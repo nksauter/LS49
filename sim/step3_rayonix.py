@@ -145,7 +145,7 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,sfall):
   SIM.polarization=1
   SIM.default_F=0
   SIM.Fhkl=sfall
-  SIM.Amatrix = Amatrix_rot
+  SIM.Amatrix_RUB = Amatrix_rot
   SIM.xtal_shape=shapetype.Gauss # both crystal & RLP are Gaussian
   # flux is always in photons/s
   SIM.flux=flux
@@ -222,7 +222,7 @@ def run_sim2smv(fileout,crystal,spectra,rotation):
   SIM.Fhkl=sfall
   print "Determinant",rotation.determinant()
   Amatrix_rot = (rotation * sqr(sfall.unit_cell().orthogonalization_matrix())).transpose()
-  SIM.Amatrix = Amatrix_rot
+  SIM.Amatrix_RUB = Amatrix_rot
   #workaround for failing init_cell, use custom written Amatrix setter
   print "unit_cell_Adeg=",SIM.unit_cell_Adeg
   print "unit_cell_tuple=",SIM.unit_cell_tuple
