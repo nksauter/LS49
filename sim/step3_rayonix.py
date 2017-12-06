@@ -1,15 +1,13 @@
 from __future__ import division
 from scitbx.array_family import flex
 from scitbx.matrix import sqr,col
-from simtbx.nanoBragg import testuple
-from simtbx.nanoBragg import pivot
 from simtbx.nanoBragg import shapetype
-from simtbx.nanoBragg import convention
 from simtbx.nanoBragg import nanoBragg
 import libtbx.load_env # possibly implicit
 from cctbx import crystal
-from cctbx import miller
 import math
+import scitbx
+
 
 pdb_lines = """HEADER TEST
 CRYST1   50.000   60.000   70.000  90.00  90.00  90.00 P 1
@@ -21,6 +19,29 @@ ATOM      5  O   HOH A   5      46.896  37.790  41.629  1.00 20.00           O
 ATOM      6 SED  MSE A   6       1.000   2.000   3.000  1.00 20.00          SE
 END
 """
+pdb_lines = open("1m2a.pdb","r").read()
+#pdb_lines = open("4tnl.pdb","r").read()
+
+class microcrystal(object):
+  def __init__(self, Deff_A, length_um, beam_diameter_um):
+    from libtbx import adopt_init_args
+    adopt_init_args(self, locals())
+    # Deff_A is the effective domain size in Angstroms.
+    # length_um is the effective path of the beam through the crystal in microns
+    # beam_diameter_um is the effective (circular) beam diameter intersecting with the crystal in microns
+    self.illuminated_volume_um3 = math.pi * (beam_diameter_um/2.) * (beam_diameter_um/2.) * length_um
+    self.domain_volume_um3 = (4./3.)*math.pi*math.pow( Deff_A / 2. / 1.E4, 3)
+    self.domains_per_crystal = self.illuminated_volume_um3 / self.domain_volume_um3
+    print "There are %d domains in the crystal"%self.domains_per_crystal
+  def number_of_cells(self, unit_cell):
+    cell_volume_um3 = unit_cell.volume()/math.pow(1.E4,3)
+    cells_per_domain = self.domain_volume_um3 / cell_volume_um3
+    cube_root = math.pow(cells_per_domain,1./3.)
+    int_CR = round(cube_root,0)
+    print "cells per domain",cells_per_domain,"%d x %d x %d"%(int_CR,int_CR,int_CR)
+    return int(int_CR)
+
+
 
 """Dev path to get step 3
 monochromatic at first, but use mosaicity.
@@ -30,7 +51,7 @@ assemble polychromatic spectrum
 deal with absolute levels
 """
 """
-problems: pixel values -40
+problems: pixel values -40.  Fixed by using adc_offset_adu = 0
 spot intensities flat:  (consequence of Tophat)
 what is the crystal shape? Tophat vs Gauss vs Square makes a huge difference
 water seemingly only diminishes bragg spots out to 2.76 Angstroms (consequence of direct transform res limit)
@@ -38,8 +59,13 @@ but it gives grey field throughout
 how to specify a 500 um PAD
 how to specity Rayonix
 apply_noise() seems to have added the psf even when add_psf() is off! --confirmed: observed when detector_psf_fwhm_mm!=0
-There seem to be hot pixels in the noisified image!
-Why is the 'water ring' at 5.7 Angstroms?
+There seem to be hot pixels in the noisified image!--values of 65535 or thereabouts (Fix by using adc_offset=10)
+Why is the 'water ring' at 5.7 Angstroms?--Because of wavelength bug; use workaround
+WHy does it look polarized in image_003 but not in noiseimage_001?
+The size (cells_abc) seems to affect the intensity the wrong way --decreases instead of increases, but increases contrast over noise
+    ---confirmed, image 1 seems to be normalized somehow
+The size (cells_abs) affects radial width correctly (good)
+C-centered symmetry not supported (non-90-degree cell angles not set)
 """
 
 """Initial try to produce simulations relevant to LS49.
@@ -49,7 +75,7 @@ Ferredoxin, use Fcalc from PDB entry 1M2A, wild type ferredoxin from Aquifex aeo
 No anomalous signal at first.
 Model a square PAD detector centered on direct beam, 2K x 2K, 0.11 mm pixels
 Distance 141.7 mm, 500 um thick silicon.
-Mosaicity angle is 0.05 stddev  
+Mosaicity angle is 0.05 stddev
 500 mosaic domains
 Domain size is 3000Angstrom (but it doesn't figure in to calculation).
 flux is average 10^12 photons per shot, but is scaled by per-shot intensity
@@ -64,7 +90,7 @@ Work out mosaic rotation ensemble.
 """
 
 """Prospective plan
-Simulate a single std-setting PAD image, using absolute units.
+Simulate a single std-setting PAD image, using absolute units. (step3)
 Simulate a whole dataset, 20000 images.  Solve by molecular replacement
 Simulate an anomalous dataset, 7150 eV, but using fixed f',f". 100,000 images.  Solve by SAD.
 *** Plug in the f' & f" as a function of wavelength.  Rerun the simulation at 7120 eV.
@@ -80,6 +106,7 @@ def fcalc_from_pdb(resolution,algorithm=None,wavelength=0.9):
   from iotbx import pdb
   pdb_inp = pdb.input(source_info=None,lines = pdb_lines)
   xray_structure = pdb_inp.xray_structure_simple()
+  xray_structure.show_summary(prefix="Input structure ")
   #
   # take a detour to insist on calculating anomalous contribution of every atom
   scatterers = xray_structure.scatterers()
@@ -92,29 +119,80 @@ def fcalc_from_pdb(resolution,algorithm=None,wavelength=0.9):
   # how do we do bulk solvent?
   primitive_xray_structure = xray_structure.primitive_setting()
   P1_primitive_xray_structure = primitive_xray_structure.expand_to_p1()
+  P1_primitive_xray_structure.show_summary(prefix="P1 structure ")
   fcalc = P1_primitive_xray_structure.structure_factors(
     d_min=resolution, anomalous_flag=True, algorithm=algorithm).f_calc()
-  print fcalc
   return fcalc.amplitudes()
 
-def run_sim2smv(fileout):
+
+def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,sfall):
+  SIM = nanoBragg(detpixels_slowfast=(2000,2000),pixel_size_mm=0.11,Ncells_abc=(N,N,N),
+    wavelength_A=wavelength_A,verbose=0)
+  SIM.adc_offset_adu = 10 # Do not offset by 40
+  SIM.mosaic_domains = 25  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
+  SIM.mosaic_spread_deg = 0.05 # interpreted by UMAT_nm as a half-width stddev
+  SIM.distance_mm=141.7
+  SIM.set_mosaic_blocks(UMAT_nm)
+
+  #SIM.detector_thick_mm = 0.5 # = 0 for Rayonix
+  #SIM.detector_thicksteps = 1 # should default to 1 for Rayonix, but set to 5 for CSPAD
+  #SIM.detector_attenuation_length_mm = default is silicon
+
+  # get same noise each time this test is run
+  SIM.seed = 1
+  SIM.oversample=1
+  SIM.wavelength_A = wavelength_A
+  SIM.polarization=1
+  SIM.default_F=0
+  SIM.Fhkl=sfall
+  SIM.Amatrix = Amatrix_rot
+  SIM.xtal_shape=shapetype.Gauss # both crystal & RLP are Gaussian
+  # flux is always in photons/s
+  SIM.flux=flux
+  SIM.exposure_s=1.0 # so total fluence is e12
+  # assumes round beam
+  SIM.beamsize_mm=0.003 #cannot make this 3 microns; spots are too intense
+  temp=SIM.Ncells_abc
+  print "Ncells_abc=",SIM.Ncells_abc
+  SIM.Ncells_abc=temp
+
+  from libtbx.development.timers import Profiler
+  P = Profiler("nanoBragg")
+  SIM.add_nanoBragg_spots()
+  del P
+  return SIM
+
+def run_sim2smv(fileout,crystal,spectra,rotation):
+  direct_algo_res_limit = 2.0
+
+  wavlen, flux, wavelength_A = spectra.next() # list of lambdas, list of fluxes, average wavelength
+
+
+  #sfall = fcalc_from_pdb(resolution=direct_algo_res_limit,algorithm="direct",wavelength=SIM.wavelength_A)
+  sfall = fcalc_from_pdb(resolution=direct_algo_res_limit,algorithm="fft",wavelength=wavelength_A)
+  # use crystal structure to initialize Fhkl array
+  sfall.show_summary(prefix = "Amplitudes used ")
+  N = crystal.number_of_cells(sfall.unit_cell())
+
   #SIM = nanoBragg(detpixels_slowfast=(2000,2000),pixel_size_mm=0.11,Ncells_abc=(5,5,5),verbose=0)
-  SIM = nanoBragg(detpixels_slowfast=(2000,2000),pixel_size_mm=0.11,Ncells_abc=(20,20,20),verbose=0)
+  SIM = nanoBragg(detpixels_slowfast=(2000,2000),pixel_size_mm=0.11,Ncells_abc=(N,N,N),
+    # workaround for problem with wavelength array, specify it separately in constructor.
+    wavelength_A=wavelength_A,verbose=0)
   SIM.adc_offset_adu = 0 # Do not offset by 40
+  SIM.adc_offset_adu = 10 # Do not offset by 40
   import sys
   if len(sys.argv)>2:
     SIM.seed = -int(sys.argv[2])
     print "GOTHERE seed=",SIM.seed
   if len(sys.argv)>1:
     if sys.argv[1]=="random" : SIM.randomize_orientation()
-  SIM.mosaic_domains = 100 # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
+  SIM.mosaic_domains = 25  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
                            # 3000000 images would be 100000 hours on a 60-core machine (dials), or 11.4 years
                            # using 2 nodes, 5.7 years.  Do this at SLAC? NERSC? combination of all?
                            # SLAC downtimes: Tues Dec 5 (24 hrs), Mon Dec 11 (72 hrs), Mon Dec 18 light use, 24 days
   SIM.mosaic_spread_deg = 0.05 # interpreted by UMAT_nm as a half-width stddev
   SIM.distance_mm=141.7
 
-  import scitbx
   UMAT_nm = flex.mat3_double()
   mersenne_twister = flex.mersenne_twister(seed=0)
   rand_norm = scitbx.random.normal_distribution(mean=0, sigma=SIM.mosaic_spread_deg * math.pi/180.)
@@ -125,29 +203,39 @@ def run_sim2smv(fileout):
     UMAT_nm.append( site.axis_and_angle_as_r3_rotation_matrix(m,deg=False) )
   SIM.set_mosaic_blocks(UMAT_nm)
 
+  #SIM.detector_thick_mm = 0.5 # = 0 for Rayonix
+  #SIM.detector_thicksteps = 1 # should default to 1 for Rayonix, but set to 5 for CSPAD
+  #SIM.detector_attenuation_length_mm = default is silicon
+
   # get same noise each time this test is run
   SIM.seed = 1
   SIM.oversample=1
-  SIM.wavelength_A=1.734045 # 7150 eV
+  SIM.wavelength_A = wavelength_A
   SIM.polarization=1
-  #SIM.unit_cell_tuple=(50,50,50,90,90,90)
-  print "unit_cell_Adeg=",SIM.unit_cell_Adeg
-  print "unit_cell_tuple=",SIM.unit_cell_tuple
   # this will become F000, marking the beam center
-  SIM.default_F=100
+  SIM.default_F=0
   #SIM.missets_deg= (10,20,30)
   print "mosaic_seed=",SIM.mosaic_seed
   print "seed=",SIM.seed
   print "calib_seed=",SIM.calib_seed
   print "missets_deg =", SIM.missets_deg
-  direct_algo_res_limit = 1.0 #critical here to extend far enough
-  sfall = fcalc_from_pdb(resolution=direct_algo_res_limit,algorithm="direct",wavelength=SIM.wavelength_A)
-  # use crystal structure to initialize Fhkl array
   SIM.Fhkl=sfall
+  print "Determinant",rotation.determinant()
+  Amatrix_rot = (rotation * sqr(sfall.unit_cell().orthogonalization_matrix())).transpose()
+  SIM.Amatrix = Amatrix_rot
+  #workaround for failing init_cell, use custom written Amatrix setter
+  print "unit_cell_Adeg=",SIM.unit_cell_Adeg
+  print "unit_cell_tuple=",SIM.unit_cell_tuple
+  Amat = sqr(SIM.Amatrix).transpose() # recovered Amatrix from SIM
+  from cctbx import crystal_orientation
+  Ori = crystal_orientation.crystal_orientation(Amat, crystal_orientation.basis_type.reciprocal)
+  print "Python unit cell from SIM state",Ori.unit_cell()
+
   # fastest option, least realistic
-  #SIM.xtal_shape=shapetype.Tophat
+  #SIM.xtal_shape=shapetype.Tophat # RLP = hard sphere
   #SIM.xtal_shape=shapetype.Square # gives fringes
-  SIM.xtal_shape=shapetype.Gauss
+  SIM.xtal_shape=shapetype.Gauss # both crystal & RLP are Gaussian
+  #SIM.xtal_shape=shapetype.Round # Crystal is a hard sphere
   # only really useful for long runs
   SIM.progress_meter=False
   # prints out value of one pixel only.  will not render full image!
@@ -156,9 +244,9 @@ def run_sim2smv(fileout):
   SIM.show_params()
   # flux is always in photons/s
   SIM.flux=1e12
+  SIM.exposure_s=1.0 # so total fluence is e12
   # assumes round beam
-  SIM.beamsize_mm=0.1
-  SIM.exposure_s=0.1
+  SIM.beamsize_mm=0.003 #cannot make this 3 microns; spots are too intense
   temp=SIM.Ncells_abc
   print "Ncells_abc=",SIM.Ncells_abc
   SIM.Ncells_abc=temp
@@ -225,14 +313,22 @@ def run_sim2smv(fileout):
   from libtbx.development.timers import Profiler
   P = Profiler("nanoBragg")
   # now actually burn up some CPU
-  SIM.add_nanoBragg_spots()
+  #SIM.add_nanoBragg_spots()
   del P
 
   # simulated crystal is only 125 unit cells (25 nm wide)
   # amplify spot signal to simulate physical crystal of 4000x larger: 100 um (64e9 x the volume)
-  SIM.raw_pixels *= 64e9;
+  print crystal.domains_per_crystal
+  SIM.raw_pixels *= crystal.domains_per_crystal; # must calculate the correct scale!
+
+  for x in xrange(100):
+    print "+++++++++++++++++++++++++++++++++++++++ Wavelength",x
+    CH = channel_pixels(wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,sfall)
+    SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal;
+    CH.free_all()
+
   SIM.to_smv_format(fileout="step3image_001.img")
-  
+
   # rough approximation to water: interpolation points for sin(theta/lambda) vs structure factor
   bg = flex.vec2_double([(0,2.57),(0.0365,2.58),(0.07,2.8),(0.12,5),(0.162,8),(0.2,6.75),(0.18,7.32),(0.216,6.75),(0.236,6.5),(0.28,4.5),(0.3,4.3),(0.345,4.36),(0.436,3.77),(0.5,3.17)])
   SIM.Fbg_vs_stol = bg
@@ -240,15 +336,16 @@ def run_sim2smv(fileout):
   SIM.amorphous_density_gcm3 = 1
   SIM.amorphous_molecular_weight_Da = 18
   SIM.flux=1e12
-  SIM.beamsize_mm=0.1
-  SIM.exposure_s=0.1
+  SIM.beamsize_mm=0.003 # square (not user specified)
+  SIM.exposure_s=1.0 # multiplies flux x exposure
   SIM.add_background()
   SIM.to_smv_format(fileout="step3image_002.img")
 
   # rough approximation to air
   bg = flex.vec2_double([(0,14.1),(0.045,13.5),(0.174,8.35),(0.35,4.78),(0.5,4.22)])
   SIM.Fbg_vs_stol = bg
-  SIM.amorphous_sample_thick_mm = 35 # between beamstop and collimator
+  #SIM.amorphous_sample_thick_mm = 35 # between beamstop and collimator
+  SIM.amorphous_sample_thick_mm = 10 # between beamstop and collimator
   SIM.amorphous_density_gcm3 = 1.2e-3
   SIM.amorphous_sample_molecular_weight_Da = 28 # nitrogen = N2
   print "amorphous_sample_size_mm=",SIM.amorphous_sample_size_mm
@@ -256,25 +353,35 @@ def run_sim2smv(fileout):
   print "amorphous_density_gcm3=",SIM.amorphous_density_gcm3
   print "amorphous_molecular_weight_Da=",SIM.amorphous_molecular_weight_Da
   SIM.add_background()
+
+  #apply beamstop mask here
+
   # set this to 0 or -1 to trigger automatic radius.  could be very slow with bright images
   # settings for CCD
   SIM.detector_psf_kernel_radius_pixels=5;
   #SIM.detector_psf_fwhm_mm=0.08;
-  SIM.detector_psf_type=shapetype.Fiber
+  #SIM.detector_psf_type=shapetype.Fiber # rayonix=Fiber, CSPAD=None (or small Gaussian)
+  SIM.detector_psf_type=shapetype.Unknown # for CSPAD
   SIM.detector_psf_fwhm_mm=0
   #SIM.apply_psf()
   print "One pixel-->",SIM.raw_pixels[500000]
+
+  # at this point we scale the raw pixels so that the output array is on an scale from 0 to 50000.
+  # that is the default behavior (intfile_scale<=0), otherwise it applies intfile_scale as a multiplier on an abs scale.
   SIM.to_smv_format(fileout="step3image_003.img")
 
-  print "quantum_gain=",SIM.quantum_gain
+  print "quantum_gain=",SIM.quantum_gain #defaults to 1. converts photons to ADU
   print "adc_offset_adu=",SIM.adc_offset_adu
   print "detector_calibration_noise_pct=",SIM.detector_calibration_noise_pct
   print "flicker_noise_pct=",SIM.flicker_noise_pct
-  print "readout_noise_adu=",SIM.readout_noise_adu
+  print "readout_noise_adu=",SIM.readout_noise_adu # gaussian random number to add to every pixel (0 for PAD)
+  # apply Poissonion correction, then scale to ADU, then adc_offset.
+  # should be 10 for most Rayonix, Pilatus should be 0, CSPAD should be 0.
+
   print "detector_psf_type=",SIM.detector_psf_type
   print "detector_psf_fwhm_mm=",SIM.detector_psf_fwhm_mm
   print "detector_psf_kernel_radius_pixels=",SIM.detector_psf_kernel_radius_pixels
-  SIM.add_noise()
+  SIM.add_noise() #converts phtons to ADU.
   #fileout = "intimage_001.img"
   print "raw_pixels=",SIM.raw_pixels
   SIM.to_smv_format(fileout="step3noiseimage_001.img",intfile_scale=1)
@@ -291,12 +398,21 @@ def run_sim2smv(fileout):
 
 
 def tst_all():
-  F = testuple()
-  assert F == (1,2,3,4)
+  from LS49.spectra.generate_spectra import spectra_simulation
+  SS = spectra_simulation()
+  #SS.plot_recast_images(20,energy=7150.)
+  iterator = SS.generate_recast_renormalized_images(20,energy=7150.,total_flux=1e12)
+
+
   #
   fileout = "step3noiseimage_001.cbf"
   #
-  run_sim2smv(fileout)
+  C = microcrystal(Deff_A = 4000, length_um = 5., beam_diameter_um = 3.) # assume smaller than 10 um crystals
+  mt = flex.mersenne_twister(seed=0)
+  rand_ori = sqr(mt.random_double_r3_rotation_matrix())
+
+
+  run_sim2smv(fileout = fileout,crystal = C,spectra=iterator,rotation=rand_ori,)
   import os
   assert os.path.isfile(fileout)
 
