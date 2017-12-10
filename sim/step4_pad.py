@@ -196,6 +196,7 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,sfall):
   SIM.Fhkl=sfall
   SIM.Amatrix_RUB = Amatrix_rot
   SIM.xtal_shape=shapetype.Gauss # both crystal & RLP are Gaussian
+  SIM.progress_meter=False
   # flux is always in photons/s
   SIM.flux=flux
   SIM.exposure_s=1.0 # so total fluence is e12
@@ -207,7 +208,7 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,sfall):
 
   from libtbx.development.timers import Profiler
   P = Profiler("nanoBragg")
-  SIM.add_nanoBragg_spots()
+  SIM.add_nanoBragg_spots_nks()
   del P
   return SIM
 
@@ -248,6 +249,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,quick=False):
 
   UMAT_nm = flex.mat3_double()
   mersenne_twister = flex.mersenne_twister(seed=0)
+  scitbx.random.set_random_seed(1234)
   rand_norm = scitbx.random.normal_distribution(mean=0, sigma=SIM.mosaic_spread_deg * math.pi/180.)
   g = scitbx.random.variate(rand_norm)
   mosaic_rotation = g(SIM.mosaic_domains)
@@ -465,10 +467,10 @@ def tst_all():
   mt = flex.mersenne_twister(seed=0)
 
   quick = False
-  if quick: prefix_root="step4Q_%06d"
+  if quick: prefix_root="step4Y_%06d"
   else: prefix_root="step4F_%06d"
 
-  Nimages = 10000
+  Nimages = 1# 10000
   for iteration in xrange(Nimages):
     file_prefix = prefix_root%iteration
     rand_ori = sqr(mt.random_double_r3_rotation_matrix())
