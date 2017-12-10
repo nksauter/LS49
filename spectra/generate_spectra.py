@@ -119,6 +119,30 @@ class spectra_simulation:
           channel_flux[channel] += self.R['spectra'][image][idx] * total_flux / self.average_integrated
       yield channel_wavelength,channel_flux,eV_to_angstrom / expected_energy
 
+  def generate_recast_renormalized_image(self, image, energy, total_flux):
+    spectrum_fitted_energy = self.LF.m * np.array(xrange(self.NS)) + self.LF.c
+    offset = energy - self.get_average_expected_energy()
+    offset_energy = spectrum_fitted_energy + offset
+
+    from scitbx.array_family import flex
+    y = flex.double(list(self.R['spectra'][image]))
+    ysum = self.bk_subtracted_sum[image]
+
+    expected_energy = self.LF.m * self.R["expidx"][image] + self.LF.c + offset
+    print image,"ebeam = %7.2f eV"%(expected_energy),"%5.1f%% of average pulse intensity"%(100.*
+        self.bk_subtracted_sum[image]/self.average_integrated)
+
+    channel_flux = flex.double(100) # 100 energy channels altogether
+    channel_mean_eV = flex.double(xrange(100)) + energy - 49.5
+    eV_to_angstrom = 12398.425
+    channel_wavelength = eV_to_angstrom / channel_mean_eV
+    for idx in xrange(len(offset_energy)):
+        i_energy = offset_energy[idx]
+        channel = int(i_energy - (energy-50))
+        if 0 <= channel < 100:
+          channel_flux[channel] += self.R['spectra'][image][idx] * total_flux / self.average_integrated
+    yield channel_wavelength,channel_flux,eV_to_angstrom / expected_energy
+
 
   def get_average_expected_energy(self):
     idx = np.array(self.LF.x)
