@@ -7,7 +7,7 @@ import libtbx.load_env # possibly implicit
 from cctbx import crystal
 import math
 import scitbx
-
+from LS49.sim.util_fmodel import fmodel_from_pdb, fcalc_from_pdb
 
 pdb_lines = """HEADER TEST
 CRYST1   50.000   60.000   70.000  90.00  90.00  90.00 P 1
@@ -111,69 +111,6 @@ dials.stills_process step4_00000[0-2].img threshold.dispersion.gain=1.47 filter.
 dials.image_viewer idx-step4_000000_integrated_experiments.json idx-step4_000000_integrated.pickle
 """
 
-def fcalc_from_pdb(resolution,algorithm=None,wavelength=0.9):
-  from iotbx import pdb
-  pdb_inp = pdb.input(source_info=None,lines = pdb_lines)
-  xray_structure = pdb_inp.xray_structure_simple()
-  xray_structure.show_summary(prefix="Input structure ")
-  #
-  # take a detour to insist on calculating anomalous contribution of every atom
-  scatterers = xray_structure.scatterers()
-  for sc in scatterers:
-    from cctbx.eltbx import sasaki, henke
-    #expected_sasaki = sasaki.table(sc.element_symbol()).at_angstrom(wavelength)
-    expected_henke = henke.table(sc.element_symbol()).at_angstrom(wavelength)
-    sc.fp = expected_henke.fp()
-    sc.fdp = expected_henke.fdp()
-  # how do we do bulk solvent?
-  primitive_xray_structure = xray_structure.primitive_setting()
-  P1_primitive_xray_structure = primitive_xray_structure.expand_to_p1()
-  P1_primitive_xray_structure.show_summary(prefix="P1 structure ")
-  fcalc = P1_primitive_xray_structure.structure_factors(
-    d_min=resolution, anomalous_flag=True, algorithm=algorithm).f_calc()
-  # does provided fixed-wavelength Fcalc if anomalous_flag is True
-  return fcalc.amplitudes()
-
-def fmodel_from_pdb(resolution,algorithm=None,wavelength=0.9):
-  from iotbx import pdb
-  pdb_inp = pdb.input(source_info=None,lines = pdb_lines)
-  xray_structure = pdb_inp.xray_structure_simple()
-  xray_structure.show_summary(prefix="Input structure ")
-  #
-  # take a detour to insist on calculating anomalous contribution of every atom
-  scatterers = xray_structure.scatterers()
-  for sc in scatterers:
-    from cctbx.eltbx import sasaki, henke
-    #expected_sasaki = sasaki.table(sc.element_symbol()).at_angstrom(wavelength)
-    expected_henke = henke.table(sc.element_symbol()).at_angstrom(wavelength)
-    sc.fp = expected_henke.fp()
-    sc.fdp = expected_henke.fdp()
-  primitive_xray_structure = xray_structure.primitive_setting()
-  P1_primitive_xray_structure = primitive_xray_structure.expand_to_p1()
-  P1_primitive_xray_structure.show_summary(prefix="P1 structure ")
-  # how do we do bulk solvent?
-  import mmtbx.command_line.fmodel
-  phil2 = mmtbx.command_line.fmodel.fmodel_from_xray_structure_master_params
-  params2 = phil2.extract()
-    # adjust the cutoff of the generated intensities to assure that
-    # statistics will be reported to the desired high-resolution limit
-    # even if the observed unit cell differs slightly from the reference.
-  params2.output.type = "complex"
-  params2.high_resolution = resolution
-  params2.fmodel.k_sol = 0.35
-  params2.fmodel.b_sol = 46.
-  params2.structure_factors_accuracy.algorithm = algorithm
-  import mmtbx
-  f_model_complex = mmtbx.utils.fmodel_from_xray_structure(
-      xray_structure = P1_primitive_xray_structure,
-      f_obs          = None,
-      add_sigmas     = False,
-      params         = params2).f_model
-  f_model_real = abs(f_model_complex)
-  f_model_real.set_observation_type_xray_amplitude()
-  f_model_real.show_summary(prefix="FMODEL ")
-  return f_model_real
-
 def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,sfall):
   SIM = nanoBragg(detpixels_slowfast=(2000,2000),pixel_size_mm=0.11,Ncells_abc=(N,N,N),
     wavelength_A=wavelength_A,verbose=0)
@@ -221,8 +158,8 @@ def run_sim2smv(prefix,crystal,spectra,rotation,quick=False):
     flux = flex.double([flex.sum(flux)])
     print "Quick sim, lambda=%f, flux=%f"%(wavelength_A,flux[0])
 
-  #sfall = fcalc_from_pdb(resolution=direct_algo_res_limit,algorithm="direct",wavelength=SIM.wavelength_A)
-  sfall = fmodel_from_pdb(resolution=direct_algo_res_limit,algorithm="fft",wavelength=wavelength_A)
+  #sfall = fcalc_from_pdb(resolution=direct_algo_res_limit,pdb_text=pdb_lines,algorithm="direct",wavelength=SIM.wavelength_A)
+  sfall = fmodel_from_pdb(resolution=direct_algo_res_limit,pdb_text=pdb_lines,algorithm="fft",wavelength=wavelength_A)
 
   # use crystal structure to initialize Fhkl array
   sfall.show_summary(prefix = "Amplitudes used ")

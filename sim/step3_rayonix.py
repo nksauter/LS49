@@ -7,7 +7,7 @@ import libtbx.load_env # possibly implicit
 from cctbx import crystal
 import math
 import scitbx
-
+from LS49.sim.util_fmodel import fcalc_from_pdb
 
 pdb_lines = """HEADER TEST
 CRYST1   50.000   60.000   70.000  90.00  90.00  90.00 P 1
@@ -102,29 +102,6 @@ Simulate an anomalous dataset, 7150 eV, but using fixed f',f". 100,000 images.  
 *** simulate polarized spectroscopy
 """
 
-def fcalc_from_pdb(resolution,algorithm=None,wavelength=0.9):
-  from iotbx import pdb
-  pdb_inp = pdb.input(source_info=None,lines = pdb_lines)
-  xray_structure = pdb_inp.xray_structure_simple()
-  xray_structure.show_summary(prefix="Input structure ")
-  #
-  # take a detour to insist on calculating anomalous contribution of every atom
-  scatterers = xray_structure.scatterers()
-  for sc in scatterers:
-    from cctbx.eltbx import sasaki, henke
-    #expected_sasaki = sasaki.table(sc.element_symbol()).at_angstrom(wavelength)
-    expected_henke = henke.table(sc.element_symbol()).at_angstrom(wavelength)
-    sc.fp = expected_henke.fp()
-    sc.fdp = expected_henke.fdp()
-  # how do we do bulk solvent?
-  primitive_xray_structure = xray_structure.primitive_setting()
-  P1_primitive_xray_structure = primitive_xray_structure.expand_to_p1()
-  P1_primitive_xray_structure.show_summary(prefix="P1 structure ")
-  fcalc = P1_primitive_xray_structure.structure_factors(
-    d_min=resolution, anomalous_flag=True, algorithm=algorithm).f_calc()
-  return fcalc.amplitudes()
-
-
 def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,sfall):
   SIM = nanoBragg(detpixels_slowfast=(2000,2000),pixel_size_mm=0.11,Ncells_abc=(N,N,N),
     wavelength_A=wavelength_A,verbose=0)
@@ -168,8 +145,8 @@ def run_sim2smv(fileout,crystal,spectra,rotation):
   wavlen, flux, wavelength_A = spectra.next() # list of lambdas, list of fluxes, average wavelength
 
 
-  #sfall = fcalc_from_pdb(resolution=direct_algo_res_limit,algorithm="direct",wavelength=SIM.wavelength_A)
-  sfall = fcalc_from_pdb(resolution=direct_algo_res_limit,algorithm="fft",wavelength=wavelength_A)
+  #sfall = fcalc_from_pdb(resolution=direct_algo_res_limit,pdb_text=pdb_lines,algorithm="direct",wavelength=SIM.wavelength_A)
+  sfall = fcalc_from_pdb(resolution=direct_algo_res_limit,pdb_text=pdb_lines,algorithm="fft",wavelength=wavelength_A)
   # use crystal structure to initialize Fhkl array
   sfall.show_summary(prefix = "Amplitudes used ")
   N = crystal.number_of_cells(sfall.unit_cell())
