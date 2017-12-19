@@ -107,7 +107,7 @@ dials.import step4_000001.img # checks import
 dials.estimate_gain datablock.json
 dials.find_spots datablock.json threshold.dispersion.gain=1.47 filter.min_spot_size=2
 dials.image_viewer datablock.json strong.pickle
-dials.stills_process step4_00000[0-2].img threshold.dispersion.gain=1.47 filter.min_spot_size=2 indexing.known_symmetry.unit_cell=67.200,59.800,47.200,90.00,110.30,90.00 indexing.known_symmetry.space_group=C2
+dials.stills_process step4_00000[0-2].img threshold.dispersion.gain=1.47 filter.min_spot_size=2 indexing.known_symmetry.unit_cell=67.200,59.800,47.200,90.00,110.30,90.00 indexing.known_symmetry.space_group=C2 mp.nproc=60
 dials.image_viewer idx-step4_000000_integrated_experiments.json idx-step4_000000_integrated.pickle
 """
 
