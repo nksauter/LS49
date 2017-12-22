@@ -82,7 +82,8 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,sfall):
   del P
   return SIM
 
-def run_sim2smv(prefix,crystal,spectra,rotation,quick=False):
+def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
+  smv_fileout = prefix + ".img"
   direct_algo_res_limit = 1.7
 
   wavlen, flux, wavelength_A = spectra.next() # list of lambdas, list of fluxes, average wavelength
@@ -312,7 +313,8 @@ def run_sim2smv(prefix,crystal,spectra,rotation,quick=False):
   SIM.add_noise() #converts phtons to ADU.
 
   print "raw_pixels=",SIM.raw_pixels
-  SIM.to_smv_format(fileout=prefix + ".img",intfile_scale=1)
+  extra = "PREFIX=%s;\nRANK=%d;\n"%(prefix,rank)
+  SIM.to_smv_format_py(fileout=smv_fileout,intfile_scale=1,rotmat=True,extra=extra,gz=True)
 
   # try to write as CBF
   if False:
@@ -344,7 +346,7 @@ def tst_all():
   for iteration in xrange(Nimages):
     file_prefix = prefix_root%iteration
     rand_ori = sqr(mt.random_double_r3_rotation_matrix())
-    run_sim2smv(prefix = file_prefix,crystal = C,spectra=iterator,rotation=rand_ori,quick=quick)
+    run_sim2smv(prefix = file_prefix,crystal = C,spectra=iterator,rotation=rand_ori,quick=quick,rank=0)
 
 if __name__=="__main__":
   tst_all()
