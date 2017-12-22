@@ -15,6 +15,7 @@ pdb_lines = open("1m2a.pdb","r").read()
 from LS49.sim.step4_pad import microcrystal
 
 """Changes in Step4K relative to Step4
+k_sol is now hard-coded to 0.435 instead of 0.35 to reduce solvent contrast
 Simulation out to 1.7 Angstrom resolution
 Use 3K x 3K detector, not 2K x 2K to insure complete coverage at 2.1 A inscribed circle
 Put the ROTMAT orientation in the file header, instead of in log file
