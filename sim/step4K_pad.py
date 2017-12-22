@@ -9,89 +9,23 @@ import math
 import scitbx
 from LS49.sim.util_fmodel import fmodel_from_pdb, fcalc_from_pdb
 
-pdb_lines = """HEADER TEST
-CRYST1   50.000   60.000   70.000  90.00  90.00  90.00 P 1
-ATOM      1  O   HOH A   1      56.829   2.920  55.702  1.00 20.00           O
-ATOM      2  O   HOH A   2      49.515  35.149  37.665  1.00 20.00           O
-ATOM      3  O   HOH A   3      52.667  17.794  69.925  1.00 20.00           O
-ATOM      4  O   HOH A   4      40.986  20.409  18.309  1.00 20.00           O
-ATOM      5  O   HOH A   5      46.896  37.790  41.629  1.00 20.00           O
-ATOM      6 SED  MSE A   6       1.000   2.000   3.000  1.00 20.00          SE
-END
-"""
 pdb_lines = open("1m2a.pdb","r").read()
 #pdb_lines = open("4tnl.pdb","r").read()
 
-class microcrystal(object):
-  def __init__(self, Deff_A, length_um, beam_diameter_um):
-    from libtbx import adopt_init_args
-    adopt_init_args(self, locals())
-    # Deff_A is the effective domain size in Angstroms.
-    # length_um is the effective path of the beam through the crystal in microns
-    # beam_diameter_um is the effective (circular) beam diameter intersecting with the crystal in microns
-    self.illuminated_volume_um3 = math.pi * (beam_diameter_um/2.) * (beam_diameter_um/2.) * length_um
-    self.domain_volume_um3 = (4./3.)*math.pi*math.pow( Deff_A / 2. / 1.E4, 3)
-    self.domains_per_crystal = self.illuminated_volume_um3 / self.domain_volume_um3
-    print "There are %d domains in the crystal"%self.domains_per_crystal
-  def number_of_cells(self, unit_cell):
-    cell_volume_um3 = unit_cell.volume()/math.pow(1.E4,3)
-    cells_per_domain = self.domain_volume_um3 / cell_volume_um3
-    cube_root = math.pow(cells_per_domain,1./3.)
-    int_CR = round(cube_root,0)
-    print "cells per domain",cells_per_domain,"%d x %d x %d"%(int_CR,int_CR,int_CR)
-    return int(int_CR)
+from LS49.sim.step4_pad import microcrystal
 
-"""Dev path to get step 4
-develop a switch between time consuming SASE calc, and quick & dirty mono calc DONE
-Check whether I can decrease crystal diffraction by factor of 10 DONE
-Confirm orientations are random DONE
-Sort out the output file names (make quick switch for intermediate file output) DONE
-Put a record of the orientation in the file header. IT's IN THE SCREEN OUTPUT.
-Test OpenMP on linux.
-"""
-"""
-problems: pixel values -40.  Fixed by using adc_offset_adu = 0
-spot intensities flat:  (consequence of Tophat)
-what is the crystal shape? Tophat vs Gauss vs Square makes a huge difference
-water seemingly only diminishes bragg spots out to 2.76 Angstroms (consequence of direct transform res limit)
-but it gives grey field throughout
-how to specify a 500 um PAD
-how to specity Rayonix
-apply_noise() seems to have added the psf even when add_psf() is off! --confirmed: observed when detector_psf_fwhm_mm!=0
-There seem to be hot pixels in the noisified image!--values of 65535 or thereabouts (Fix by using adc_offset=10)
-Why is the 'water ring' at 5.7 Angstroms?--Because of wavelength bug; use workaround
-WHy does it look polarized in image_003 but not in noiseimage_001?
-The size (cells_abc) seems to affect the intensity the wrong way --decreases instead of increases, but increases contrast over noise
-    ---confirmed, image 1 seems to be normalized somehow
-The size (cells_abs) affects radial width correctly (good)
-C-centered symmetry not supported (non-90-degree cell angles not set)
-"""
-
-"""Initial try to produce simulations relevant to LS49.
-step3:
-produce a single PAD image
-Ferredoxin, use Fcalc from PDB entry 1M2A, wild type ferredoxin from Aquifex aeolicus, 1.5 Angstrom
-No anomalous signal at first.
-Model a square PAD detector centered on direct beam, 2K x 2K, 0.11 mm pixels
-Distance 141.7 mm, 500 um thick silicon.
-Mosaicity angle is 0.05 stddev
-500 mosaic domains
-Domain size is 3000Angstrom (but it doesn't figure in to calculation).
-flux is average 10^12 photons per shot, but is scaled by per-shot intensity
-Illuminated volume is 3x3circlex10um long.
-Choose a standard orientation at first, then a random orientation.
-For the first shot, choose 7150 as our target beam energy.
-Break it up into 100 spectral channels
-Altogether this is 500 x 100 = 50000 mono-perfect subimages.
-For the spectral dispersion, use shot #1, run 209 LG36.
-Use a helium atmosphere, unattenuated beam passes through.
-Work out mosaic rotation ensemble.
+"""Changes in Step4K relative to Step4
+k_sol is now hard-coded to 0.435 instead of 0.35 to reduce solvent contrast
+Simulation out to 1.7 Angstrom resolution
+Use 3K x 3K detector, not 2K x 2K to insure complete coverage at 2.1 A inscribed circle
+Put the ROTMAT orientation in the file header, instead of in log file
+Put sequence number and MPI rank in header
+Write gz compressed file
+Avoid computing the image if already on disk
 """
 
 """Prospective plan
-Simulate a single std-setting PAD image, using absolute units. (step 3)
-Simulate a whole dataset, 20000 images.  Solve by molecular replacement (step 4)
-Simulate an anomalous dataset, 7150 eV, but using fixed f',f". 100,000 images.  Solve by SAD.
+Simulate an anomalous dataset, 7150 eV, but using fixed f',f". 50,000 images. Solve by SAD. (step4K)
 *** Plug in the f' & f" as a function of wavelength.  Rerun the simulation at 7120 eV.
   Sort images into normalized-intensity wavelength bins and calculate maps
 *** Put a detector at far distance, and one nearby, process both simultaneously.
@@ -110,9 +44,13 @@ dials.image_viewer datablock.json strong.pickle
 dials.stills_process step4_00000[0-2].img threshold.dispersion.gain=1.47 filter.min_spot_size=2 indexing.known_symmetry.unit_cell=67.200,59.800,47.200,90.00,110.30,90.00 indexing.known_symmetry.space_group=C2 mp.nproc=60
 dials.image_viewer idx-step4_000000_integrated_experiments.json idx-step4_000000_integrated.pickle
 """
+def write_safe(fname):
+  # make sure file or compressed file is not already on disk
+  import os
+  return (not os.path.isfile(fname)) and (not os.path.isfile(fname+".gz"))
 
 def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,sfall):
-  SIM = nanoBragg(detpixels_slowfast=(2000,2000),pixel_size_mm=0.11,Ncells_abc=(N,N,N),
+  SIM = nanoBragg(detpixels_slowfast=(3000,3000),pixel_size_mm=0.11,Ncells_abc=(N,N,N),
     wavelength_A=wavelength_A,verbose=0)
   SIM.adc_offset_adu = 10 # Do not offset by 40
   SIM.mosaic_domains = 25  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
@@ -149,8 +87,14 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,sfall):
   del P
   return SIM
 
-def run_sim2smv(prefix,crystal,spectra,rotation,quick=False):
-  direct_algo_res_limit = 2.0
+def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
+  smv_fileout = prefix + ".img"
+  if quick is not True:
+    if not write_safe(smv_fileout):
+      print "File %s already exists, skipping in rank %d"%(smv_fileout,rank)
+      return
+
+  direct_algo_res_limit = 1.7
 
   wavlen, flux, wavelength_A = spectra.next() # list of lambdas, list of fluxes, average wavelength
   if quick:
@@ -166,7 +110,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,quick=False):
   N = crystal.number_of_cells(sfall.unit_cell())
 
   #SIM = nanoBragg(detpixels_slowfast=(2000,2000),pixel_size_mm=0.11,Ncells_abc=(5,5,5),verbose=0)
-  SIM = nanoBragg(detpixels_slowfast=(2000,2000),pixel_size_mm=0.11,Ncells_abc=(N,N,N),
+  SIM = nanoBragg(detpixels_slowfast=(3000,3000),pixel_size_mm=0.11,Ncells_abc=(N,N,N),
     # workaround for problem with wavelength array, specify it separately in constructor.
     wavelength_A=wavelength_A,verbose=0)
   SIM.adc_offset_adu = 0 # Do not offset by 40
@@ -379,7 +323,8 @@ def run_sim2smv(prefix,crystal,spectra,rotation,quick=False):
   SIM.add_noise() #converts phtons to ADU.
 
   print "raw_pixels=",SIM.raw_pixels
-  SIM.to_smv_format(fileout=prefix + ".img",intfile_scale=1)
+  extra = "PREFIX=%s;\nRANK=%d;\n"%(prefix,rank)
+  SIM.to_smv_format_py(fileout=smv_fileout,intfile_scale=1,rotmat=True,extra=extra,gz=True)
 
   # try to write as CBF
   if False:
@@ -403,15 +348,15 @@ def tst_all():
   C = microcrystal(Deff_A = 4000, length_um = 1., beam_diameter_um = 1.0) # assume smaller than 10 um crystals
   mt = flex.mersenne_twister(seed=0)
 
-  quick = False
-  if quick: prefix_root="step4Y_%06d"
-  else: prefix_root="step4F_%06d"
+  quick = True
+  if quick: prefix_root="step4K_%06d"
+  else: prefix_root="step4Kpoly_%06d"
 
   Nimages = 1# 10000
   for iteration in xrange(Nimages):
     file_prefix = prefix_root%iteration
     rand_ori = sqr(mt.random_double_r3_rotation_matrix())
-    run_sim2smv(prefix = file_prefix,crystal = C,spectra=iterator,rotation=rand_ori,quick=quick)
+    run_sim2smv(prefix = file_prefix,crystal = C,spectra=iterator,rotation=rand_ori,quick=quick,rank=0)
 
 if __name__=="__main__":
   tst_all()
