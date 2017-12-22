@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 def get_results():
   import pickle
@@ -43,6 +42,7 @@ class spectra_simulation:
     self.N = len(self.R["spectra"]) # number of events overall
 
   def plot_input_images(self,nlimit,axis="idx"):  #axis is either channel number (idx) or calibrated energy (energy)
+    import matplotlib.pyplot as plt
     ylim = [-.05*self.max_of_max, 1.05*self.max_of_max]
     spectrum_fitted_energy = self.LF.m * np.array(xrange(self.NS)) + self.LF.c
     for image in xrange(min(nlimit, self.N)):
@@ -66,6 +66,7 @@ class spectra_simulation:
       plt.show()
 
   def plot_recast_images(self,nlimit,energy):
+    import matplotlib.pyplot as plt
     ylim = [-.05*self.max_of_max, 1.05*self.max_of_max]
     spectrum_fitted_energy = self.LF.m * np.array(xrange(self.NS)) + self.LF.c
     offset = energy - self.get_average_expected_energy()
