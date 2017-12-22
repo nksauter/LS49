@@ -44,6 +44,10 @@ dials.image_viewer datablock.json strong.pickle
 dials.stills_process step4_00000[0-2].img threshold.dispersion.gain=1.47 filter.min_spot_size=2 indexing.known_symmetry.unit_cell=67.200,59.800,47.200,90.00,110.30,90.00 indexing.known_symmetry.space_group=C2 mp.nproc=60
 dials.image_viewer idx-step4_000000_integrated_experiments.json idx-step4_000000_integrated.pickle
 """
+def write_safe(fname):
+  # make sure file or compressed file is not already on disk
+  import os
+  return (not os.path.isfile(fname)) and (not os.path.isfile(fname+".gz"))
 
 def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,sfall):
   SIM = nanoBragg(detpixels_slowfast=(3000,3000),pixel_size_mm=0.11,Ncells_abc=(N,N,N),
@@ -85,6 +89,11 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,sfall):
 
 def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
   smv_fileout = prefix + ".img"
+  if quick is not True:
+    if not write_safe(smv_fileout):
+      print "File %s already exists, skipping in rank %d"%(smv_fileout,rank)
+      return
+
   direct_algo_res_limit = 1.7
 
   wavlen, flux, wavelength_A = spectra.next() # list of lambdas, list of fluxes, average wavelength
