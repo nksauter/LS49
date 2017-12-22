@@ -104,5 +104,12 @@ if __name__=="__main__":
   for idx in xrange(job_no,N_total,N_stride):
     print "idx------------------->",idx
     tst_one(image=idx,spectra=SS,crystal=C,random_orientation=random_orientations[idx])
-    exit()
   print "OK"
+"""bsub -n 8 -o job${JOB}.log OMP_NUM_THREADS=8 libtbx.python ~/proj-1217/modules/LS49/sim/step4batch_pad.py ${JOB}
+for JOB in `seq 10 69`; do bsub -q psanaq -n 8 -o job${JOB}.log OMP_NUM_THREADS=8 libtbx.python ~/proj-1217/modules/LS49/sim/step4batch_pad.py ${JOB};done
+
+for JOB in `seq 62 69`; do bsub -q psanaq -o job${JOB}.log bsub -R "affinity[core(8)]" libtbx.python ~/proj-1217/modules/LS49/sim/step4batch_pad.py ${JOB};done FAIL
+for JOB in `seq 62 69`; do bsub -q psanaq -n 24 -o job${JOB}.log OMP_NUM_THREADS=24 libtbx.python ~/proj-1217/modules/LS49/sim/step4batch_pad.py ${JOB};done
+for JOB in `seq -w 0 69`; do bsub -q psanaq -n 12 -o jobA${JOB}.log OMP_NUM_THREADS=12 libtbx.python ~/proj-1217/modules/LS49/sim/step4batch_pad.py ${JOB};done
+"""
+
