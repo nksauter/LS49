@@ -43,7 +43,7 @@ if __name__=="__main__":
     transmitted_info = None
   transmitted_info = comm.bcast(transmitted_info, root = 0)
   comm.barrier()
-  parcels = xrange(rank,N_total,N_stride)
+  parcels = list(xrange(rank,N_total,N_stride))
   while len(parcels)>0:
     import random
     idx = random.choice(parcels)
