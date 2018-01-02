@@ -67,6 +67,7 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator):
                    label_has="FE1",tables=Fe_oxidized_model,newvalue=wavelength_A)
   fmodel_generator.reset_specific_at_wavelength(
                    label_has="FE2",tables=Fe_reduced_model,newvalue=wavelength_A)
+  print "USING scatterer-specific energy-dependent scattering factors"
   sfall_channel = fmodel_generator.get_amplitudes()
   SIM = nanoBragg(detpixels_slowfast=(3000,3000),pixel_size_mm=0.11,Ncells_abc=(N,N,N),
     wavelength_A=wavelength_A,verbose=0)
