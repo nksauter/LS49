@@ -38,10 +38,13 @@ class george_sherrell:
       lines = F.readlines()
       for line in lines:
         tokens = [float(f) for f in line.strip().split()]
-        print tokens
         self.energy.append(tokens[0])
         self.fp.append(tokens[1])
         self.fdp.append(tokens[2])
+  def fp_fdp_at_wavelength(self,angstroms):
+    lookup_energy = round(12398.425/angstroms,0)
+    lookup_idx = list(self.energy).index(lookup_energy)
+    return self.fp[lookup_idx], self.fdp[lookup_idx]
   def plot_them(self,plt,f1,f2):
     plt.plot(self.energy, self.fp, f1)
     plt.plot(self.energy, self.fdp, f2)
