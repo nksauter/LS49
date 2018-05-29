@@ -1,3 +1,4 @@
+from __future__ import division
 #source /reg/g/psdm/etc/psconda.sh
 import numpy as np
 import matplotlib.pyplot as plt

@@ -1,3 +1,4 @@
+from __future__ import division
 import dxtbx
 
 #file1 = "step5_000000.img.gz"

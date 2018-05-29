@@ -1,3 +1,4 @@
+from __future__ import division
 import os,cPickle as pickle,math
 from scitbx.matrix import sqr,col
 from cctbx.crystal_orientation import crystal_orientation

@@ -1,3 +1,4 @@
+from __future__ import division
 import psana
 import sys
 from xfel.cxi.cspad_ana import cspad_tbx

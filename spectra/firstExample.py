@@ -1,3 +1,4 @@
+from __future__ import division
 from psana import *
 import matplotlib.pyplot as plt
 

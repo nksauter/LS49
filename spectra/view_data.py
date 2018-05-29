@@ -1,3 +1,4 @@
+from __future__ import division
 import psana
 ds = psana.DataSource('exp=cxig3614:run=201')
 det = psana.Detector('Ds1CsPad')

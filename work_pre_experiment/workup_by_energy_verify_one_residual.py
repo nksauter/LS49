@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 from cctbx.array_family import flex
 import pickle,glob
 import scitbx
@@ -141,7 +142,7 @@ class lbfgs_fpfdp_fit:
     for ix in xrange(inn):
       print (ix,A[ix],dr0[ix])
     #Verified derivatives for each residual
-start here:
+#start here:
     # Now what about each term in the functional?
 
     return f

@@ -1,3 +1,4 @@
+from __future__ import division
 from psana import *
 ds = DataSource('exp=xpptut15:run=54:smd')
 det = Detector('cspad')

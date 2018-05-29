@@ -1,3 +1,4 @@
+from __future__ import division
 from post5_ang_misset import parse_postrefine
 from scitbx.matrix import col
 from dials.algorithms.shoebox import MaskCode

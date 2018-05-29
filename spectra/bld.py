@@ -1,3 +1,4 @@
+from __future__ import division
 from psana import *
 ds = DataSource('exp=cxig3614:run=231')
 

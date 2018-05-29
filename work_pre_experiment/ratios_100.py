@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 from cctbx.array_family import flex
 import pickle
 from LS49.sim.util_fmodel import gen_fmodel

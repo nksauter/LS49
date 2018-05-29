@@ -1,3 +1,4 @@
+from __future__ import division
 #source /reg/g/psdm/etc/psconda.sh
 from psana import *
 import numpy as np

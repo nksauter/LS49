@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 from scitbx.array_family import flex
 import pickle
 
