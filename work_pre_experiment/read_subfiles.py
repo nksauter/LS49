@@ -31,7 +31,7 @@ class GM (object):
         self.asu[image["millers"][i]]=1
         yield image["millers"][i]
 
-     except EOFError,e:
+     except EOFError as e:
       break
 
 if __name__=="__main__":

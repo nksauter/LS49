@@ -33,7 +33,7 @@ class GM (object):
         self.asu[image["millers"][i]]=1
         yield image["millers"][i]
 
-     except EOFError,e:
+     except EOFError as e:
       break
 def lsq_target_function(title,label_table,images_Gi,genfmodel,genmiller):
 
@@ -161,7 +161,7 @@ if __name__=="__main__":
       try:
         lookup_idx = list(self.energy).index(lookup_energy)
         return self.fp[lookup_idx], self.fdp[lookup_idx]
-      except Exception,e:
+      except Exception as e:
         lower_energies = self.energy<lookup_energy
         lower_energy = flex.max(self.energy.select(lower_energies))
         lower_idx = list(self.energy).index(lower_energy)

@@ -36,7 +36,7 @@ class GM (object):
         self.asu[image["millers"][i]]=1
         yield image["millers"][i]
 
-     except EOFError,e:
+     except EOFError as e:
       break
 
 class lbfgs_fpfdp_fit:
