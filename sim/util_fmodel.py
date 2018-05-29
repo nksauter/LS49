@@ -115,6 +115,7 @@ class gen_fmodel:
     primitive_xray_structure = self.xray_structure.primitive_setting()
     P1_primitive_xray_structure = primitive_xray_structure.expand_to_p1()
     P1_primitive_xray_structure.show_summary(prefix="P1 structure ")
+    self.cb_op_C2_to_P = self.xray_structure.change_of_basis_op_to_primitive_setting()
     self.xray_structure = P1_primitive_xray_structure
   def set_k_sol(self,newvalue):  self.params2.fmodel.k_sol = newvalue
   def reset_wavelength(self,newvalue):
@@ -146,4 +147,13 @@ class gen_fmodel:
       params         = self.params2).f_model
     f_model_real = abs(f_model_complex)
     f_model_real.set_observation_type_xray_amplitude()
+    return f_model_real
+  def get_intensities(self):
+    import mmtbx
+    f_model_complex = mmtbx.utils.fmodel_from_xray_structure(
+      xray_structure = self.xray_structure,
+      f_obs          = None,
+      add_sigmas     = False,
+      params         = self.params2).f_model
+    f_model_real = f_model_complex.as_intensity_array()
     return f_model_real
