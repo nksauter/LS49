@@ -1,0 +1,118 @@
+May 26, 2018
+
+Picking up project again.  Using a new approach.  
+For each Bragg spot, take F**2 = constant simulated profile.
+Multiply by Icalc
+Do this for all (4) spots on each image, so as to fit Gi.
+
+This means I have to find a point where I have access to both the observed shoeboxes, and also a 
+shoebox corresponding to the "black" curve with partiality profile x spectral profile.  It has to be 
+the 2D shoebox, not 1D projection onto the energy axis.
+
+Furthermore, I can do the local fitting to the background based on the profile.  i.e., don't use the
+dials shoebox background; use a new fit.  Can use DIALS background model as a starting point.  Can 
+we get it from the DIALS shoeboxes?
+
+Two other considerations: 
+performance
+plotting to confirm correctness
+
+Take what we have now in may25_just_get_scale_factors as a baseline.
+...it is 1D, not 2D.
+...baseline has already been subtracted off in the shoebox.
+...the I(hkl) has already been computed but I have not confirmed it.
+...the I(hkl)--what energy does it represent?  Is anomalous scattering included or just FP?
+
+make_7122_intensities.py:
+just do one thing:  export a pickled dictionary with 7122 eV intensities.
+
+make_7090_7150_intensities.py:
+more complex, figure the intensities for every miller index over the entire energy range,
+specifically for the reduced form 
+
+plot_intensities.py:
+just make sure the 7122 intensities are consistent with the range intensities
+
+make_model_obs.py:
+dump the entire model/obs database from dataX##.pickle into a single file.  This avoids 
+reprocessing 73 seconds each time we look at the model/obs fit.  Simple reformatting and expedience
+
+may26_fit_Gi.py:
+try to make sense out of having multiple reflections on one image.  Is there a common scaling factor?
+
+AAACK! it seems that the model spectrum already has partiality x spectrum x Icalc, instead of 
+partiality x spectrum as I had thought.  We are going to have to go deep to see how the model 
+is calculated by gen_data_mpi, for deposition into the pickle files dataX##.pickle.
+
+Looking at LS49/sim/util_partiality.  The main simulator seems to be using structure factors 
+calculated with mean_wavelength (per pulse), while the channel_pixels function (one call per eV step) 
+is running with energy_dependent_model=False, thus presumably no separate scattering curves for
+oxidized or reduced iron, and set to the mean wavelength.  Checking now how anomalous is applied or not.
+This is done within LS49/sim/util_fmodel, class gen_fmodel.  By default this takes the iron fp and fdp 
+at the input wavelength.  
+
+So it would seem a good test to see if there is better scaling fit if the correct intensities are 
+substituted for the default.  We can do this test.  Yeah but there's ambiguity in the code.  For 
+util_partility did I calculate Icalc just once at a single energy at the time of first import?  
+If so I may have lost the Icalc.  So need to investigate further, and possibly redo the dataX## calculation.
+It would be sufficient if we could rerun the dataX##, and modify it to dump the Icalcs, and then verify
+we get the same models in the dataX##.
+
+May 27.  
+OK, back up a bit.  Let's re-run the correlation between LSQ Gi and total flux, with the may26_fit_Gi.py script.
+But this time do not include the extra factor of Icalc, since it is already pre-multiplied into the model.
+Better.  At least there is a trend:  the higher the flux, the lower the Gi factor.  Looks good for now.
+
+wrote the framework for a bugfix LSQ treatment:  may27_debug.py.  However, I can't run it yet because the model
+is still contaminated with Icalcs, and those are of uncertain provenance due to my use of a global variable to 
+supply them.  It looks as if I'll have to rerun the calculation of dataX## first.
+
+writing a new version, may27_gen_data_mpi.py.
+Note on incident spectrum:  in the LS49/sim/util_partiality/sim_2smv class, the flux is treated as a tophat function
+that averages the variable total flux from my LG36 simulator uniformly over the 7090-7150 range.  Great!
+
+Now what about Icalc?
+Modifying util_partiality.py (not yet tracked in git, should do it soon).
+Set the confusing gsfall option to False.
+Utilize new singleton sfall_7122 to create a unified set of F's to use for all models. 
+It's the same numerical values as in make_7122_intensities--in fact, update that script and write it 
+to a pickle file.
+
+0 ebeam = 7119.20 eV 112.6% of average pulse intensity
+Traceback (most recent call last):
+  File "may27_gen_data_mpi.py", line 223, in <module>
+    abs_PA,origin,position0,B,intensity_lookup,intensity_lookup_1,key)
+  File "may27_gen_data_mpi.py", line 54, in plot_energy_scale_noplot
+    cscale = max(spectrumy)/max(combined_model)
+ZeroDivisionError: float division by zero
+
+May 28. 
+Problem fixed.  Have to generate the 7122 in space group P1 to feed to simtbx.
+Park the fixes in util_partiality.py.
+time libtbx.python may27_gen_data_mpi.py 0 
+libtbx.python may27_gen_data_mpi.py 0 &
+disown
+
+production
+cd /net/dials/raid1/sauter/LS49_1803/research/test2
+bash
+source ../build/setpaths.sh
+libtbx.python may27_gen_data_mpi.py XX > /dev/null &
+disown
+
+These new dataX##.pickle files are concatenated with new script make_model_obs_28.py 
+Then try to fit Gi's with may28_fit_Gi.py
+OK, looks like we are in the right ballpark.  Gi LSQ fit seems roughly anticorrelated with total flux,
+while fitting a constant Gi against the 3-5 separate HKL observations on each image brings model 
+and observation roughly into agreement.
+
+Now focus on may27_bugfix.py, to fit the f' f" curve.
+make a note.  The minimizer should report how many images went in to the calculation
+with 962 images the curve looks just as bad as ever.  Wait till May 29 to get more data.
+
+May 29
+1856 images.  Still noisy, but less so.
+
+
+
+
