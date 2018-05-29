@@ -1,0 +1,13 @@
+git clone git@github.com:nksauter/LS49.git
+ln -s /net/dials/raid1/sauter/LS49/1m2a.pdb .
+ln -s /net/dials/raid1/sauter/LS49/data .
+ln -s /net/dials/raid1/sauter/LS49/data_sherrell/ .
+cp ../modules/LS49/sim/step5_pad.py .
+libtbx.python step5_pad.py
+cctbx.image_viewer step5_000000.img.gz
+dials.stills_process step5_000000.img threshold.dispersion.gain=1.47 filter.min_spot_size=2 indexing.known_symmetry.unit_cell=67.200,59.800,47.200,90.00,110.30,90.00 indexing.known_symmetry.space_group=C2 integration.debug.output=True integration.debug.separate_files=False
+cxi.print_pickle int-0-step5_000000.pickle
+dials.show idx-step5_000000_integrated_experiments.json
+libtbx.python test.py input.experiments=idx-step5_000000_integrated_experiments.json
+
+
