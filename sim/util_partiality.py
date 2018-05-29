@@ -1,4 +1,6 @@
 from __future__ import division
+from six.moves import range
+from six.moves import cPickle as pickle
 from scitbx.array_family import flex
 from LS49.sim.step5_pad import microcrystal
 from scitbx.matrix import sqr,col
@@ -9,7 +11,6 @@ from simtbx.nanoBragg import nanoBragg
 from six.moves import StringIO
 import scitbx
 import math
-from six.moves import cPickle as pickle
 from LS49.sim.fdp_plot import george_sherrell
 Fe_oxidized_model = george_sherrell("data_sherrell/pf-rd-ox_fftkk.out")
 Fe_reduced_model = george_sherrell("data_sherrell/pf-rd-red_fftkk.out")
@@ -94,7 +95,7 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,quick=False):
     sum_flux = flex.sum(flux)
     #from IPython import embed; embed()
     ave_flux = sum_flux/60. # 60 energy channels
-    for ix in xrange(len(wavlen)):
+    for ix in range(len(wavlen)):
       energy = 12398.425 / wavlen[ix]
       if energy>=7090 and energy <=7150:
         flux[ix]=ave_flux
@@ -266,7 +267,7 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,quick=False):
   print crystal.domains_per_crystal
   SIM.raw_pixels *= crystal.domains_per_crystal; # must calculate the correct scale!
   output = StringIO() # open("myfile","w")
-  for x in xrange(0,100,2): #len(flux)):
+  for x in range(0,100,2): #len(flux)):
     if flux[x]==0.0:continue
     print "+++++++++++++++++++++++++++++++++++++++ Wavelength",x
     CH = channel_pixels(ROI,wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,GF,output)
@@ -293,7 +294,7 @@ def get_partiality_response(key,one_index,spectra_simulation,ROI):
   crystal = microcrystal(Deff_A = 4000, length_um = 4., beam_diameter_um = 1.0) # assume smaller than 10 um crystals
   mt = flex.mersenne_twister(seed=0)
   random_orientations = []
-  for iteration in xrange(N_total):
+  for iteration in range(N_total):
     random_orientations.append( mt.random_double_r3_rotation_matrix() )
 
   iterator = spectra.generate_recast_renormalized_image(image=key,energy=7120.,total_flux=1e12)

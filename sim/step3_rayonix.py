@@ -1,5 +1,5 @@
 from __future__ import division
-from scitbx.array_family import flex
+from six.moves import rangefrom scitbx.array_family import flex
 from scitbx.matrix import sqr,col
 from simtbx.nanoBragg import shapetype
 from simtbx.nanoBragg import nanoBragg
@@ -298,7 +298,7 @@ def run_sim2smv(fileout,crystal,spectra,rotation):
   print crystal.domains_per_crystal
   SIM.raw_pixels *= crystal.domains_per_crystal; # must calculate the correct scale!
 
-  for x in xrange(100):
+  for x in range(100):
     print "+++++++++++++++++++++++++++++++++++++++ Wavelength",x
     CH = channel_pixels(wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,sfall)
     SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal;

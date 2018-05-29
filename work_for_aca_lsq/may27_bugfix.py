@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import division
+from six.moves import range
 from cctbx.array_family import flex
 import pickle
 import scitbx.lbfgs
@@ -81,7 +82,7 @@ class lbfgs_fpfdp_fit:
 
     inn = len(terms0)
     A = (terms1-terms0)/0.0001
-    for ix in xrange(inn):
+    for ix in range(inn):
       print (ix,A[ix],dt0[ix])
     # Verified each term in the functional?
 
@@ -127,7 +128,7 @@ if __name__=="__main__":
   result_energies = flex.double()
   result_FE1_fpfdp = flex.vec2_double()
   result_FE2_fpfdp = flex.vec2_double()
-  for iE,Energy in enumerate(xrange(7110,7131)):
+  for iE,Energy in enumerate(range(7110,7131)):
     Eidx = iE+20 # index into the G arrays, for that particular energy
     if 1:#try:
       A = lbfgs_fpfdp_fit(energy = Energy, all_data = G, Eidx = Eidx)

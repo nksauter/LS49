@@ -1,5 +1,6 @@
 from __future__ import print_function, absolute_import
 from __future__ import division
+from six.moves import range
 from cctbx.array_family import flex
 
 class gen_fmodel:
@@ -135,7 +136,7 @@ def single_atom_workup(workup,resolution,angstroms):
   delf_delfp2 = flex.vec2_double()
   delf_delfdp2 = flex.vec2_double()
 
-  for i in xrange(len(metalcalc.indices())):
+  for i in range(len(metalcalc.indices())):
     K1 = metalcalc.data()[i]
     K2 = metalzcalc.data()[i]
     lhs = (K1/K2)-1.
@@ -271,7 +272,7 @@ if __name__=="__main__":
   print (HASH0)
   print (HASH1)
   # this test verifies analytical derivatives at the level of Fcalc of metalloprotein
-  for i in xrange(len(HASH[0])):
+  for i in range(len(HASH[0])):
     A = (col(HASH1[0][i])-col(HASH0[0][i]))/0.0001
     B = col(HASH0[1][i])
     print (i,"%8.4f,%8.4f   %8.4f,%8.4f"%(A[0],A[1],B[0],B[1]))

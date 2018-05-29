@@ -1,4 +1,5 @@
 from __future__ import division, absolute_import
+from six.moves import range
 from post5_ang_misset import parse_postrefine
 from scitbx.matrix import col
 from dials.algorithms.shoebox import MaskCode
@@ -103,7 +104,7 @@ def plot_energy_scale(ax,ax1,ax2,abs_PA,origin,position0,B,intensity_lookup,inte
   combined_model = flex.double()
   incident_xaxis = 12398.425/wavlen
   int_ix = [int (ix) for ix in incident_xaxis]
-  for ic in xrange(len(spectrumx)):
+  for ic in range(len(spectrumx)):
     ic_idx = int_ix.index(spectrumx[ic])
     combined_model.append(flux[ic_idx] * spectrumy_1[ic])
   cscale = max(spectrumy)/max(combined_model)
@@ -143,7 +144,7 @@ if __name__=="__main__":
     shoe = item["shoebox"].select(iselect)
     intensity_lookup ={}
     intensity_lookup_1 ={}
-    for x in xrange(len(hkl)):
+    for x in range(len(hkl)):
       if not asu[x]==one_index:continue
       slow = xyz[x][1]
       fast = xyz[x][0]

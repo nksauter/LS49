@@ -1,4 +1,5 @@
 from __future__ import division, absolute_import
+from six.moves import range
 from post5_ang_misset import parse_postrefine
 from scitbx.matrix import col
 from dials.algorithms.shoebox import MaskCode
@@ -52,7 +53,7 @@ if __name__=="__main__":
     asu = cust_copy.map_to_asu().indices()
     xyz = item["xyzobs.px.value"].select(iselect)
     shoe = item["shoebox"].select(iselect)
-    for x in xrange(len(hkl)):
+    for x in range(len(hkl)):
       slow = xyz[x][1]
       fast = xyz[x][0]
       positionX = col((slow,fast))-origin

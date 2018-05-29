@@ -6,7 +6,7 @@ from simtbx.nanoBragg import nanoBragg
 import libtbx.load_env # possibly implicit
 from cctbx import crystal
 from LS49.sim.util_fmodel import fcalc_from_pdb
-
+from six.moves import range
 pdb_lines = """HEADER TEST
 CRYST1   50.000   60.000   70.000  90.00  90.00  90.00 P 1
 ATOM      1  O   HOH A   1      56.829   2.920  55.702  1.00 20.00           O
@@ -227,7 +227,7 @@ def tst_all():
   #
   fileout = "noiseimage_001.cbf"
   #
-  for x in xrange(10000):
+  for x in range(10000):
     print "memory",x
     #memory_leak_1(fileout)
     run_sim2smv(fileout)

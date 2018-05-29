@@ -1,5 +1,6 @@
 from __future__ import print_function, absolute_import
 from __future__ import division
+from six.moves import range
 from cctbx.array_family import flex
 
 class gen_fmodel:
@@ -135,7 +136,7 @@ def single_atom_workup(workup,resolution,angstroms):
   delf_delfp2 = flex.vec2_double()
   delf_delfdp2 = flex.vec2_double()
 
-  for i in xrange(len(metalcalc.indices())):
+  for i in range(len(metalcalc.indices())):
     K1 = metalcalc.data()[i]
     K2 = metalzcalc.data()[i]
     lhs = (K1/K2)-1.

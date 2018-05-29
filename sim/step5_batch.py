@@ -1,4 +1,5 @@
 from __future__ import division
+from six.moves import range
 from scitbx.array_family import flex
 from scitbx.matrix import sqr
 import libtbx.load_env # possibly implicit
@@ -34,7 +35,7 @@ if __name__=="__main__":
     C = microcrystal(Deff_A = 4000, length_um = 4., beam_diameter_um = 1.0) # assume smaller than 10 um crystals
     mt = flex.mersenne_twister(seed=0)
     random_orientations = []
-    for iteration in xrange(N_total):
+    for iteration in range(N_total):
       random_orientations.append( mt.random_double_r3_rotation_matrix() )
     transmitted_info = dict(spectra = SS,
                             crystal = C,
@@ -43,7 +44,7 @@ if __name__=="__main__":
     transmitted_info = None
   transmitted_info = comm.bcast(transmitted_info, root = 0)
   comm.barrier()
-  parcels = list(xrange(rank,N_total,N_stride))
+  parcels = list(range(rank,N_total,N_stride))
   while len(parcels)>0:
     import random
     idx = random.choice(parcels)

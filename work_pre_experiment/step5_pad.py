@@ -1,4 +1,5 @@
 from __future__ import division, absolute_import
+from six.moves import range
 from scitbx.array_family import flex
 from scitbx.matrix import sqr,col
 from simtbx.nanoBragg import shapetype
@@ -303,7 +304,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
   print crystal.domains_per_crystal
   SIM.raw_pixels *= crystal.domains_per_crystal; # must calculate the correct scale!
 
-  for x in xrange(len(flux)):
+  for x in range(len(flux)):
     print "+++++++++++++++++++++++++++++++++++++++ Wavelength",x
     CH = channel_pixels(wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,GF)
     SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal;
@@ -394,7 +395,7 @@ def tst_all():
   else: prefix_root="step5poly_%06d"
 
   Nimages = 1# 10000
-  for iteration in xrange(Nimages):
+  for iteration in range(Nimages):
     file_prefix = prefix_root%iteration
     rand_ori = sqr(mt.random_double_r3_rotation_matrix())
     run_sim2smv(prefix = file_prefix,crystal = C,spectra=iterator,rotation=rand_ori,quick=quick,rank=0)

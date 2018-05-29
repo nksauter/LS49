@@ -1,6 +1,6 @@
 from __future__ import division
 from scitbx.array_family import flex
-
+from six.moves import range
 class csv:
   def __init__(self):
     self.energy = flex.double()
@@ -59,7 +59,7 @@ if __name__=="__main__":
   energies = list(12398.425/T[0])
   lambd = list(T[0])
 
-  energies = flex.double(xrange(7000,7300))
+  energies = flex.double(range(7000,7300))
   lambd = 12398.425/energies
 
   CSV = csv()

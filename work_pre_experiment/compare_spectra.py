@@ -1,4 +1,5 @@
 from __future__ import division, absolute_import
+from six.moves import range
 from post5_ang_misset import parse_postrefine
 from scitbx.matrix import col
 from dials.algorithms.shoebox import MaskCode
@@ -110,7 +111,7 @@ if __name__=="__main__":
     calcpx = item["xyzcal.px"].select(iselect)
     shoe = item["shoebox"].select(iselect)
     intensity_lookup ={}
-    for x in xrange(len(hkl)):
+    for x in range(len(hkl)):
       if not asu[x]==one_index:continue
       slow = xyz[x][1]
       fast = xyz[x][0]

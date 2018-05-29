@@ -1,4 +1,5 @@
 from __future__ import division
+from six.moves import range
 #source /reg/g/psdm/etc/psconda.sh
 from psana import *
 import numpy as np
@@ -37,7 +38,7 @@ for nevent,evt in enumerate(ds.events()):
     summed  = img.sum(axis=0)
     lower = summed[0:50].mean()
     upper = summed[-50:].mean()
-    baseline = (np.array(xrange(len(summed)))/len(summed))*(upper-lower)+lower
+    baseline = (np.array(range(len(summed)))/len(summed))*(upper-lower)+lower
     min_summed = np.min(summed)
     print "minimum ",min_summed
     real = np.array(list(summed-baseline))
@@ -49,11 +50,11 @@ for nevent,evt in enumerate(ds.events()):
     #plt.plot(xrange(len(fr.real)), fr.real, 'b-')
     #plt.show()
     #low_pass_fr:
-    for x in xrange(len(fr)/4, len(fr)):
+    for x in range(len(fr)/4, len(fr)):
       fr[x]=0.+0.j
     filtered_real = np.fft.irfft(fr)
     # get the expectation value of the index
-    numerator = np.sum( xrange(len(filtered_real)) * filtered_real )
+    numerator = np.sum( range(len(filtered_real)) * filtered_real )
     denominator = np.sum( filtered_real )
     mean_index = numerator/denominator
     maxplot = np.max(filtered_real)

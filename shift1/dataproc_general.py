@@ -1,4 +1,5 @@
 from __future__ import division
+from six.moves import range
 #source /reg/g/psdm/etc/psconda.sh
 from psana import *
 import numpy as np
@@ -36,7 +37,7 @@ class calib_A(linear_fit):
 class GaussFit:
   def __init__(self,data):
     self.data = data
-    numerator = np.sum( xrange(len(self.data)) * self.data )
+    numerator = np.sum( range(len(self.data)) * self.data )
     denominator = np.sum( self.data )
     self.mean_index = numerator/denominator
     sqnum = np.zeros(len(self.data))
@@ -89,31 +90,31 @@ for nevent,evt,time in sources[proposal]["gen"](ds):
     summed  = img.sum(axis=0)
     lower = summed[0:50].mean()
     upper = summed[-50:].mean()
-    baseline = (np.array(xrange(len(summed)))/len(summed))*(upper-lower)+lower # baseline uses the left & right edges
+    baseline = (np.array(range(len(summed)))/len(summed))*(upper-lower)+lower # baseline uses the left & right edges
     min_summed = np.min(summed)
     #print "minimum ",min_summed
     real = np.array(list(summed-baseline))
     if plots>4:
-      plt.plot(xrange(len(real)), real, 'r-')
+      plt.plot(range(len(real)), real, 'r-')
       plt.show() # show baseline-corrected spectrum
 
     fr = np.fft.rfft(real)
     #print type(fr), len(real)//2, len(fr.real)
     if plots>5:
-      plt.plot(xrange(len(fr.real)), fr.real, 'b-')
+      plt.plot(range(len(fr.real)), fr.real, 'b-')
       plt.show()
     #low_pass_fr: # highest 3/4 are zeroed out
-    for x in xrange(len(fr)//4, len(fr)):
+    for x in range(len(fr)//4, len(fr)):
       fr[x]=0.+0.j
     filtered_real = np.fft.irfft(fr)
     # get the expectation value of the index
-    numerator = np.sum( xrange(len(filtered_real)) * filtered_real )
+    numerator = np.sum( range(len(filtered_real)) * filtered_real )
     denominator = np.sum( filtered_real )
     mean_index = numerator/denominator
     maxplot = np.max(filtered_real)
     if plots>3:
       #plt.plot(xrange(len(real)), real, 'r-')
-      plt.plot(xrange(len(filtered_real)), filtered_real, 'g-')
+      plt.plot(range(len(filtered_real)), filtered_real, 'g-')
       plt.plot([mean_index,mean_index],[0.15*maxplot, 1.05*maxplot],'k-')
       plt.show()
     expidx.append(mean_index)

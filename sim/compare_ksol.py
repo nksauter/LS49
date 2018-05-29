@@ -1,5 +1,5 @@
 from __future__ import division
-
+from six.moves import range
 from scitbx.array_family import flex
 
 pdb_lines = open("1m2a.pdb","r").read()
@@ -7,7 +7,7 @@ pdb_lines = open("1m2a.pdb","r").read()
 if __name__=="__main__":
   from LS49.sim.util_fmodel import gen_fmodel
   GF = gen_fmodel(resolution=10.0,pdb_text=pdb_lines,algorithm="fft",wavelength=1.73424)
-  ksol=0.01*flex.double([float(u) for u in xrange(70)])
+  ksol=0.01*flex.double([float(u) for u in range(70)])
   sumarray = []
   for u in ksol:
     GF.params2.fmodel.k_sol = u
@@ -21,7 +21,7 @@ if __name__=="__main__":
   plt.plot(ksol,sumarray,'r.')
 
   GF = gen_fmodel(resolution=7.0,pdb_text=pdb_lines,algorithm="fft",wavelength=1.73424)
-  ksol=0.01*flex.double([float(u) for u in xrange(70)])
+  ksol=0.01*flex.double([float(u) for u in range(70)])
   sumarray = []
   for u in ksol:
     GF.params2.fmodel.k_sol = u

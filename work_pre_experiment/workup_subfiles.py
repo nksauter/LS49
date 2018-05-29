@@ -1,5 +1,6 @@
 from __future__ import print_function, absolute_import
 from __future__ import division
+from six.moves import range
 from cctbx.array_family import flex
 import pickle,glob
 
@@ -39,7 +40,7 @@ def lsq_target_function(title,label_table,images_Gi,genfmodel,genmiller):
 
   per_energy_I = {}
   per_HKL_I = {}
-  for iE,Energy in enumerate(xrange(7090,7151)):
+  for iE,Energy in enumerate(range(7090,7151)):
     if Energy%10==0: print (Energy)
     W = 12398.425/Energy
     genfmodel.reset_wavelength(W)
@@ -54,7 +55,7 @@ def lsq_target_function(title,label_table,images_Gi,genfmodel,genmiller):
     selected_H = W_state.indices().select(sel1)
     if iE==0:
       for key in selected_H: per_HKL_I[key]=flex.double()
-    for ikey in xrange(len(selected_H)):
+    for ikey in range(len(selected_H)):
       per_HKL_I[selected_H[ikey]].append(selected_I[ikey])
     per_energy_I[Energy] = selected_I
   # that gives all intensities at all energies
@@ -114,7 +115,7 @@ if __name__=="__main__":
 
   per_energy_I = {}
   per_HKL_I = {}
-  for iE,Energy in enumerate(xrange(7090,7151)):
+  for iE,Energy in enumerate(range(7090,7151)):
     if Energy%10==0: print (Energy)
     W = 12398.425/Energy
     GF.reset_wavelength(W)
@@ -129,7 +130,7 @@ if __name__=="__main__":
     selected_H = W_reduced.indices().select(sel1)
     if iE==0:
       for key in selected_H: per_HKL_I[key]=flex.double()
-    for ikey in xrange(len(selected_H)):
+    for ikey in range(len(selected_H)):
       per_HKL_I[selected_H[ikey]].append(selected_I[ikey])
     per_energy_I[Energy] = selected_I
   # that gives all intensities at all energies

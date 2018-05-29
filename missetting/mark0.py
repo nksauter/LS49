@@ -1,4 +1,5 @@
 from __future__ import division
+from six.moves import range
 import os,cPickle as pickle,math
 from scitbx.matrix import sqr,col
 from cctbx.crystal_orientation import crystal_orientation
@@ -90,7 +91,7 @@ if __name__=="__main__":
   TRIAL = sys.argv[1] # like "006"
   from scitbx.array_family import flex
   angular = flex.double()
-  for item in xrange(1,20001):
+  for item in range(1,20001):
     try:
       SC = image_case_factory(item)
       angle_deg = SC.angular_rotation()*180./math.pi
