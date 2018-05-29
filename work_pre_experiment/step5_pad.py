@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, absolute_import
 from scitbx.array_family import flex
 from scitbx.matrix import sqr,col
 from simtbx.nanoBragg import shapetype

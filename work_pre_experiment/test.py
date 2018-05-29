@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, absolute_import
 from libtbx.phil import parse
 import libtbx.load_env
 from scitbx.matrix import sqr

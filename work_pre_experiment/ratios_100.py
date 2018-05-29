@@ -1,10 +1,9 @@
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 from __future__ import division
 from cctbx.array_family import flex
 import pickle
 from LS49.sim.util_fmodel import gen_fmodel
 from LS49.sim.step5_pad import pdb_lines,Fe_oxidized_model,Fe_reduced_model
-
 
 def generate_100():
   V = open("data.pickle","rb")

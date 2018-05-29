@@ -101,7 +101,7 @@ if __name__=="__main__":
     #missetting_rot = refined_ori.reciprocal_matrix() * ground_truth_ori.reciprocal_matrix().inverse()
     missetting_rot = sqr(refined_ori.direct_matrix()) * sqr(ground_truth_ori.direct_matrix()).inverse()
     print "deter",missetting_rot.determinant()
-    from mark0 import ScoringContainer
+    from LS49.missetting.mark0 import ScoringContainer
     SC = ScoringContainer()
     SC.model = refined_ori
     SC.reference = ground_truth_ori

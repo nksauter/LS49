@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, absolute_import
 import sys,math
 trial = sys.argv[1] # Like "005"
 from scitbx.array_family import flex

@@ -54,7 +54,7 @@ class GM (object):
 
      except EOFError:
       break
-from may25_ratio_approach import lbfgs_fpfdp_fit
+from LS49.work_for_aca_lsq.may25_ratio_approach import lbfgs_fpfdp_fit
 
 def test_Gi_factor(G):
   from LS49.spectra.generate_spectra import spectra_simulation

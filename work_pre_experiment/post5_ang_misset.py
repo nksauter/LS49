@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, absolute_import
 from scitbx.array_family import flex
 from scitbx.matrix import sqr
 from dxtbx.format.Registry import Registry
