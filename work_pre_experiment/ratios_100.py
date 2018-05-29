@@ -20,7 +20,7 @@ def generate_100():
         if icount>100: return
         yield image["millers"][i]
       asu[image["millers"][i]]=1
-    
+
       #print ("CC>70%%: %20s %5.2f"%(image["millers"][i],
       #     image["cc"][i]))
 
@@ -82,8 +82,3 @@ if __name__=="__main__":
   plt.imshow(effect.as_numpy_array(),cmap="bwr")
   plt.colorbar()
   plt.show()
-
-
-  
-
-

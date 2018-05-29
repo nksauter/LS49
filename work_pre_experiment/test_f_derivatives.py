@@ -144,14 +144,14 @@ if __name__=="__main__":
     print ("%4d %16s%16s%16s"%(i,I[i],Fecalc.indices()[i],Pcalc.indices()[i]),Fecalc.data()[i],Pcalc.data()[i],Fecalc.data()[i]+Pcalc.data()[i],ALLcalc.data()[i])
   # shows that protein + metal = all atoms.
   # next, want to show that zeroed metal + anomalous metal = metal
-  # it is not clear how to get f0(angle) function.  
+  # it is not clear how to get f0(angle) function.
   # figure f0, K1, K2, ab.  Verify anomalous_metal = (f0+fp)ab
   # start working out the derivatives
 
   exit()
   """
   print ("Testing f0")
-  # Next, get F's with just Fe1, 
+  # Next, get F's with just Fe1,
   plines_src = open("1m2a.pdb","r").readlines()
   plines_dst = []
   for line in plines_src:
@@ -167,7 +167,7 @@ if __name__=="__main__":
 
 
   sc = GF.xray_structure.scatterers()[0]
-  fpfdp = (complex(sc.fp,sc.fdp))   
+  fpfdp = (complex(sc.fp,sc.fdp))
 
   GF.reset_wavelength(W2)
   GF.zero_out_specific_at_wavelength(label_has="FE1")
@@ -188,11 +188,3 @@ if __name__=="__main__":
   from matplotlib import pyplot as plt
   plt.plot(x,y,"r.")
   plt.show()
-
-
-
-
-
-
-
-

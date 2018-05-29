@@ -52,7 +52,7 @@ def plot_energy_scale(ax,abs_PA,origin,position0,B):
       print "position1",position1.elems
       contour_x.append(position1[1]-0.5-B[0])
       contour_y.append(position1[0]-0.5-B[2])
-    
+
     ax.plot(contour_x,contour_y, "r-",linewidth=0.3)
 
     contour_x = []; contour_y = []
@@ -64,10 +64,10 @@ def plot_energy_scale(ax,abs_PA,origin,position0,B):
       if int(position1[0])!=1075: continue
       contour_x.append(position1[1]-0.5-B[0])
       contour_y.append(position1[0]-0.5-B[2])
-    
+
     ax.plot(contour_x,contour_y, "ro",markersize=1.0)
 
-    
+
 
 if __name__=="__main__":
   origin = col((1500,1500))
@@ -107,7 +107,7 @@ if __name__=="__main__":
         print "%20s,asu %20s"%(str(hkl[x]),str(asu[x])),
         print "slow=%5.0f  fast=%5.0f"%(xyz[x][1],xyz[x][0]),"PA %6.1f"%position_angle
         sb = shoe[x]
-        print "shoebox has %d pixels"%(sb.mask.size())  
+        print "shoebox has %d pixels"%(sb.mask.size())
         print "first coordinate is ",sb.coords()[0]
         nsb = sb.mask.size()
         for c in range(nsb):
@@ -148,7 +148,7 @@ if __name__=="__main__":
           return "%.1f"%(x + 0.5 + B[0])
         formatterf = FuncFormatter(fast_scale)
         ax.xaxis.set_major_formatter(formatterf)
-        
+
         ax.plot([spotprediction[0] - 0.5 - B[0]], [spotprediction[1] - 0.5 - B[2]], "y.")
 
         plot_energy_scale(ax,abs_PA,origin,position0,B)
@@ -157,7 +157,7 @@ if __name__=="__main__":
 
 
       exit()
-    
+
   print "Number of images %d; of all spots %d; of in-resolution spots %d; in position %d"%(
     nitem, nall_spots, nres_range, npos_angle)
   print "Valid foreground pixels: %d. Number of Miller indices: %d"%(nVF, len(millerd.keys()))
@@ -171,9 +171,3 @@ if __name__=="__main__":
       print key, millerd[key]
       nfreq+=1
   print "Total of %d observed > 30 times"%nfreq
-
-
-
-
-
-    

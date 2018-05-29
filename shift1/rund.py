@@ -25,15 +25,15 @@ for run in ds.runs():
     icount+=1
     for key in evt.keys():
       if key.alias() != "":
-        
+
         print key.alias(),
       if 0 and 'FEE-SPEC0' in str(key):
         print key.src(),
-	d = evt.get(key.type(), key.src())
-	plt.cla()
-	plt.plot(range(len(d.hproj())), d.hproj(), '-')
-	plt.draw()
-	plt.pause(0.1)
+        d = evt.get(key.type(), key.src())
+        plt.cla()
+        plt.plot(range(len(d.hproj())), d.hproj(), '-')
+        plt.draw()
+        plt.pause(0.1)
       if "FEE_Spec" in key.alias():
         #from IPython import embed; embed()
         d = evt.get(key.type(), key.src())
@@ -43,4 +43,3 @@ for run in ds.runs():
         plt.draw()
         plt.pause(0.01)
     print
-

@@ -19,5 +19,3 @@ for M in ten_hkl:
   plt.plot([7122,], per_HKL_I_7122[M],"r.")
 
 plt.show()
-
-

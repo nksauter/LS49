@@ -12,13 +12,13 @@ class GM (object):
   self.images_strong = {}
   self.images_Gi = {}
   for filen in glob.glob(globv):
-    
+
     V = open(filen,"rb")
     while 1:
      try:
       image = pickle.load(V)
       print (image["image"])
-      
+
       self.images_all+=1
       highcc = flex.double(image["cc"]) > 0.70
       if highcc.count(True)<4: continue
@@ -35,7 +35,7 @@ class GM (object):
      except EOFError,e:
       break
 def lsq_target_function(title,label_table,images_Gi,genfmodel,genmiller):
-     
+
   per_energy_I = {}
   per_HKL_I = {}
   for iE,Energy in enumerate(xrange(7090,7151)):
@@ -76,7 +76,7 @@ if __name__=="__main__":
   for i in G.generate_millers():
     M.append(i)
   print ("%d Bragg spots measured"%len(M))
-  
+
   print ("%d Unique Miller indices"%(len(G.asu)))
 
   from LS49.sim.util_fmodel import gen_fmodel
@@ -147,12 +147,12 @@ if __name__=="__main__":
     G.images_Gi[key]=numerator/denominator
     if key%100==0: print (key, "Gi:", G.images_Gi[key])
 
-  # Now get table of intensities for the oxidized form  
+  # Now get table of intensities for the oxidized form
   # Einsle paper: Oxidized form has
   #    buried irons, FE1, in Fe(III) state (absorption at higher energy, oxidized)
   #    surface iron, FE2, in Fe(III) state (absorption at higher energy, oxidized)
 
-  # Now get table of intensities for metallic iron 
+  # Now get table of intensities for metallic iron
   from LS49.sim.fdp_plot import george_sherrell
   class interpGS(george_sherrell):
     def fp_fdp_at_wavelength(self,angstroms):
@@ -205,7 +205,3 @@ DONE 3) target function if it is Fe-0          2.11805254818e+12
 4) figure out Jacobian; figure out if I can do this by LevMar
 5) with initial guess for Gi=10^-15
   """
-
-
-  
-

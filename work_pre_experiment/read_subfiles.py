@@ -10,7 +10,7 @@ class GM (object):
   self.images_all = 0
   self.images_strong = 0
   for filen in glob.glob(globv):
-    
+
     V = open(filen,"rb")
     while 1:
      try:
@@ -23,7 +23,7 @@ class GM (object):
       for i in range(len(image["cc"])):
         if image["cc"][i]<0.7: continue
         self.icount+=1
-        if self.icount>10000: 
+        if self.icount>10000:
             print ("readched limit")
             return
         print (filen,self.icount,"CC>70%%: %20s %5.2f"%(image["millers"][i],image["cc"][i]))
@@ -32,14 +32,14 @@ class GM (object):
 
      except EOFError,e:
       break
-      
+
 if __name__=="__main__":
   M = flex.miller_index()
   G = GM()
   for i in G.generate_millers():
     M.append(i)
   print ("%d Bragg spots measured"%len(M))
-  
+
   print ("%d Unique Miller indices"%(len(G.asu)))
 
   from LS49.sim.util_fmodel import gen_fmodel
@@ -93,12 +93,8 @@ if __name__=="__main__":
     for y in xrange(100):
       if effect[(x,y)]>1.1: effect[(x,y)]=1.1
       if effect[(x,y)]<0.9: effect[(x,y)]=0.9
-      
+
   from matplotlib import pyplot as plt
   plt.imshow(effect.as_numpy_array(),cmap="bwr")
   plt.colorbar()
   plt.show()
-
-
-  
-

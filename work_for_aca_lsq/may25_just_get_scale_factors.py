@@ -18,12 +18,12 @@ class GM (object):
   self.images_strong = {}
   self.images_Gi = {}
   for filen in glob.glob(globv):
-    
+
    with open(filen,"rb") as V:
     while 1:
      try:
       image = pickle.load(V)
-      
+
       self.images_all+=1
       highcc = flex.double(image["cc"]) > 0.80 #was 0.7 and minimum 4
       if highcc.count(True)<3: continue
@@ -80,7 +80,7 @@ if __name__=="__main__":
   for i in G.generate_millers():
     M.append(i)
   print ("%d Bragg spots measured"%len(M))
-  
+
   print ("%d Unique Miller indices"%(len(G.asu)))
   exit()
   from LS49.sim.util_fmodel import gen_fmodel
@@ -185,7 +185,3 @@ if __name__=="__main__":
   plt.ylim([-8.2,4.2])
   plt.show()
   exit("STOP")
-
-
-  
-

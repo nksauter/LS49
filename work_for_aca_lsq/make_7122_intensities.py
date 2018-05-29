@@ -37,10 +37,7 @@ if __name__=="__main__":
 
   with (open("sfall_7122_amplitudes.pickle","wb")) as F:
     pickle.dump(GF.get_amplitudes(), F, pickle.HIGHEST_PROTOCOL)
-    
+
   GF.make_P1_primitive()
   with (open("sfall_P1_7122_amplitudes.pickle","wb")) as F:
     pickle.dump(GF.get_amplitudes(), F, pickle.HIGHEST_PROTOCOL)
-    
-  
-

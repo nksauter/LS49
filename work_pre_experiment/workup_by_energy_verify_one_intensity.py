@@ -16,12 +16,12 @@ class GM (object):
   self.images_strong = {}
   self.images_Gi = {}
   for filen in glob.glob(globv):
-    
+
     V = open(filen,"rb")
     while 1:
      try:
       image = pickle.load(V)
-      
+
       self.images_all+=1
       highcc = flex.double(image["cc"]) > 0.70
       if highcc.count(True)<4: continue
@@ -38,7 +38,7 @@ class GM (object):
      except EOFError,e:
       break
 def lsq_target_function(title,label_table,images_Gi,genfmodel,genmiller):
-     
+
   per_energy_I = {}
   per_HKL_I = {}
   for iE,Energy in enumerate(xrange(7090,7151)):
@@ -88,7 +88,7 @@ class lbfgs_fpfdp_fit:
            "["," ".join(["%10.4f"%a for a in self.x]),"]")
 
   def lsq_target_function(self,title,debug):
-     
+
     per_HKL_I = {}
     miller_lookup = {}
 
@@ -176,7 +176,7 @@ if __name__=="__main__":
   for i in G.generate_millers():
     M.append(i)
   print ("%d Bragg spots measured"%len(M))
-  
+
   print ("%d Unique Miller indices"%(len(G.asu)))
 
   from LS49.sim.util_fmodel import gen_fmodel
@@ -280,7 +280,3 @@ if __name__=="__main__":
   plt.ylim([-8.2,4.2])
   plt.show()
   exit("STOP")
-
-
-  
-

@@ -102,7 +102,7 @@ class gen_fmodel:
 
 def single_atom_workup(workup,resolution,angstroms):
   #print ("Testing f0 for workup %s"%(str(workup)))
-  # Next, get F's with just Fe1, 
+  # Next, get F's with just Fe1,
   plines_src = open("1m2a.pdb","r").readlines()
   plines_dst = []
   for line in plines_src:
@@ -118,7 +118,7 @@ def single_atom_workup(workup,resolution,angstroms):
   Fe1model,metalcalc = GF.get_complex()
 
   sc = GF.xray_structure.scatterers()[0]
-  fpfdp = (complex(sc.fp,sc.fdp))   
+  fpfdp = (complex(sc.fp,sc.fdp))
 
   GF.reset_wavelength(angstroms)
   GF.zero_out_specific_at_wavelength(label_has=workup[1])
@@ -266,7 +266,7 @@ if __name__=="__main__":
   HASH2 = at_one_eV(eV=eV,values=flex.double([-4.,2.0001,-4.,2.]),tst_delF=True)
   HASH3 = at_one_eV(eV=eV,values=flex.double([-4.,2.,-3.9999,2.]),tst_delF=True)
   HASH4 = at_one_eV(eV=eV,values=flex.double([-4.,2.,-4.,2.0001]),tst_delF=True)
-  
+
   from scitbx.matrix import col
   print (HASH0)
   print (HASH1)
@@ -277,8 +277,3 @@ if __name__=="__main__":
     print (i,"%8.4f,%8.4f   %8.4f,%8.4f"%(A[0],A[1],B[0],B[1]))
   # still have to test derivatives over the whole target functional
   # perform the verification with algorithm="direct", then switch to "fft" for production
-
-
-
-
-

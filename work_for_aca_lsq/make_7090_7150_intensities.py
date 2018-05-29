@@ -38,5 +38,3 @@ if __name__=="__main__":
 
   with (open("debug26_range_intensities.pickle","wb")) as F:
     pickle.dump(per_HKL_I, F, pickle.HIGHEST_PROTOCOL)
-
-

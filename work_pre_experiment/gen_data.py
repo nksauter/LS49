@@ -38,7 +38,7 @@ def get_items(key=None):
     nitem = len(resolutions)
     yield T,key
     return
-  
+
   for key in postreffed:
     print "image=",key
     from dxtbx.model.experiment_list import ExperimentListFactory
@@ -71,7 +71,7 @@ def plot_energy_scale(d_Ang,ax,ax1,ax2,abs_PA,origin,position0,B,intensity_looku
       position1 = origin + radius_px*clock
       contour_x.append(position1[1]-0.5-B[0])
       contour_y.append(position1[0]-0.5-B[2])
-    
+
     if plot:
       ax.plot(contour_x,contour_y, "r-",linewidth=0.3)
       ax1.plot(contour_x,contour_y, "r-",linewidth=0.3)
@@ -119,14 +119,14 @@ if __name__=="__main__":
   npos_angle = 0
   nVF = 0
   millerd = {}
-  
+
   #for item,key in get_items(key=3271):
   for item,key in get_items():
     result = dict(image=key,millers=[],spectrumx=[],obs=[],model=[],cc=[])
     #good indices: 3271, 2301: continue
     d = item["d"]
     nitem += 1
-    
+
     nall_spots += len(item)
     iselect = ((d < 2.5) & (d > 2.1))
     nres_range += len(d.select(iselect))
@@ -167,7 +167,7 @@ if __name__=="__main__":
         B = sb.bbox
         ROI = ((B[0],B[1]),(B[2],B[3]))
         values = sb.data-sb.background # ADU above background
- 
+
         v0 = values.set_selected(values<=0, 0.)
         v1 = v0.set_selected(v0>255,255)
         v2 = (256.-v1)/256.
@@ -178,17 +178,17 @@ if __name__=="__main__":
         for c in range(nsb):
           intensity_lookup_1[(int(sb.coords()[c][1]),int(sb.coords()[c][0]))] = pr_value[c]
         assert len(intensity_lookup_1) == len(intensity_lookup)
-        assert len(pr_value) == len(sb.data)        
+        assert len(pr_value) == len(sb.data)
 
-        values_1 = pr_value # sb.data # ADU 
+        values_1 = pr_value # sb.data # ADU
         v0_1 = values_1.set_selected(values_1<=0, 0.)
         v1_1 = v0_1.set_selected(v0_1>255,255)
         v2_1 = (256.-v1_1)/256.
         np_v2_1 = np.ndarray(shape=(B[3]-B[2],B[1]-B[0],), dtype=np.float64, buffer=v2_1.as_numpy_array())
 
-        if plot: 
-          import matplotlib.pyplot as plt 
-        
+        if plot:
+          import matplotlib.pyplot as plt
+
           fig = plt.figure(figsize=(12,9))
           ax = plt.subplot2grid ((2,2),(0,0))
           ax1 = plt.subplot2grid((2,2),(0,1))
@@ -207,7 +207,7 @@ if __name__=="__main__":
           formatterf = FuncFormatter(fast_scale)
           ax.xaxis.set_major_formatter(formatterf)
           ax1.xaxis.set_major_formatter(formatterf)
-        
+
           ax.plot([spotprediction[0] - 0.5 - B[0]], [spotprediction[1] - 0.5 - B[2]], "y.")
           ax1.plot([spotprediction[0] - 0.5 - B[0]], [spotprediction[1] - 0.5 - B[2]], "y.")
         else:
@@ -226,7 +226,7 @@ if __name__=="__main__":
     import pickle
     print "pickling",result
     pickle.dump(result,open("data.pickle","ab"))
-    
+
   print "Number of images %d; of all spots %d; of in-resolution spots %d; in position %d"%(
     nitem, nall_spots, nres_range, npos_angle)
   print "Valid foreground pixels: %d. Number of Miller indices: %d"%(nVF, len(millerd.keys()))
@@ -243,8 +243,3 @@ if __name__=="__main__":
 
 # 1. why are the two dictionaries of differing lengths
 # 2. why are the imshows inconsistent with green curves
-
-
-
-
-    

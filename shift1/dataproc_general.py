@@ -43,7 +43,7 @@ class GaussFit:
       sqnum[ix] = (float(ix) - self.mean_index)**2 * self.data[ix]
     numerator = np.sum( sqnum )
     self.stddevidx = math.sqrt(numerator/denominator)
-  
+
 
 
 sources = dict(lg36={"src":'exp=cxig3614:run=209',"fee":'Fee_Orca_Spectrometer',"gen":gen_lg36},
@@ -84,7 +84,7 @@ for nevent,evt,time in sources[proposal]["gen"](ds):
     if plots>5:
       plt.imshow(img, interpolation='nearest')
       plt.show()
-    
+
     summed  = img.sum(axis=0)
     lower = summed[0:50].mean()
     upper = summed[-50:].mean()
@@ -95,7 +95,7 @@ for nevent,evt,time in sources[proposal]["gen"](ds):
     if plots>4:
       plt.plot(xrange(len(real)), real, 'r-')
       plt.show() # show baseline-corrected spectrum
-    
+
     fr = np.fft.rfft(real)
     #print type(fr), len(real)//2, len(fr.real)
     if plots>5:
@@ -118,7 +118,7 @@ for nevent,evt,time in sources[proposal]["gen"](ds):
     expidx.append(mean_index)
     energy.append(ebeam.ebeamPhotonEnergy())
     spectra.append(filtered_real.astype('float32'))
-    
+
 # plotting the correlation between ebeam (x) and mean spectrometer index (y)
 CA = calib_A(data = dict(expidx=expidx,energy=energy))
 #CA.plot(plt)
@@ -145,5 +145,3 @@ plt.plot([lower,upper],[fullheight/2.,fullheight/2.],'r-')
 
 plt.plot(xenergy,sumspectra,"b-")
 plt.show()
-
-

@@ -57,7 +57,7 @@ def plot_energy_scale_noplot(SS,d_Ang,abs_PA,origin,position0,B,intensity_lookup
   return spectrumx,spectrumy,combined_model,CC
   # spectrumy is the observed spectrum, projected
   # spectrumy_1 is the partiality model x Icalc, projected
-  # combined model is the partiality x Icalc x spectrum, projected 
+  # combined model is the partiality x Icalc x spectrum, projected
 
 def parse_postrefine():
   lines = open("/net/dials/raid1/sauter/LS49_merge/merge5_redo2.log").xreadlines()

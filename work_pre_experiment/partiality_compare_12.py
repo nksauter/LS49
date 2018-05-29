@@ -62,13 +62,13 @@ def plot_energy_scale(IDX,ax,abs_PA,origin,position0,B,intensity_lookup,intensit
       position1 = origin + radius_px*clock
       contour_x.append(position1[1]-0.5-B[0])
       contour_y.append(position1[0]-0.5-B[2])
-    
+
     for rot in range(-8,9):
       PA = abs_PA + 0.25*rot*mos_rotation_deg*math.pi/180.
       clock = unit_pos0.rotate_2d(-PA, deg=False)
       position1 = origin + radius_px*clock
       int_coords = (int(position1[0]),int(position1[1]))
-     
+
       specy += intensity_lookup.get(int_coords,0)
       specy_1 += intensity_lookup_1.get(int_coords,0)
     spectrumy.append(specy)
@@ -83,7 +83,7 @@ def plot_energy_scale(IDX,ax,abs_PA,origin,position0,B,intensity_lookup,intensit
   wavlen, flux, wavelength_A = iterator.next() # list of lambdas, list of fluxes, average wavelength
   ratio = flex.max(flux)/max(spectrumy)
   # plot incident spectrum
-  ax[IDX//3][IDX%3].plot(12398.425/wavlen,(flux/ratio),"b-") 
+  ax[IDX//3][IDX%3].plot(12398.425/wavlen,(flux/ratio),"b-")
   combined_model = flex.double()
   incident_xaxis = 12398.425/wavlen
   int_ix = [int (ix) for ix in incident_xaxis]
@@ -116,7 +116,7 @@ if __name__=="__main__":
   for item,key in get_items():
     d = item["d"]
     nitem += 1
-    
+
     nall_spots += len(item)
     iselect = ((d < 2.5) & (d > 2.1))
     nres_range += len(d.select(iselect))
@@ -142,7 +142,7 @@ if __name__=="__main__":
         print "%20s,asu %20s"%(str(hkl[x]),str(asu[x])),
         print "slow=%5.0f  fast=%5.0f"%(xyz[x][1],xyz[x][0]),"PA %6.1f"%position_angle
         sb = shoe[x]
-        print "shoebox has %d pixels"%(sb.mask.size())  
+        print "shoebox has %d pixels"%(sb.mask.size())
         print "first coordinate is ",sb.coords()[0]
         nsb = sb.mask.size()
         for c in range(nsb):
@@ -176,9 +176,9 @@ if __name__=="__main__":
         for c in range(nsb):
           intensity_lookup_1[(int(sb.coords()[c][1]),int(sb.coords()[c][0]))] = pr_value[c]
         assert len(intensity_lookup_1) == len(intensity_lookup)
-        assert len(pr_value) == len(sb.data)        
+        assert len(pr_value) == len(sb.data)
 
-        values_1 = pr_value # sb.data # ADU 
+        values_1 = pr_value # sb.data # ADU
         v0_1 = values_1.set_selected(values_1<=0, 0.)
         v1_1 = v0_1.set_selected(v0_1>255,255)
         v2_1 = (256.-v1_1)/256.
@@ -190,7 +190,7 @@ if __name__=="__main__":
         if IDX==12:
           plt.show()
           exit()
-    
+
   print "Number of images %d; of all spots %d; of in-resolution spots %d; in position %d"%(
     nitem, nall_spots, nres_range, npos_angle)
   print "Valid foreground pixels: %d. Number of Miller indices: %d"%(nVF, len(millerd.keys()))
@@ -204,9 +204,3 @@ if __name__=="__main__":
       print key, millerd[key]
       nfreq+=1
   print "Total of %d observed > 30 times"%nfreq
-
-
-
-
-
-    

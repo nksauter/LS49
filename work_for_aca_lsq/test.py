@@ -17,10 +17,8 @@ d2 = L2.get_raw_data()
 
 for i in xrange(len(d1)):
  if d1[i]-d2[i] != 0:
-  print "%6d %6d %6d"%(i, d1[i], d2[i]), 
+  print "%6d %6d %6d"%(i, d1[i], d2[i]),
   if d1[i]-d2[i] != 0:
     print d1[i]-d2[i]
   else:
     print
-
-

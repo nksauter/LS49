@@ -62,7 +62,7 @@ if __name__=="__main__":
         print "%20s,asu %20s"%(str(hkl[x]),str(asu[x])),"slow=%5.0f  fast=%5.0f"%(xyz[x][1],xyz[x][0]),"PA %6.1f"%position_angle
         #from IPython import embed; embed()
         sb = shoe[x]
-        #print "shoebox has %d pixels"%(sb.mask.size())  
+        #print "shoebox has %d pixels"%(sb.mask.size())
         nsb = sb.mask.size()
         for c in range(nsb):
           #print c, sb.mask[c], sb.mask[c]&MaskCode.Valid == MaskCode.Valid,\
@@ -73,7 +73,7 @@ if __name__=="__main__":
             #print "VF",c, sb.coords()[c], sb.background[c], sb.data[c], sb.data[c]-sb.background[c]
             nVF += 1
 
-    
+
   print "Number of images %d; of all spots %d; of in-resolution spots %d; in position %d"%(
     nitem, nall_spots, nres_range, npos_angle)
   print "Valid foreground pixels: %d. Number of Miller indices: %d"%(nVF, len(millerd.keys()))
@@ -87,9 +87,3 @@ if __name__=="__main__":
       print key, millerd[key]
       nfreq+=1
   print "Total of %d observed > 30 times"%nfreq
-
-
-
-
-
-    

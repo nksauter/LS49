@@ -24,10 +24,9 @@ for run in ds.runs():
         print key.alias(),
       if 'FEE-SPEC0' in str(key):
         print key.src(),
-	d = evt.get(key.type(), key.src())
-	plt.cla()
-	plt.plot(range(len(d.hproj())), d.hproj(), '-')
-	plt.draw()
-	plt.pause(0.1)
+        d = evt.get(key.type(), key.src())
+        plt.cla()
+        plt.plot(range(len(d.hproj())), d.hproj(), '-')
+        plt.draw()
+        plt.pause(0.1)
     print
-

@@ -16,12 +16,12 @@ class GM (object):
   self.images_strong = {}
   self.images_Gi = {}
   for filen in glob.glob(globv):
-    
+
     V = open(filen,"rb")
     while 1:
      try:
       image = pickle.load(V)
-      
+
       self.images_all+=1
       highcc = flex.double(image["cc"]) > 0.80 #was 0.7 and minimum 4
       if highcc.count(True)<3: continue
@@ -54,7 +54,7 @@ class lbfgs_fpfdp_fit:
            "["," ".join(["%10.4f"%a for a in self.x]),"]")
 
   def lsq_target_function(self,title,debug=None):
-     
+
     per_HKL_I = {}
     miller_lookup = {}
 
@@ -106,7 +106,7 @@ class lbfgs_fpfdp_fit:
     inn = len(terms0)
     A = (terms1-terms0)/0.0001
     for ix in xrange(inn):
-      print (ix,A[ix],dt0[ix]) 
+      print (ix,A[ix],dt0[ix])
     # Verified each term in the functional?
 
     return f
@@ -144,7 +144,7 @@ if __name__=="__main__":
   for i in G.generate_millers():
     M.append(i)
   print ("%d Bragg spots measured"%len(M))
-  
+
   print ("%d Unique Miller indices"%(len(G.asu)))
 
   from IPython import embed; embed()
@@ -247,7 +247,3 @@ if __name__=="__main__":
   plt.ylim([-8.2,4.2])
   plt.show()
   exit("STOP")
-
-
-  
-

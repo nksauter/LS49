@@ -31,7 +31,7 @@ def plot_energy_scale_noplot(SS,d_Ang,abs_PA,origin,position0,B,intensity_lookup
     two_theta = 2. * math.asin( lambda_Ang / (2.*d_Ang))
     radius_mm = distance_mm * math.tan(two_theta)
     radius_px = radius_mm / pixel_sz_mm
-    
+
     for rot in range(-8,9):
       PA = abs_PA + 0.25*rot*mos_rotation_deg*math.pi/180.
       clock = unit_pos0.rotate_2d(-PA, deg=False)
@@ -67,7 +67,7 @@ def get_items(myrank):
     #each rank should only allow keys in the range from myrank*N_stride to (myrank+1)*N_stride
     if key<myrank*N_stride: continue
     if key >= (myrank+1) * N_stride: continue
-    
+
     from dxtbx.model.experiment_list import ExperimentListFactory
     E = ExperimentListFactory.from_json_file(json_glob%key,check_format=False)[0]
     C = E.crystal
@@ -130,7 +130,7 @@ if __name__=="__main__":
   npos_angle = 0
   nVF = 0
   millerd = {}
-  
+
   #for item,key in get_items(key=3271):
   for item,key in get_items(rank):
     result = dict(image=key,millers=[],spectrumx=[],obs=[],model=[],cc=[])
@@ -179,7 +179,7 @@ if __name__=="__main__":
         B = sb.bbox
         ROI = ((B[0],B[1]),(B[2],B[3]))
         values = sb.data-sb.background # ADU above background
- 
+
         v0 = values.set_selected(values<=0, 0.)
         v1 = v0.set_selected(v0>255,255)
         v2 = (256.-v1)/256.
@@ -190,9 +190,9 @@ if __name__=="__main__":
         for c in range(nsb):
           intensity_lookup_1[(int(sb.coords()[c][1]),int(sb.coords()[c][0]))] = pr_value[c]
         assert len(intensity_lookup_1) == len(intensity_lookup)
-        assert len(pr_value) == len(sb.data)        
+        assert len(pr_value) == len(sb.data)
 
-        values_1 = pr_value # sb.data # ADU 
+        values_1 = pr_value # sb.data # ADU
         v0_1 = values_1.set_selected(values_1<=0, 0.)
         v1_1 = v0_1.set_selected(v0_1>255,255)
         v2_1 = (256.-v1_1)/256.
@@ -210,14 +210,8 @@ if __name__=="__main__":
         result["cc"].append(CC)
 
 
-    # At this point we optionally restrict the data  
+    # At this point we optionally restrict the data
 
     import pickle
     print ("pickling key %d in rank %d"%(key,rank),result)
     pickle.dump(result,open("dataX%02d.pickle"%rank,"ab"))
-
-
-
-
-
-    

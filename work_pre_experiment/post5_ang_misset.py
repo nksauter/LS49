@@ -118,7 +118,7 @@ if __name__=="__main__":
     aoff = alipost_Ori.a.angle(C2_ground_truth.a,deg=True)
     boff = alipost_Ori.b.angle(C2_ground_truth.b,deg=True)
     coff = alipost_Ori.c.angle(C2_ground_truth.c,deg=True)
-    # solved:  the reason missetting_rot doesn't exactly align postref and ground_truth is 
+    # solved:  the reason missetting_rot doesn't exactly align postref and ground_truth is
     # that it's a monoclinic lattice, not orthorhombic.  Difference in the beta angle prevents exact alignment
 
     hyp = flex.mean(flex.double((aoff,boff,coff)))

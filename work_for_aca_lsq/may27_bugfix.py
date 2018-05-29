@@ -28,7 +28,7 @@ class lbfgs_fpfdp_fit:
            "["," ".join(["%10.4f"%a for a in self.x]),"]",", %d refl,%d images"%(self.nvisited,len(self.G.images_strong)))
 
   def lsq_target_function(self,title,debug=None):
-     
+
     per_step_per_HKL_I = {}
     miller_lookup = {}
 
@@ -82,7 +82,7 @@ class lbfgs_fpfdp_fit:
     inn = len(terms0)
     A = (terms1-terms0)/0.0001
     for ix in xrange(inn):
-      print (ix,A[ix],dt0[ix]) 
+      print (ix,A[ix],dt0[ix])
     # Verified each term in the functional?
 
     return f
@@ -154,7 +154,3 @@ if __name__=="__main__":
   plt.ylim([-8.2,4.2])
   plt.show()
   exit("STOP")
-
-
-  
-

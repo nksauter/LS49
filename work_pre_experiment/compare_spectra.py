@@ -58,7 +58,7 @@ def plot_energy_scale(ax,ax2,abs_PA,origin,position0,B,intensity_lookup,key):
       position1 = origin + radius_px*clock
       contour_x.append(position1[1]-0.5-B[0])
       contour_y.append(position1[0]-0.5-B[2])
-    
+
     ax.plot(contour_x,contour_y, "r-",linewidth=0.3)
 
     contour_x = []; contour_y = []
@@ -67,20 +67,20 @@ def plot_energy_scale(ax,ax2,abs_PA,origin,position0,B,intensity_lookup,key):
       clock = unit_pos0.rotate_2d(-PA, deg=False)
       position1 = origin + radius_px*clock
       int_coords = (int(position1[0]),int(position1[1]))
-     
+
       specy += intensity_lookup.get(int_coords,0)
       if int(position1[1])!=367 : continue
       if int(position1[0])!=1075: continue
       contour_x.append(position1[1]-0.5-B[0])
       contour_y.append(position1[0]-0.5-B[2])
-    
+
     ax.plot(contour_x,contour_y, "ro",markersize=1.0)
     spectrumy.append(specy)
   ax2.plot(spectrumx, spectrumy,"r.")
   iterator = SS.generate_recast_renormalized_image(image=key,energy=7120.,total_flux=1e12)
   wavlen, flux, wavelength_A = iterator.next() # list of lambdas, list of fluxes, average wavelength
   ratio = flex.max(flux)/max(spectrumy)
-  ax2.plot(12398.425/wavlen,(flux/ratio)+100,"b-") 
+  ax2.plot(12398.425/wavlen,(flux/ratio)+100,"b-")
 
 if __name__=="__main__":
   origin = col((1500,1500))
@@ -96,7 +96,7 @@ if __name__=="__main__":
   for item,key in get_items():
     d = item["d"]
     nitem += 1
-    
+
     nall_spots += len(item)
     iselect = ((d < 2.5) & (d > 2.1))
     nres_range += len(d.select(iselect))
@@ -121,7 +121,7 @@ if __name__=="__main__":
         print "%20s,asu %20s"%(str(hkl[x]),str(asu[x])),
         print "slow=%5.0f  fast=%5.0f"%(xyz[x][1],xyz[x][0]),"PA %6.1f"%position_angle
         sb = shoe[x]
-        print "shoebox has %d pixels"%(sb.mask.size())  
+        print "shoebox has %d pixels"%(sb.mask.size())
         print "first coordinate is ",sb.coords()[0]
         nsb = sb.mask.size()
         for c in range(nsb):
@@ -163,14 +163,14 @@ if __name__=="__main__":
           return "%.1f"%(x + 0.5 + B[0])
         formatterf = FuncFormatter(fast_scale)
         ax.xaxis.set_major_formatter(formatterf)
-        
+
         ax.plot([spotprediction[0] - 0.5 - B[0]], [spotprediction[1] - 0.5 - B[2]], "y.")
 
         plot_energy_scale(ax,ax2,abs_PA,origin,position0,B,intensity_lookup,key)
 
         plt.show()
 
-    
+
   print "Number of images %d; of all spots %d; of in-resolution spots %d; in position %d"%(
     nitem, nall_spots, nres_range, npos_angle)
   print "Valid foreground pixels: %d. Number of Miller indices: %d"%(nVF, len(millerd.keys()))
@@ -184,9 +184,3 @@ if __name__=="__main__":
       print key, millerd[key]
       nfreq+=1
   print "Total of %d observed > 30 times"%nfreq
-
-
-
-
-
-    

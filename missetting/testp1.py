@@ -77,7 +77,7 @@ def plot_unit_cell(ax,Ori):
 if __name__=="__main__":
   #for iu,uni in enumerate(get_coord_shifts()):
   #  print iu, uni.determinant()
-  
+
   pdb_lines = open("/net/dials/raid1/sauter/LS49/1m2a.pdb","r").read()
   from LS49.sim.util_fmodel import gen_fmodel
   GF = gen_fmodel(resolution=3.0,pdb_text=pdb_lines,algorithm="fft",wavelength=1.7)
@@ -113,7 +113,7 @@ if __name__=="__main__":
     refined_triclinic_ori = refined_ori.change_basis(current_cb_op_to_primitive)
     print "UNI",testuni,sqr(testuni).determinant()
     ground_truth_ori = Ori
-    print "refined ori--> %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f"%( 
+    print "refined ori--> %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f"%(
     refined_triclinic_ori.unit_cell().parameters())
     print "truth ori  --> %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f"%(
     ground_truth_ori.unit_cell().parameters())
@@ -173,7 +173,7 @@ if __name__=="__main__":
     test = R90*LI*LI
     print "Test",test.determinant()
     trial_ori = ground_truth_ori.change_basis(test)
-    
+
     #plot_unit_cell(ax,comparison_triclinic)
     plot_unit_cell(ax,refined_triclinic_ori)
     plot_unit_cell(ax,ground_truth_ori)

@@ -102,7 +102,7 @@ class gen_fmodel:
 
 def single_atom_workup(workup,resolution,angstroms):
   print ("Testing f0 for workup %s"%(str(workup)))
-  # Next, get F's with just Fe1, 
+  # Next, get F's with just Fe1,
   plines_src = open("1m2a.pdb","r").readlines()
   plines_dst = []
   for line in plines_src:
@@ -118,7 +118,7 @@ def single_atom_workup(workup,resolution,angstroms):
   Fe1model,metalcalc = GF.get_complex()
 
   sc = GF.xray_structure.scatterers()[0]
-  fpfdp = (complex(sc.fp,sc.fdp))   
+  fpfdp = (complex(sc.fp,sc.fdp))
 
   GF.reset_wavelength(angstroms)
   GF.zero_out_specific_at_wavelength(label_has=workup[1])
@@ -197,7 +197,3 @@ if __name__=="__main__":
   # have a separate function here that simply tests single_atom workup
   tst_single_atom_workup()
   exit()
-
-
-
-
