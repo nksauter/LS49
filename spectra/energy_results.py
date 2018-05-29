@@ -1,11 +1,11 @@
 #source /reg/g/psdm/etc/psconda.sh
-from psana import *
 import numpy as np
 import matplotlib.pyplot as plt
 
 def get_results():
   import pickle
-  R = pickle.load(open("/reg/d/psdm/cxi/cxig3614/scratch/spectra209.pickle","rb"))
+  #R = pickle.load(open("/reg/d/psdm/cxi/cxig3614/scratch/spectra209.pickle","rb"))
+  R = pickle.load(open("data/spectra209.pickle","rb"))
   return R
 
 class linear_fit:
@@ -38,6 +38,7 @@ if __name__=="__main__":
 
   plt.plot(R["energy"], R["expidx"], "b.")
   plt.plot([e1,e2],[idx1,idx2],"r-")
+  plt.xlim([7050,7120])
   plt.show()
 
   residuals = LF.get_residuals()
