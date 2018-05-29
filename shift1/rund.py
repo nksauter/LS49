@@ -2,8 +2,6 @@ from __future__ import division
 import psana
 import sys
 from xfel.cxi.cspad_ana import cspad_tbx
-import numpy as np
-from scitbx.array_family import flex
 runno = int(sys.argv[1])
 dataset_name = "exp=mfxls4916:run=%d:idx"%(runno)
 

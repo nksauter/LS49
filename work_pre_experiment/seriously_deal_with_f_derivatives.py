@@ -1,7 +1,6 @@
 from __future__ import print_function
 from __future__ import division
 from cctbx.array_family import flex
-import pickle,glob
 
 class gen_fmodel:
   def __init__(self,resolution,pdb_text,algorithm=None,wavelength=0.9,verbose=False):
@@ -194,7 +193,7 @@ def eV_as_angstroms(eV):
 def at_one_eV(eV,values,tst_delF=False):
   # values is required to be a flex double with (fp-FE1,fdp-FE1,fp-FE2,fdp-FE2)
   resolution = (2.095,2.505)
-  from LS49.sim.step5_pad import pdb_lines,Fe_oxidized_model,Fe_reduced_model
+  from LS49.sim.step5_pad import pdb_lines
   angstroms = eV_as_angstroms(eV)
   GF = gen_fmodel(resolution=resolution,pdb_text=pdb_lines,
                          algorithm="fft",wavelength=angstroms)
@@ -253,7 +252,7 @@ def at_one_eV(eV,values,tst_delF=False):
 
 
 if __name__=="__main__":
-  from LS49.sim.step5_pad import pdb_lines,Fe_oxidized_model,Fe_reduced_model
+  from LS49.sim.step5_pad import pdb_lines
   eV = 7125.
   #values is required to be a flex double with (fp-FE1,fdp-FE1,fp-FE2,fdp-FE2)
   HASH = at_one_eV(eV=eV,values=flex.double([-4.,2.,-4.,2.]))

@@ -1,9 +1,7 @@
 from __future__ import division
 import psana
-import sys
 from xfel.cxi.cspad_ana import cspad_tbx
-import numpy as np
-from scitbx.array_family import flex
+from scitbx.array_family import flex # implicit import
 dataset_name = "exp=mfxls4916:run=17:idx"
 
 ds = psana.DataSource(dataset_name)

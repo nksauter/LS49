@@ -1,7 +1,6 @@
 from __future__ import print_function
 from __future__ import division
 from cctbx.array_family import flex
-import pickle,glob
 
 class gen_fmodel:
   def __init__(self,resolution,pdb_text,algorithm=None,wavelength=0.9,verbose=False):

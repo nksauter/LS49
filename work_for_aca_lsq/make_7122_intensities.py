@@ -1,8 +1,5 @@
 from __future__ import print_function
 from __future__ import division
-from cctbx.array_family import flex
-import glob
-import scitbx
 from six.moves import cPickle as pickle
 from six.moves import range
 
@@ -23,7 +20,6 @@ if __name__=="__main__":
   #    buried irons, FE1, in Fe(III) state (absorption at higher energy, oxidized)
   #    surface iron, FE2, in Fe(II) state (absorption at lower energy, reduced)
 
-  from cctbx import miller
   W2i = W2_reduced.indices()
   with (open("debug26.data","w")) as F:
     for iw in range(len(W2i)):

@@ -1,5 +1,4 @@
 from __future__ import division
-from scitbx.array_family import flex
 
 from LS49.sim.fdp_plot import george_sherrell
 

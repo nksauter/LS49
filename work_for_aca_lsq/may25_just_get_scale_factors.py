@@ -2,10 +2,8 @@ from __future__ import print_function
 from __future__ import division
 from cctbx.array_family import flex
 import glob
-import scitbx
 from six.moves import cPickle as pickle
 from six.moves import range
-from seriously_deal_with_f_derivatives import eV_as_angstroms,at_one_eV
 """Focus on one energy at a time.  Assume we already know the image scale factors.
 Only thing left to do is optimize the four parameters FE1 f'f" and FE2 f'f"
 """

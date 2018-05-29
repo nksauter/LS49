@@ -1,8 +1,6 @@
 from __future__ import print_function
 from __future__ import division
 from cctbx.array_family import flex
-import glob
-import scitbx
 from six.moves import cPickle as pickle
 from six.moves import range
 
@@ -22,7 +20,7 @@ if __name__=="__main__":
   #    surface iron, FE2, in Fe(II) state (absorption at lower energy, reduced)
 
   per_HKL_I = {}
-  for iE,Energy in enumerate(xrange(7090,7151)):
+  for iE,Energy in enumerate(range(7090,7151)):
     if Energy%10==0: print (Energy)
     W = 12398.425/Energy
     GF.reset_wavelength(W)
@@ -33,7 +31,7 @@ if __name__=="__main__":
     data = this_energy_Fmodel.data()
     if iE==0:
       for key in millers: per_HKL_I[key]=flex.double()
-    for ikey in xrange(len(millers)):
+    for ikey in range(len(millers)):
       if millers[ikey] in per_HKL_I:
         per_HKL_I[millers[ikey]].append(data[ikey])
 

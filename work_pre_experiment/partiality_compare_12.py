@@ -3,7 +3,6 @@ from post5_ang_misset import parse_postrefine
 from scitbx.matrix import col
 from dials.algorithms.shoebox import MaskCode
 from scitbx.array_family import flex
-from matplotlib.ticker import FuncFormatter
 import numpy as np
 import math
 

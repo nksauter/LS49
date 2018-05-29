@@ -3,7 +3,6 @@ from post5_ang_misset import parse_postrefine
 from scitbx.matrix import col
 from dials.algorithms.shoebox import MaskCode
 from scitbx.array_family import flex
-from matplotlib.ticker import FuncFormatter
 import numpy as np
 import math
 
@@ -111,7 +110,6 @@ if __name__=="__main__":
     SS = spectra_simulation()
 
     from LS49.spectra.generate_spectra import spectra_simulation
-    from LS49.sim.step5_pad import microcrystal
 
     transmitted_info = dict(spectra = SS,
                             amplitudes = A)
