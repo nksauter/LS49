@@ -90,13 +90,17 @@ def get_items(myrank):
     from dxtbx.model.experiment_list import ExperimentListFactory
     E = ExperimentListFactory.from_json_file(json_glob%key,check_format=False)[0]
     C = E.crystal
+    C.show()
     import cPickle as pickle
     T = pickle.load(open(pickle_glob%key,"rb"))
     resolutions = T["d"]
     millers = T["miller_index"]
     nitem = len(resolutions)
     ycount+=1
-    if ycount>maxy: break
+    if ycount>maxy:
+      print("maxy break %d"%maxy)
+      break
+    print ("THE ACTUAL JSON / PICKLE USED:",json_glob%key,pickle_glob%key)
     yield T,key
 
 from LS49.sim.util_partiality import get_partiality_response
@@ -149,7 +153,8 @@ if __name__=="__main__":
 
   #for item,key in get_items(key=3271):
   for item,key in get_items(rank):
-    result = dict(image=key,millers=[],spectrumx=[],obs=[],model=[],cc=[])
+    result = dict(image=key,millers=[],orig_idx=[],pick=pickle_glob%key,spectrumx=[],obs=[],model=[],cc=[],
+                  simtbx_millers=[],simtbx_intensity=[])
     #good indices: 3271, 2301: continue
     d = item["d"]
     nitem += 1
@@ -203,7 +208,10 @@ if __name__=="__main__":
         np_v2 = np.ndarray(shape=(B[3]-B[2],B[1]-B[0],), dtype=np.float32, buffer=v2.as_numpy_array())
 
         # insert code here to estimate the partiality response
-        pr_value = get_partiality_response(key,hkl[x],spectra_simulation=transmitted_info["spectra"],ROI=ROI)
+        PRD = get_partiality_response(key,hkl[x],spectra_simulation=transmitted_info["spectra"],ROI=ROI)
+        pr_value=PRD["roi_pixels"]
+        miller=PRD["miller"]
+        intensity=PRD["intensity"]
 
         for c in range(nsb):
           intensity_lookup_1[(int(sb.coords()[c][1]),int(sb.coords()[c][0]))] = pr_value[c]
@@ -217,12 +225,25 @@ if __name__=="__main__":
         v2_1 = (256.-v1_1)/256.
         np_v2_1 = np.ndarray(shape=(B[3]-B[2],B[1]-B[0],), dtype=np.float64, buffer=v2_1.as_numpy_array())
 
-        ax=ax1=ax2=None
+        ssplot=False
+        if ssplot:
+          ax=ax1=ax2=None
+          fig = plt.figure(figsize=(8,6))
+          ax = plt.subplot2grid ((2,2),(0,0))
+          ax1 = plt.subplot2grid((2,2),(0,1))
+          ax2 = plt.subplot2grid((2,2),(1,0),colspan=2)
+          ax.imshow(np_v2, cmap=plt.cm.gray, interpolation="nearest")
+          ax1.imshow(np_v2_1, cmap=plt.cm.gray, interpolation="nearest")
+          plt.show()
+
         spectrumx,spectrumy,combined_model,CC =\
         plot_energy_scale_noplot(transmitted_info["spectra"],
                                  transmitted_info["amplitudes"].unit_cell().d(hkl[x]),
                                  abs_PA,origin,position0,B,intensity_lookup,intensity_lookup_1,key)
+        result["simtbx_millers"].append(miller)
+        result["simtbx_intensity"].append(intensity)
         result["millers"].append(asu[x])
+        result["orig_idx"].append(hkl[x])
         result["spectrumx"].append(spectrumx) # spectrumx: energy channels in units of eV
         result["obs"].append(spectrumy) # observations, presumably
         result["model"].append(combined_model) # model presumably consisting of partiality x spectrum x Icalc
@@ -232,8 +253,16 @@ if __name__=="__main__":
           plt.plot(spectrumx,combined_model,"k-")
           plt.show()
 
-    # At this point we optionally restrict the data
+    #recast the ROI miller indices in the centered (hi-sym) space group that was used for DIALS integration
+    CBOP = cust_copy.change_of_basis_op_to_primitive_setting()
+    from cctbx.array_family import flex as cflex
+    M = cflex.miller_index(result["simtbx_millers"])
+    P = cust_copy.customized_copy(indices=M)
+    Q = P.change_basis(CBOP.inverse())
+    result["simtbx_millers_DIALS_setting"]=list(Q.indices())
+    result["cb_op_simtbx_to_dials"] = CBOP.inverse()
 
+    # At this point we optionally restrict the data
     import pickle
     print ("pickling key %d in rank %d"%(key,rank),result)
-    pickle.dump(result,open("dataX%02d.pickle"%rank,"ab"))
+    pickle.dump(result,open("dataX%04d.pickle"%rank,"ab"))

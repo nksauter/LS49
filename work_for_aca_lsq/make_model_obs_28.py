@@ -29,7 +29,11 @@ class GM (object):
       for i in range(len(image["cc"])):
         if image["cc"][i]<0.8: continue
         self.icount+=1
-        imdict[image["millers"][i]]=dict(model=image["model"][i], obs=flex.double(image["obs"][i]))
+        imdict[image["millers"][i]]=dict(model=image["model"][i], obs=flex.double(image["obs"][i]),
+          cc=image["cc"][i], simtbx_intensity=image["simtbx_intensity"][i],
+          simtbx_miller=image["simtbx_millers"][i],orig_index=image["orig_idx"][i],
+          simtbx_miller_DIALS_setting=image["simtbx_millers_DIALS_setting"][i],
+        )
         print (filen,self.icount,"CC>70%%: %20s %5.2f"%(image["millers"][i],image["cc"][i]))
         #from matplotlib import pyplot as plt
         #model = image["model"][i]

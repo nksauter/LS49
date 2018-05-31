@@ -3,6 +3,7 @@ from __future__ import division
 from cctbx.array_family import flex
 from six.moves import cPickle as pickle
 from six.moves import range
+from make_model_obs_28 import GM # implicit import
 from matplotlib import pyplot as plt
 
 def test_Gi_factor(G):
@@ -63,9 +64,11 @@ if __name__=="__main__":
     for ikey, HKL in enumerate(G.images_strong[key]):
       plt.subplot(nkeys,1,1+ikey)
       MD = G.images_strong[key][HKL]
-      plt.plot(range(7090,7151),MD["model"] * per_HKL_I[HKL] / per_HKL_I_7122[HKL],"k-")
+      print (HKL,MD,"7122 lookup",per_HKL_I_7122[HKL],per_HKL_I_7122[HKL]/MD["simtbx_intensity"])
+
+      plt.plot(range(7090,7151),MD["model"] * per_HKL_I[HKL] / MD["simtbx_intensity"],"k-")
       plt.plot(range(7090,7151),1E10*MD["obs"],"r-")
-      terms1 = MD["model"] * per_HKL_I[HKL] / per_HKL_I_7122[HKL]
+      terms1 = MD["model"] * per_HKL_I[HKL] / MD["simtbx_intensity"]
       terms2 = terms1 * terms1
       terms0 = MD["obs"] * terms1
       numerator+=flex.sum(terms0)
