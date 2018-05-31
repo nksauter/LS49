@@ -6,6 +6,7 @@ from LS49.sim.step5_pad import pdb_lines
 from LS49.sim.util_fmodel import gen_fmodel
 from simtbx.nanoBragg import shapetype
 from simtbx.nanoBragg import nanoBragg
+from six.moves import StringIO
 import scitbx
 import math
 from six.moves import cPickle as pickle
@@ -20,7 +21,7 @@ use_g_sfall=False
 with (open("sfall_P1_7122_amplitudes.pickle","rb")) as F:
   sfall_7122 = pickle.load(F)
 
-def channel_pixels(ROI,wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator):
+def channel_pixels(ROI,wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,output):
   energy_dependent_fmodel=False
   if energy_dependent_fmodel:
     fmodel_generator.reset_wavelength(wavelength_A)
@@ -71,7 +72,12 @@ def channel_pixels(ROI,wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator)
 
   from libtbx.development.timers import Profiler
   P = Profiler("nanoBragg")
-  SIM.add_nanoBragg_spots_nks()
+  SIM.printout=True
+  fast = ROI[1][0] + (ROI[1][1]-ROI[1][0])//2
+  slow = ROI[0][0] + (ROI[0][1]-ROI[0][0])//2
+  SIM.printout_pixel_fastslow=(slow,fast)
+  from boost.python import streambuf # will deposit printout into output as side effect
+  SIM.add_nanoBragg_spots_nks(streambuf(output))
   del P
   print ("SIM count > 0",(SIM.raw_pixels>0).count(True))
   return SIM
@@ -259,19 +265,26 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,quick=False):
   # amplify spot signal to simulate physical crystal of 4000x larger: 100 um (64e9 x the volume)
   print crystal.domains_per_crystal
   SIM.raw_pixels *= crystal.domains_per_crystal; # must calculate the correct scale!
-
+  output = StringIO() # open("myfile","w")
   for x in xrange(0,100,2): #len(flux)):
     if flux[x]==0.0:continue
     print "+++++++++++++++++++++++++++++++++++++++ Wavelength",x
-    CH = channel_pixels(ROI,wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,GF)
+    CH = channel_pixels(ROI,wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,GF,output)
     SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal;
     print SIM.raw_pixels
 
     CH.free_all()
+
+  message = output.getvalue().split()
+  miller = (int(message[4]),int(message[5]),int(message[6]))
+  intensity = float(message[9]);
+
   #SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
-  result = SIM.raw_pixels
+  pixels = SIM.raw_pixels
+  roi_pixels = pixels[ROI[1][0]:ROI[1][1], ROI[0][0]:ROI[0][1]]
+  print "Reducing full shape of",pixels.focus(),"to ROI of",roi_pixels.focus()
   SIM.free_all()
-  return result
+  return dict(roi_pixels=roi_pixels,miller=miller,intensity=intensity)
 
 def get_partiality_response(key,one_index,spectra_simulation,ROI):
 
@@ -289,9 +302,4 @@ def get_partiality_response(key,one_index,spectra_simulation,ROI):
   rand_ori = sqr(random_orientations[key])
 
   pixels = run_sim2smv(ROI,prefix = file_prefix,crystal = crystal,spectra=iterator,rotation=rand_ori,quick=False,rank=0)
-  print "full shape",pixels.focus()
-  roi_pixels = pixels[ROI[1][0]:ROI[1][1], ROI[0][0]:ROI[0][1]]
-  print roi_pixels.focus()
-  #print list(roi_pixels)
-  #from IPython import embed; embed()
-  return roi_pixels
+  return pixels
