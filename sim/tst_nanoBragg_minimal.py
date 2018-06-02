@@ -15,9 +15,9 @@ SIM.Ncells_abc = (5,5,5)
 # default orientation is with a axis down the beam, lets pick a random one
 SIM.randomize_orientation()
 # display randomly-picked missetting angles
-print(SIM.missets_deg)
+print((SIM.missets_deg))
 # or an Arndt-Wonacott A matrix (U*B), same as used by mosflm
-print(SIM.Amatrix)
+print((SIM.Amatrix))
 
 # show all parameters
 SIM.show_params()

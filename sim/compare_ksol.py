@@ -15,7 +15,7 @@ if __name__=="__main__":
     asum = flex.sum(amplitudes.data())
     #for i in xrange(amplitudes.size()):
       #print i,amplitudes.indices()[i],amplitudes.data()[i]
-    print("ksol = %f sum is %f"%(u,asum))
+    print(("ksol = %f sum is %f"%(u,asum)))
     sumarray.append(asum)
   from matplotlib import pyplot as plt
   plt.plot(ksol,sumarray,'r.')
@@ -29,7 +29,7 @@ if __name__=="__main__":
     asum = flex.sum(amplitudes.data())
     #for i in xrange(amplitudes.size()):
       #print i,amplitudes.indices()[i],amplitudes.data()[i]
-    print("ksol = %f sum is %f"%(u,asum))
+    print(("ksol = %f sum is %f"%(u,asum)))
     sumarray.append(asum*0.7) # arbitrary scaling factor for better looking plot
   plt.plot(ksol,sumarray,'b.')
   plt.show()

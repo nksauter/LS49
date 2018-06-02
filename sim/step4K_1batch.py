@@ -26,11 +26,11 @@ if __name__=="__main__":
   size = comm.Get_size()
   N_total = 32768 # number of items to simulate
   N_stride = size # total number of worker tasks
-  print("hello from rank %d of %d"%(rank,size))
+  print(("hello from rank %d of %d"%(rank,size)))
   if rank == 0:
     from LS49.spectra.generate_spectra import spectra_simulation
     from LS49.sim.step4K_pad import microcrystal
-    print("hello2 from rank %d of %d"%(rank,size))
+    print(("hello2 from rank %d of %d"%(rank,size)))
     SS = spectra_simulation()
     C = microcrystal(Deff_A = 4000, length_um = 1., beam_diameter_um = 1.0) # assume smaller than 10 um crystals
     mt = flex.mersenne_twister(seed=0)
@@ -48,8 +48,8 @@ if __name__=="__main__":
   while len(parcels)>0:
     import random
     idx = random.choice(parcels)
-    print("idx------------------->",idx,"rank",rank)
+    print(("idx------------------->",idx,"rank",rank))
     tst_one(image=idx,spectra=transmitted_info["spectra"],
             crystal=transmitted_info["crystal"],random_orientation=transmitted_info["random_orientations"][idx])
     parcels.remove(idx)
-  print("OK exiting rank",rank)
+  print(("OK exiting rank",rank))

@@ -30,7 +30,7 @@ def channel_pixels(ROI,wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,
                    label_has="FE1",tables=Fe_oxidized_model,newvalue=wavelength_A)
     fmodel_generator.reset_specific_at_wavelength(
                    label_has="FE2",tables=Fe_reduced_model,newvalue=wavelength_A)
-    print "USING scatterer-specific energy-dependent scattering factors"
+    print("USING scatterer-specific energy-dependent scattering factors")
     sfall_channel = fmodel_generator.get_amplitudes()
   elif use_g_sfall:
     global g_sfall
@@ -68,7 +68,7 @@ def channel_pixels(ROI,wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,
   # assumes round beam
   SIM.beamsize_mm=0.003 #cannot make this 3 microns; spots are too intense
   temp=SIM.Ncells_abc
-  print "Ncells_abc=",SIM.Ncells_abc
+  print("Ncells_abc=",SIM.Ncells_abc)
   SIM.Ncells_abc=temp
 
   from libtbx.development.timers import Profiler
@@ -80,7 +80,7 @@ def channel_pixels(ROI,wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,
   from boost.python import streambuf # will deposit printout into output as side effect
   SIM.add_nanoBragg_spots_nks(streambuf(output))
   del P
-  print ("SIM count > 0",(SIM.raw_pixels>0).count(True))
+  print(("SIM count > 0",(SIM.raw_pixels>0).count(True)))
   return SIM
 
 def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,quick=False):
@@ -104,7 +104,7 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,quick=False):
   if quick:
     wavlen = flex.double([wavelength_A]);
     flux = flex.double([flex.sum(flux)])
-    print "Quick sim, lambda=%f, flux=%f"%(wavelength_A,flux[0])
+    print("Quick sim, lambda=%f, flux=%f"%(wavelength_A,flux[0]))
 
   GF = gen_fmodel(resolution=direct_algo_res_limit,pdb_text=pdb_lines,algorithm="fft",wavelength=wavelength_A)
   GF.set_k_sol(0.435)
@@ -124,7 +124,7 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,quick=False):
   import sys
   if len(sys.argv)>2:
     SIM.seed = -int(sys.argv[2])
-    print "GOTHERE seed=",SIM.seed
+    print("GOTHERE seed=",SIM.seed)
   if len(sys.argv)>1:
     if sys.argv[1]=="random" : SIM.randomize_orientation()
   SIM.mosaic_domains = 50  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
@@ -157,25 +157,25 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,quick=False):
   # this will become F000, marking the beam center
   SIM.default_F=0
   #SIM.missets_deg= (10,20,30)
-  print "mosaic_seed=",SIM.mosaic_seed
-  print "seed=",SIM.seed
-  print "calib_seed=",SIM.calib_seed
-  print "missets_deg =", SIM.missets_deg
+  print("mosaic_seed=",SIM.mosaic_seed)
+  print("seed=",SIM.seed)
+  print("calib_seed=",SIM.calib_seed)
+  print("missets_deg =", SIM.missets_deg)
   SIM.Fhkl=sfall_main
-  print "Determinant",rotation.determinant()
+  print("Determinant",rotation.determinant())
   Amatrix_rot = (rotation * sqr(sfall_main.unit_cell().orthogonalization_matrix())).transpose()
-  print "RAND_ORI", prefix,
-  for i in Amatrix_rot: print i,
-  print
+  print("RAND_ORI", prefix, end=' ')
+  for i in Amatrix_rot: print(i, end=' ')
+  print()
 
   SIM.Amatrix_RUB = Amatrix_rot
   #workaround for failing init_cell, use custom written Amatrix setter
-  print "unit_cell_Adeg=",SIM.unit_cell_Adeg
-  print "unit_cell_tuple=",SIM.unit_cell_tuple
+  print("unit_cell_Adeg=",SIM.unit_cell_Adeg)
+  print("unit_cell_tuple=",SIM.unit_cell_tuple)
   Amat = sqr(SIM.Amatrix).transpose() # recovered Amatrix from SIM
   from cctbx import crystal_orientation
   Ori = crystal_orientation.crystal_orientation(Amat, crystal_orientation.basis_type.reciprocal)
-  print "Python unit cell from SIM state",Ori.unit_cell()
+  print("Python unit cell from SIM state",Ori.unit_cell())
 
   # fastest option, least realistic
   #SIM.xtal_shape=shapetype.Tophat # RLP = hard sphere
@@ -194,67 +194,67 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,quick=False):
   # assumes round beam
   SIM.beamsize_mm=0.003 #cannot make this 3 microns; spots are too intense
   temp=SIM.Ncells_abc
-  print "Ncells_abc=",SIM.Ncells_abc
+  print("Ncells_abc=",SIM.Ncells_abc)
   SIM.Ncells_abc=temp
-  print "Ncells_abc=",SIM.Ncells_abc
-  print "xtal_size_mm=",SIM.xtal_size_mm
-  print "unit_cell_Adeg=",SIM.unit_cell_Adeg
-  print "unit_cell_tuple=",SIM.unit_cell_tuple
-  print "missets_deg=",SIM.missets_deg
-  print "Amatrix=",SIM.Amatrix
-  print "beam_center_mm=",SIM.beam_center_mm
-  print "XDS_ORGXY=",SIM.XDS_ORGXY
-  print "detector_pivot=",SIM.detector_pivot
-  print "xtal_shape=",SIM.xtal_shape
-  print "beamcenter_convention=",SIM.beamcenter_convention
-  print "fdet_vector=",SIM.fdet_vector
-  print "sdet_vector=",SIM.sdet_vector
-  print "odet_vector=",SIM.odet_vector
-  print "beam_vector=",SIM.beam_vector
-  print "polar_vector=",SIM.polar_vector
-  print "spindle_axis=",SIM.spindle_axis
-  print "twotheta_axis=",SIM.twotheta_axis
-  print "distance_meters=",SIM.distance_meters
-  print "distance_mm=",SIM.distance_mm
-  print "close_distance_mm=",SIM.close_distance_mm
-  print "detector_twotheta_deg=",SIM.detector_twotheta_deg
-  print "detsize_fastslow_mm=",SIM.detsize_fastslow_mm
-  print "detpixels_fastslow=",SIM.detpixels_fastslow
-  print "detector_rot_deg=",SIM.detector_rot_deg
-  print "curved_detector=",SIM.curved_detector
-  print "pixel_size_mm=",SIM.pixel_size_mm
-  print "point_pixel=",SIM.point_pixel
-  print "polarization=",SIM.polarization
-  print "nopolar=",SIM.nopolar
-  print "oversample=",SIM.oversample
-  print "region_of_interest=",SIM.region_of_interest
-  print "wavelength_A=",SIM.wavelength_A
-  print "energy_eV=",SIM.energy_eV
-  print "fluence=",SIM.fluence
-  print "flux=",SIM.flux
-  print "exposure_s=",SIM.exposure_s
-  print "beamsize_mm=",SIM.beamsize_mm
-  print "dispersion_pct=",SIM.dispersion_pct
-  print "dispsteps=",SIM.dispsteps
-  print "divergence_hv_mrad=",SIM.divergence_hv_mrad
-  print "divsteps_hv=",SIM.divsteps_hv
-  print "divstep_hv_mrad=",SIM.divstep_hv_mrad
-  print "round_div=",SIM.round_div
-  print "phi_deg=",SIM.phi_deg
-  print "osc_deg=",SIM.osc_deg
-  print "phisteps=",SIM.phisteps
-  print "phistep_deg=",SIM.phistep_deg
-  print "detector_thick_mm=",SIM.detector_thick_mm
-  print "detector_thicksteps=",SIM.detector_thicksteps
-  print "detector_thickstep_mm=",SIM.detector_thickstep_mm
-  print "***mosaic_spread_deg=",SIM.mosaic_spread_deg
-  print "***mosaic_domains=",SIM.mosaic_domains
-  print "indices=",SIM.indices
-  print "amplitudes=",SIM.amplitudes
-  print "Fhkl_tuple=",SIM.Fhkl_tuple
-  print "default_F=",SIM.default_F
-  print "interpolate=",SIM.interpolate
-  print "integral_form=",SIM.integral_form
+  print("Ncells_abc=",SIM.Ncells_abc)
+  print("xtal_size_mm=",SIM.xtal_size_mm)
+  print("unit_cell_Adeg=",SIM.unit_cell_Adeg)
+  print("unit_cell_tuple=",SIM.unit_cell_tuple)
+  print("missets_deg=",SIM.missets_deg)
+  print("Amatrix=",SIM.Amatrix)
+  print("beam_center_mm=",SIM.beam_center_mm)
+  print("XDS_ORGXY=",SIM.XDS_ORGXY)
+  print("detector_pivot=",SIM.detector_pivot)
+  print("xtal_shape=",SIM.xtal_shape)
+  print("beamcenter_convention=",SIM.beamcenter_convention)
+  print("fdet_vector=",SIM.fdet_vector)
+  print("sdet_vector=",SIM.sdet_vector)
+  print("odet_vector=",SIM.odet_vector)
+  print("beam_vector=",SIM.beam_vector)
+  print("polar_vector=",SIM.polar_vector)
+  print("spindle_axis=",SIM.spindle_axis)
+  print("twotheta_axis=",SIM.twotheta_axis)
+  print("distance_meters=",SIM.distance_meters)
+  print("distance_mm=",SIM.distance_mm)
+  print("close_distance_mm=",SIM.close_distance_mm)
+  print("detector_twotheta_deg=",SIM.detector_twotheta_deg)
+  print("detsize_fastslow_mm=",SIM.detsize_fastslow_mm)
+  print("detpixels_fastslow=",SIM.detpixels_fastslow)
+  print("detector_rot_deg=",SIM.detector_rot_deg)
+  print("curved_detector=",SIM.curved_detector)
+  print("pixel_size_mm=",SIM.pixel_size_mm)
+  print("point_pixel=",SIM.point_pixel)
+  print("polarization=",SIM.polarization)
+  print("nopolar=",SIM.nopolar)
+  print("oversample=",SIM.oversample)
+  print("region_of_interest=",SIM.region_of_interest)
+  print("wavelength_A=",SIM.wavelength_A)
+  print("energy_eV=",SIM.energy_eV)
+  print("fluence=",SIM.fluence)
+  print("flux=",SIM.flux)
+  print("exposure_s=",SIM.exposure_s)
+  print("beamsize_mm=",SIM.beamsize_mm)
+  print("dispersion_pct=",SIM.dispersion_pct)
+  print("dispsteps=",SIM.dispsteps)
+  print("divergence_hv_mrad=",SIM.divergence_hv_mrad)
+  print("divsteps_hv=",SIM.divsteps_hv)
+  print("divstep_hv_mrad=",SIM.divstep_hv_mrad)
+  print("round_div=",SIM.round_div)
+  print("phi_deg=",SIM.phi_deg)
+  print("osc_deg=",SIM.osc_deg)
+  print("phisteps=",SIM.phisteps)
+  print("phistep_deg=",SIM.phistep_deg)
+  print("detector_thick_mm=",SIM.detector_thick_mm)
+  print("detector_thicksteps=",SIM.detector_thicksteps)
+  print("detector_thickstep_mm=",SIM.detector_thickstep_mm)
+  print("***mosaic_spread_deg=",SIM.mosaic_spread_deg)
+  print("***mosaic_domains=",SIM.mosaic_domains)
+  print("indices=",SIM.indices)
+  print("amplitudes=",SIM.amplitudes)
+  print("Fhkl_tuple=",SIM.Fhkl_tuple)
+  print("default_F=",SIM.default_F)
+  print("interpolate=",SIM.interpolate)
+  print("integral_form=",SIM.integral_form)
 
   from libtbx.development.timers import Profiler
   P = Profiler("nanoBragg")
@@ -264,15 +264,15 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,quick=False):
 
   # simulated crystal is only 125 unit cells (25 nm wide)
   # amplify spot signal to simulate physical crystal of 4000x larger: 100 um (64e9 x the volume)
-  print crystal.domains_per_crystal
+  print(crystal.domains_per_crystal)
   SIM.raw_pixels *= crystal.domains_per_crystal; # must calculate the correct scale!
   output = StringIO() # open("myfile","w")
   for x in range(0,100,2): #len(flux)):
     if flux[x]==0.0:continue
-    print "+++++++++++++++++++++++++++++++++++++++ Wavelength",x
+    print("+++++++++++++++++++++++++++++++++++++++ Wavelength",x)
     CH = channel_pixels(ROI,wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,GF,output)
     SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal;
-    print SIM.raw_pixels
+    print(SIM.raw_pixels)
 
     CH.free_all()
 
@@ -283,7 +283,7 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,quick=False):
   #SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
   pixels = SIM.raw_pixels
   roi_pixels = pixels[ROI[1][0]:ROI[1][1], ROI[0][0]:ROI[0][1]]
-  print "Reducing full shape of",pixels.focus(),"to ROI of",roi_pixels.focus()
+  print("Reducing full shape of",pixels.focus(),"to ROI of",roi_pixels.focus())
   SIM.free_all()
   return dict(roi_pixels=roi_pixels,miller=miller,intensity=intensity)
 
