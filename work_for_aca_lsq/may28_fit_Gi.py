@@ -3,7 +3,7 @@ from __future__ import division
 from cctbx.array_family import flex
 from six.moves import cPickle as pickle
 from six.moves import range
-from make_model_obs_28 import GM # implicit import
+from LS49.work_for_aca_lsq.make_model_obs_28 import GM # implicit import
 from matplotlib import pyplot as plt
 
 def test_Gi_factor(G):
