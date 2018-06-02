@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 #source /reg/g/psdm/etc/psconda.sh
 from psana import *
 ds = DataSource('exp=cxig3614:run=210')
