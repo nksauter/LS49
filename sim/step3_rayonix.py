@@ -1,5 +1,6 @@
 from __future__ import division
-from six.moves import rangefrom scitbx.array_family import flex
+from six.moves import range
+from scitbx.array_family import flex
 from scitbx.matrix import sqr,col
 from simtbx.nanoBragg import shapetype
 from simtbx.nanoBragg import nanoBragg
