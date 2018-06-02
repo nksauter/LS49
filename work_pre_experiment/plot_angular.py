@@ -6,7 +6,7 @@ if True:
   angular_offset = flex.double()
 
 
-  for line in open(trial,"r").xreadlines():
+  for line in open(trial,"r"):
     if line.find("angular offset")>0:
       value = line.split()[5]
       angular_offset.append(float(value))
