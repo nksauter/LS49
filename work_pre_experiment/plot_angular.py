@@ -1,4 +1,4 @@
-from __future__ import division, absolute_import
+from __future__ import division, absolute_import, print_function
 import sys,math
 trial = sys.argv[1] # Like "005"
 from scitbx.array_family import flex
@@ -18,8 +18,8 @@ if True:
   rmsd = math.sqrt(flex.mean(angular_offset*angular_offset))
   print(trial,"%6d measurements; rmsd %7.3f"%(len(angular_offset),
     rmsd
-  ), end=' ')
-  print("Median is %7.3f"%(median))
+  ),
+    "Median is %7.3f"%(median))
   print("Max is %7.3f"%(flex.max(angular_offset)))
 
   from matplotlib import pyplot as plt

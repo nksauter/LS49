@@ -1,4 +1,4 @@
-from __future__ import division, absolute_import
+from __future__ import division, absolute_import, print_function
 from six.moves import range
 from post5_ang_misset import parse_postrefine
 from scitbx.matrix import col
@@ -42,7 +42,7 @@ def get_items(key=None):
     return
 
   for key in postreffed:
-    print "image=",key
+    print("image=",key)
     from dxtbx.model.experiment_list import ExperimentListFactory
     E = ExperimentListFactory.from_json_file(json_glob%key,check_format=False)[0]
     C = E.crystal
@@ -107,14 +107,14 @@ def plot_energy_scale(d_Ang,ax,ax1,ax2,abs_PA,origin,position0,B,intensity_looku
   cscale = max(spectrumy)/max(combined_model)
   if plot: ax2.plot(spectrumx,cscale * combined_model, "k.")
   CC=flex.linear_correlation(combined_model, flex.double(spectrumy)).coefficient()
-  print "The correlation coefficient is",CC
+  print("The correlation coefficient is",CC)
   return spectrumx,spectrumy,combined_model,CC
 
 if __name__=="__main__":
   origin = col((1500,1500))
   position0 = col((1500,3000))-origin
   postreffed = parse_postrefine()
-  print "# postrefined images",len(postreffed)
+  print("# postrefined images",len(postreffed))
   nitem = 0
   nall_spots = 0
   nres_range = 0
@@ -156,7 +156,7 @@ if __name__=="__main__":
        #try:
         npos_angle += 1
         millerd[asu[x]]=millerd.get(asu[x],0)+1
-        print "%20s,asu %20s"%(str(hkl[x]),str(asu[x])),
+        print("%20s,asu %20s"%(str(hkl[x]),str(asu[x])), end=' ')
         sb = shoe[x]
         nsb = sb.mask.size()
         for c in range(nsb):
@@ -226,22 +226,22 @@ if __name__=="__main__":
        #except Exception as e:
          #print "Skipping with Exception",e
     import pickle
-    print "pickling",result
+    print("pickling",result)
     pickle.dump(result,open("data.pickle","ab"))
 
-  print "Number of images %d; of all spots %d; of in-resolution spots %d; in position %d"%(
-    nitem, nall_spots, nres_range, npos_angle)
-  print "Valid foreground pixels: %d. Number of Miller indices: %d"%(nVF, len(millerd))
-  print "Average",  npos_angle/nitem,"spots/image"
-  print "Average",  npos_angle/len(millerd), "observations/Miller index"
-  print "Average",  nVF/npos_angle," valid foreground pixels /spot"
+  print("Number of images %d; of all spots %d; of in-resolution spots %d; in position %d"%(
+    nitem, nall_spots, nres_range, npos_angle))
+  print("Valid foreground pixels: %d. Number of Miller indices: %d"%(nVF, len(millerd)))
+  print("Average",  npos_angle/nitem,"spots/image")
+  print("Average",  npos_angle/len(millerd), "observations/Miller index")
+  print("Average",  nVF/npos_angle," valid foreground pixels /spot")
   nfreq = 0
-  print "Analyze Miller indices observed more than 30 times"
+  print("Analyze Miller indices observed more than 30 times")
   for key in millerd:
     if millerd[key]>30:
-      print key, millerd[key]
+      print(key, millerd[key])
       nfreq+=1
-  print "Total of %d observed > 30 times"%nfreq
+  print("Total of %d observed > 30 times"%nfreq)
 
 # 1. why are the two dictionaries of differing lengths
 # 2. why are the imshows inconsistent with green curves

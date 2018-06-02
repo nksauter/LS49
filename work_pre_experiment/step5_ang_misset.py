@@ -1,4 +1,4 @@
-from __future__ import division, absolute_import
+from __future__ import division, absolute_import, print_function
 from scitbx.array_family import flex
 from scitbx.matrix import sqr
 from dxtbx.format.Registry import Registry
@@ -18,7 +18,7 @@ def get_items():
   for item in file_list:
     serial_no = int(item[-37:-32])
     image_file = image_glob%serial_no
-    #print image_file
+    #print (image_file)
     if format_class is None:
       format_class = Registry.find(image_file)
     i = format_class(image_file)

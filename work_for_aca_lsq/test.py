@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 from six.moves import range
 import dxtbx
 
@@ -19,8 +19,8 @@ d2 = L2.get_raw_data()
 
 for i in range(len(d1)):
  if d1[i]-d2[i] != 0:
-  print "%6d %6d %6d"%(i, d1[i], d2[i]),
+  print("%6d %6d %6d"%(i, d1[i], d2[i]), end=' ')
   if d1[i]-d2[i] != 0:
-    print d1[i]-d2[i]
+    print(d1[i]-d2[i])
   else:
-    print
+    print()
