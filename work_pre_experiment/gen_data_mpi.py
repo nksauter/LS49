@@ -71,7 +71,7 @@ def get_items(myrank):
     from dxtbx.model.experiment_list import ExperimentListFactory
     E = ExperimentListFactory.from_json_file(json_glob%key,check_format=False)[0]
     C = E.crystal
-    import cPickle as pickle
+    from six.moves import cPickle as pickle
     T = pickle.load(open(pickle_glob%key,"rb"))
     resolutions = T["d"]
     millers = T["miller_index"]

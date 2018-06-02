@@ -1,6 +1,7 @@
 from __future__ import division
 from six.moves import range
-import os,cPickle as pickle,math
+from six.moves import cPickle as pickle
+import os, math
 from scitbx.matrix import sqr,col
 from cctbx.crystal_orientation import crystal_orientation
 class ScoringContainer:
