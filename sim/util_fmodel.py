@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 
 def hisym_fcalc_from_pdb(resolution,pdb_text,algorithm=None,wavelength=0.9):
   from iotbx import pdb
