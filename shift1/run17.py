@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 from six.moves import range
 import psana
 from xfel.cxi.cspad_ana import cspad_tbx
@@ -18,15 +18,15 @@ for run in ds.runs():
   for i, t in enumerate(times):
     evt = run.event(t)
     ts = cspad_tbx.evt_timestamp((t.seconds(),t.nanoseconds()/1e6))
-    print ts,
+    print(ts, end=' ')
     for key in evt:
       if key.alias() in ['Rayonix', 'Jungfrau1M']:
-        print key.alias(),
+        print(key.alias(), end=' ')
       if 'FEE-SPEC0' in str(key):
-        print key.src(),
+        print(key.src(), end=' ')
         d = evt.get(key.type(), key.src())
         plt.cla()
         plt.plot(range(len(d.hproj())), d.hproj(), '-')
         plt.draw()
         plt.pause(0.1)
-    print
+    print()
