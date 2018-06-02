@@ -93,7 +93,7 @@ def plot_energy_scale(d_Ang,ax,ax1,ax2,abs_PA,origin,position0,B,intensity_looku
     ax2.plot(spectrumx, pscale*spectrumy_1,"g-")
     ax2.plot(spectrumx, spectrumy,"r-")
   iterator = SS.generate_recast_renormalized_image(image=key,energy=7120.,total_flux=1e12)
-  wavlen, flux, wavelength_A = iterator.next() # list of lambdas, list of fluxes, average wavelength
+  wavlen, flux, wavelength_A = next(iterator) # list of lambdas, list of fluxes, average wavelength
   ratio = flex.max(flux)/max(spectrumy)
   if plot: ax2.plot(12398.425/wavlen,(flux/ratio),"b-")
 

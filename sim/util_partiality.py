@@ -88,7 +88,7 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,quick=False):
 
   direct_algo_res_limit = 1.7
 
-  wavlen, flux, wavelength_A = spectra.next() # list of lambdas, list of fluxes, average wavelength
+  wavlen, flux, wavelength_A = next(spectra) # list of lambdas, list of fluxes, average wavelength
 
   tophat_spectrum = True
   if tophat_spectrum:

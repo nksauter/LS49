@@ -143,7 +143,7 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,sfall):
 def run_sim2smv(fileout,crystal,spectra,rotation):
   direct_algo_res_limit = 2.0
 
-  wavlen, flux, wavelength_A = spectra.next() # list of lambdas, list of fluxes, average wavelength
+  wavlen, flux, wavelength_A = next(spectra) # list of lambdas, list of fluxes, average wavelength
 
 
   #sfall = fcalc_from_pdb(resolution=direct_algo_res_limit,pdb_text=pdb_lines,algorithm="direct",wavelength=SIM.wavelength_A)

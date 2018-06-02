@@ -116,7 +116,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
 
   direct_algo_res_limit = 1.7
 
-  wavlen, flux, wavelength_A = spectra.next() # list of lambdas, list of fluxes, average wavelength
+  wavlen, flux, wavelength_A = next(spectra) # list of lambdas, list of fluxes, average wavelength
   if quick:
     wavlen = flex.double([wavelength_A]);
     flux = flex.double([flex.sum(flux)])

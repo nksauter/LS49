@@ -43,7 +43,7 @@ def plot_energy_scale_noplot(SS,d_Ang,abs_PA,origin,position0,B,intensity_lookup
     spectrumy_1.append(specy_1)
 
   iterator = SS.generate_recast_renormalized_image(image=key,energy=7120.,total_flux=1e12)
-  wavlen, flux, wavelength_A = iterator.next() # list of lambdas, list of fluxes, average wavelength
+  wavlen, flux, wavelength_A = next(iterator) # list of lambdas, list of fluxes, average wavelength
   ratio = flex.max(flux)/max(spectrumy)
 
   combined_model = flex.double()

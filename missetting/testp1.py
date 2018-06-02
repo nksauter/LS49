@@ -43,7 +43,7 @@ def get_items():
     ABC = Z[1]["DIRECT_SPACE_ABC"]
     abc = tuple([float(a) for a in ABC.split(",")])
     G = generate_data_from_streams([item])
-    stills_process = G.next()
+    stills_process = next(G)
     yield(dict(serial_no=serial_no,ABC=abc,stills_process=stills_process))
     #for key in stills_process:
     #  print key, stills_process[key]

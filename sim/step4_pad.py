@@ -153,7 +153,7 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,sfall):
 def run_sim2smv(prefix,crystal,spectra,rotation,quick=False):
   direct_algo_res_limit = 2.0
 
-  wavlen, flux, wavelength_A = spectra.next() # list of lambdas, list of fluxes, average wavelength
+  wavlen, flux, wavelength_A = next(spectra) # list of lambdas, list of fluxes, average wavelength
   if quick:
     wavlen = flex.double([wavelength_A]);
     flux = flex.double([flex.sum(flux)])

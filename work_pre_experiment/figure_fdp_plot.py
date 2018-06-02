@@ -56,7 +56,7 @@ if __name__=="__main__":
   from LS49.spectra.generate_spectra import spectra_simulation
   SS = spectra_simulation()
   iterator = SS.generate_recast_renormalized_image(image=0,energy=7150.,total_flux=1e12)
-  T = iterator.next()
+  T = next(iterator)
   energies = list(12398.425/T[0])
   lambd = list(T[0])
 
