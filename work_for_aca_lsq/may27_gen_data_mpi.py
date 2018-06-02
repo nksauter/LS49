@@ -110,21 +110,23 @@ if __name__=="__main__":
   Usage = """mpirun -n 50 libtbx.python gen_data_mpi.py
              rather: for x in `seq 0 49`; do libtbx.python may27_gen_data_mpi.py $x & done
              for x in `seq 0 3`; do time libtbx.python may27_gen_data_mpi.py $x > /dev/null & done"""
-  #from mpi4py import MPI
-  #comm = MPI.COMM_WORLD
-  #rank = comm.Get_rank()
-  #size = comm.Get_size()
-  import sys
-  rank = int (sys.argv[1])
-  #rank=0
-  size=50
+  usingMPI = True
+  if usingMPI:
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+  else:
+    import sys
+    rank = int (sys.argv[1])
+    size=50
   N_total = 100000 # number of items to simulate
   N_stride = 2000 # total number of tasks per rank
   print ("hello from rank %d of %d"%(rank,size))
 
-  if True: #rank == 0:
+  if (not usingMPI) or rank == 0:
     print ("set up in rank 0")
-    pdb_lines = open("/net/dials/raid1/sauter/LS49/1m2a.pdb","r").read()
+    pdb_lines = open("./1m2a.pdb","r").read()
     from LS49.sim.util_fmodel import gen_fmodel
 
     GF = gen_fmodel(resolution=10.0,pdb_text=pdb_lines,algorithm="fft",wavelength=1.7)
@@ -138,9 +140,12 @@ if __name__=="__main__":
     print ("finished setup in rank 0")
   else:
     transmitted_info = None
-  #transmitted_info = comm.bcast(transmitted_info, root = 0)
-  #comm.barrier()
-  print ("barrier from rank %d of %d"%(rank,size))
+  if usingMPI:
+    transmitted_info = comm.bcast(transmitted_info, root = 0)
+    comm.barrier()
+    import os
+    host = os.environ["HOST"]
+    print ("barrier from rank %d of %d"%(rank,size),host)
 
   origin = col((1500,1500))
   position0 = col((1500,3000))-origin
