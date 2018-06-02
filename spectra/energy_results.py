@@ -65,7 +65,7 @@ if __name__=="__main__":
   # show a random spectrum
   spectrum_fitted_energy = LF.m * np.array(range(len(R['spectra'][200]))) + LF.c
   plt.title('Random spectrum from LG36, run 209 (event 200)')
-  #plt.plot(xrange(len(R['spectra'][200])),R['spectra'][200],"r-")
+  #plt.plot(range(len(R['spectra'][200])),R['spectra'][200],"r-")
   plt.plot(spectrum_fitted_energy,R['spectra'][200],"r-")
   plt.xlabel('Energy (eV)')
   plt.show()
@@ -75,7 +75,7 @@ if __name__=="__main__":
   for x in range(1,100000):
     sum_spectrum += np.array(R['spectra'][x])
   plt.title('Average spectrum over LG36, run 209, 100000 events')
-  #plt.plot(xrange(len(R['spectra'][200])),R['spectra'][200],"r-")
+  #plt.plot(range(len(R['spectra'][200])),R['spectra'][200],"r-")
   plt.plot(spectrum_fitted_energy,sum_spectrum,"b-")
   plt.xlabel('Energy (eV)')
   plt.xlim([7040,7140])

@@ -1,4 +1,5 @@
 from __future__ import division
+from six.moves import range
 import psana
 from xfel.cxi.cspad_ana import cspad_tbx
 from scitbx.array_family import flex # implicit import
