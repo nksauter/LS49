@@ -36,7 +36,7 @@ if __name__=="__main__":
   from LS49.sim.util_fmodel import gen_fmodel
   GF = gen_fmodel(resolution=3.0,pdb_text=pdb_lines,algorithm="fft",wavelength=1.7)
   CB_OP_C_P = GF.xray_structure.change_of_basis_op_to_primitive_setting() # from C to P
-  print str(CB_OP_C_P)
+  print(str(CB_OP_C_P))
 
   icount=0
   from scitbx.array_family import flex
@@ -44,7 +44,7 @@ if __name__=="__main__":
   for stuff in get_items():
     #print stuff
     icount+=1
-    print "Iteration",icount
+    print("Iteration",icount)
     # work up the crystal model from integration
     direct_A = stuff["integrated_crystal_model"].get_A_inverse_as_sqr()
     permute = sqr((0,0,1,0,1,0,-1,0,0))
@@ -64,13 +64,13 @@ if __name__=="__main__":
     cb_op_align = integrated_Ori.best_similarity_transformation(C2_ground_truth,50,1)
     aligned_Ori = integrated_Ori.change_basis(sqr(cb_op_align))
     aligned_Ori.show(legend="integrated, aligned")
-    print "alignment matrix", cb_op_align
+    print("alignment matrix", cb_op_align)
 
     U_integrated = aligned_Ori.get_U_as_sqr()
     U_ground_truth = C2_ground_truth.get_U_as_sqr()
 
     missetting_rot = U_integrated * U_ground_truth.inverse()
-    print "determinant",missetting_rot.determinant()
+    print("determinant",missetting_rot.determinant())
     from libtbx.test_utils import approx_equal
     assert approx_equal(missetting_rot.determinant(),1.0)
     angle,axis = missetting_rot.r3_rotation_matrix_as_unit_quaternion().unit_quaternion_as_axis_and_angle(deg=True)
@@ -87,6 +87,6 @@ if __name__=="__main__":
     hyp = flex.mean(flex.double((aoff,boff,coff)))
 
     angles.append(hyp)
-    print "Item %5d angular offset is %12.9f deg."%(icount,hyp)
+    print("Item %5d angular offset is %12.9f deg."%(icount,hyp))
 
-  print "RMSD", math.sqrt(flex.mean(angles*angles))
+  print("RMSD", math.sqrt(flex.mean(angles*angles)))

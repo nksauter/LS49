@@ -10,9 +10,9 @@ for nevent,evt in enumerate(ds.events()):
     # includes pedestal subtraction, common-mode correction, bad-pixel
     # suppresion, and uses geometry to position the multiple CSPAD panels
     # into a 2D image
-    print 'Fetching event number',nevent
+    print('Fetching event number',nevent)
     img = det.image(evt)
 
     plt.imshow(img,vmin=-2,vmax=2)
     plt.show()
-print 'Done.'
+print('Done.')

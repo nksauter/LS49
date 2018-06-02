@@ -11,17 +11,17 @@ class linear_fit:
   def __init__(self,data):
     self.x = data["expidx"] # the expected index over the 1D spectral distribution (low pass filtered)
     self.y = data["energy"] # the ebeam energy
-    print len(self.x)
-    print len(self.y)
+    print(len(self.x))
+    print(len(self.y))
     # y = Ap, where A = [[x 1]] and p = [[m], [c]]
     A = np.vstack([self.x, np.ones(len(self.x))]).T
     self.m,self.c = np.linalg.lstsq(A,self.y)[0]
     # y = mx + c
     # x = (1./m) y - (c/m)
   def get_residuals(self):
-    print len(self.y)
+    print(len(self.y))
     calc_idx = (1./self.m)*np.array(self.y) - (self.c/self.m)
-    print len(calc_idx)
+    print(len(calc_idx))
     return self.x - calc_idx
 
 class spectra_simulation:
@@ -37,7 +37,7 @@ class spectra_simulation:
 
     self.max_of_max = max(maxima)
     average_integrated = np.mean(bk_subtracted_sum)
-    print "average_integrated",average_integrated
+    print("average_integrated",average_integrated)
     self.bk_subtracted_sum = bk_subtracted_sum
     self.average_integrated = average_integrated
     self.NS = len(self.R["spectra"][0]) # number of points in each spectrum
@@ -48,8 +48,8 @@ class spectra_simulation:
     ylim = [-.05*self.max_of_max, 1.05*self.max_of_max]
     spectrum_fitted_energy = self.LF.m * np.array(range(self.NS)) + self.LF.c
     for image in range(min(nlimit, self.N)):
-      print image,"ebeam = %7.2f eV"%(self.R["energy"][image]),"%5.1f%% of average pulse intensity"%(100.*
-        self.bk_subtracted_sum[image]/self.average_integrated)
+      print(image,"ebeam = %7.2f eV"%(self.R["energy"][image]),"%5.1f%% of average pulse intensity"%(100.*
+        self.bk_subtracted_sum[image]/self.average_integrated))
       if axis is "idx":
         plt.plot(range(self.NS),self.R['spectra'][image],"b-")
         plt.xlabel('Channel')
@@ -75,8 +75,8 @@ class spectra_simulation:
     offset_energy = spectrum_fitted_energy + offset
     for image in range(min(nlimit, self.N)):
       expected_energy = self.LF.m * self.R["expidx"][image] + self.LF.c + offset
-      print image,"ebeam = %7.2f eV"%(expected_energy),"%5.1f%% of average pulse intensity"%(100.*
-        self.bk_subtracted_sum[image]/self.average_integrated)
+      print(image,"ebeam = %7.2f eV"%(expected_energy),"%5.1f%% of average pulse intensity"%(100.*
+        self.bk_subtracted_sum[image]/self.average_integrated))
       if True:
         plt.plot(offset_energy,self.R['spectra'][image],"b-")
         plt.xlabel('Energy (eV)')
@@ -93,8 +93,8 @@ class spectra_simulation:
     offset_energy = spectrum_fitted_energy + offset
     for image in range(min(nlimit, self.N)):
       expected_energy = self.LF.m * self.R["expidx"][image] + self.LF.c + offset
-      print image,"ebeam = %7.2f eV"%(expected_energy),"%5.1f%% of average pulse intensity"%(100.*
-        self.bk_subtracted_sum[image]/self.average_integrated)
+      print(image,"ebeam = %7.2f eV"%(expected_energy),"%5.1f%% of average pulse intensity"%(100.*
+        self.bk_subtracted_sum[image]/self.average_integrated))
       yield offset_energy,self.R['spectra'][image],self.bk_subtracted_sum[image]/self.average_integrated
 
   def generate_recast_renormalized_images(self, nlimit, energy, total_flux):
@@ -108,8 +108,8 @@ class spectra_simulation:
       ysum = self.bk_subtracted_sum[image]
 
       expected_energy = self.LF.m * self.R["expidx"][image] + self.LF.c + offset
-      print image,"ebeam = %7.2f eV"%(expected_energy),"%5.1f%% of average pulse intensity"%(100.*
-        self.bk_subtracted_sum[image]/self.average_integrated)
+      print(image,"ebeam = %7.2f eV"%(expected_energy),"%5.1f%% of average pulse intensity"%(100.*
+        self.bk_subtracted_sum[image]/self.average_integrated))
 
       channel_flux = flex.double(100) # 100 energy channels altogether
       channel_mean_eV = flex.double(range(100)) + energy - 49.5
@@ -132,8 +132,8 @@ class spectra_simulation:
     ysum = self.bk_subtracted_sum[image]
 
     expected_energy = self.LF.m * self.R["expidx"][image] + self.LF.c + offset
-    print image,"ebeam = %7.2f eV"%(expected_energy),"%5.1f%% of average pulse intensity"%(100.*
-        self.bk_subtracted_sum[image]/self.average_integrated)
+    print(image,"ebeam = %7.2f eV"%(expected_energy),"%5.1f%% of average pulse intensity"%(100.*
+        self.bk_subtracted_sum[image]/self.average_integrated))
 
     channel_flux = flex.double(100) # 100 energy channels altogether
     channel_mean_eV = flex.double(range(100)) + energy - 49.5
@@ -156,6 +156,6 @@ if __name__=="__main__":
   SS = spectra_simulation()
   #SS.plot_input_images(20,axis="energy")
 
-  print "average expected energy %f eV"%(SS.get_average_expected_energy())
-  print "average ebeam is %f eB"%(np.mean(SS.R["energy"]))
+  print("average expected energy %f eV"%(SS.get_average_expected_energy()))
+  print("average ebeam is %f eB"%(np.mean(SS.R["energy"])))
   SS.plot_recast_images(20,energy=7120.)

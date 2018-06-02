@@ -19,7 +19,7 @@ for nevent,evt in enumerate(ds.events()):
     img = det.image(evt)
     #from IPython import embed; embed()
     if img is None:
-      print nevent,"None"; continue
+      print(nevent,"None"); continue
     ##-----------------------------
     # graphics
     axim.cla()                                         # clear image axes if necessary...

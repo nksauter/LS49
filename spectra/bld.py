@@ -7,5 +7,5 @@ ebeamDet = Detector('EBeam')
 for nevent,evt in enumerate(ds.events()):
     ebeam = ebeamDet.get(evt)
     if ebeam is None: continue
-    print nevent, ebeam.ebeamPhotonEnergy()
+    print(nevent, ebeam.ebeamPhotonEnergy())
     #break

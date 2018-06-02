@@ -14,17 +14,17 @@ class linear_fit:
   def __init__(self,data):
     self.x = data["expidx"]
     self.y = data["energy"]
-    print len(self.x)
-    print len(self.y)
+    print(len(self.x))
+    print(len(self.y))
     # y = Ap, where A = [[x 1]] and p = [[m], [c]]
     A = np.vstack([self.x, np.ones(len(self.x))]).T
     self.m,self.c = np.linalg.lstsq(A,self.y)[0]
     # y = mx + c
     # x = (1./m) y - (c/m)
   def get_residuals(self):
-    print len(self.y)
+    print(len(self.y))
     calc_idx = (1./self.m)*np.array(self.y) - (self.c/self.m)
-    print len(calc_idx)
+    print(len(calc_idx))
     return self.x - calc_idx
 
 if __name__=="__main__":
@@ -47,7 +47,7 @@ if __name__=="__main__":
   for image in range(len(R["energy"])):
     break
     if abs(residuals[image])>75:
-      print image,residuals[image],R["energy"][image]
+      print(image,residuals[image],R["energy"][image])
       plt.plot(range(len(R['spectra'][image])),R['spectra'][image],"b-")
       plt.show()
 

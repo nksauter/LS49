@@ -59,7 +59,7 @@ def plot_unit_cell(ax,Ori):
   veca = col((direct[0],direct[1],direct[2]))
   vecb = col((direct[3],direct[4],direct[5]))
   vecc = col((direct[6],direct[7],direct[8]))
-  print "Lengths %9.3f %9.3f %9.3f"%(veca.length(), vecb.length(),vecc.length())
+  print("Lengths %9.3f %9.3f %9.3f"%(veca.length(), vecb.length(),vecc.length()))
   pvec(zero,veca,'r')
   pvec(zero,vecb,'g')
   pvec(zero,vecc,'b')
@@ -95,28 +95,28 @@ if __name__=="__main__":
 
   for stuff in get_items():
    for testuni in get_coord_shifts():
-    print stuff
-    print
-    print stuff["ABC"]
+    print(stuff)
+    print()
+    print(stuff["ABC"])
     dx_cryst = Crystal(real_space_a=stuff["ABC"][0:3],
                        real_space_b=stuff["ABC"][3:6],
                        real_space_c=stuff["ABC"][6:9],
                        space_group_symbol="C 2")
     Ori = crystal_orientation.crystal_orientation(
       testuni*sqr(stuff["ABC"]), crystal_orientation.basis_type.direct)
-    print Ori.unit_cell().parameters()
+    print(Ori.unit_cell().parameters())
     #from IPython import embed; embed()
     sim_U = Ori.crystal_rotation_matrix()
 
     refined_ori = stuff["stills_process"]["current_orientation"][0]
     current_cb_op_to_primitive = stuff["stills_process"]["current_cb_op_to_primitive"][0]
     refined_triclinic_ori = refined_ori.change_basis(current_cb_op_to_primitive)
-    print "UNI",testuni,sqr(testuni).determinant()
+    print("UNI",testuni,sqr(testuni).determinant())
     ground_truth_ori = Ori
-    print "refined ori--> %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f"%(
-    refined_triclinic_ori.unit_cell().parameters())
-    print "truth ori  --> %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f"%(
-    ground_truth_ori.unit_cell().parameters())
+    print("refined ori--> %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f"%(
+    refined_triclinic_ori.unit_cell().parameters()))
+    print("truth ori  --> %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f"%(
+    ground_truth_ori.unit_cell().parameters()))
 
     gamma = ground_truth_ori.unit_cell().parameters()[5]
     alpha = ground_truth_ori.unit_cell().parameters()[3]
@@ -127,19 +127,19 @@ if __name__=="__main__":
                other=refined_triclinic_ori,
                fractional_length_tolerance=50.,
                unimodular_generator_range=1)
-    print (sqr(c_inv_r_best)).determinant()
+    print((sqr(c_inv_r_best)).determinant())
     #c_inv_r_int = tuple([int(round(ij,0)) for ij in c_inv_r_best])
     c_inv_r_int = tuple([int(round(ij,0)) for ij in c_inv_r_best])
     from cctbx import sgtbx
     c_inv = sgtbx.rt_mx(sgtbx.rot_mx(c_inv_r_int))
     cb_op = sgtbx.change_of_basis_op(c_inv)
-    print cb_op;
+    print(cb_op);
     comparison_triclinic = ground_truth_ori.change_basis(cb_op)
-    print "comparison---> %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f"%(
-    comparison_triclinic.unit_cell().parameters())
+    print("comparison---> %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f"%(
+    comparison_triclinic.unit_cell().parameters()))
 
     missetting_rot = sqr(refined_ori.direct_matrix()) * sqr(ground_truth_ori.direct_matrix()).inverse()
-    print "deter",missetting_rot.determinant()
+    print("deter",missetting_rot.determinant())
     from LS49.missetting.mark0 import ScoringContainer
     SC = ScoringContainer()
     SC.model = refined_triclinic_ori
@@ -147,8 +147,8 @@ if __name__=="__main__":
     angle_deg = SC.angular_rotation()*180./math.pi
     #print missetting_rot.elems
     angle,axis = missetting_rot.r3_rotation_matrix_as_unit_quaternion().unit_quaternion_as_axis_and_angle(deg=True)
-    print "Angle %8.5f degrees"%angle_deg
-    print angle
+    print("Angle %8.5f degrees"%angle_deg)
+    print(angle)
     import matplotlib as mpl
     from mpl_toolkits.mplot3d import Axes3D # import dependency
     import numpy as np
@@ -171,7 +171,7 @@ if __name__=="__main__":
     ax.plot(zeros,zeros,unit,c='b',label="z-axis")
     ax.legend()
     test = R90*LI*LI
-    print "Test",test.determinant()
+    print("Test",test.determinant())
     trial_ori = ground_truth_ori.change_basis(test)
 
     #plot_unit_cell(ax,comparison_triclinic)

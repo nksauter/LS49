@@ -6,4 +6,4 @@ nevent = 0
 for evt in ds.events():
     nevent+=1
     #if nevent==3: break
-    print 'Processed',nevent,'events.',evt
+    print('Processed',nevent,'events.',evt)

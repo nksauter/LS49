@@ -9,7 +9,7 @@ proposal = sys.argv[1]
 
 def gen_ls49(ds):
   for run in ds.runs():
-    print run
+    print(run)
     times = run.times()
     for nevent, t in enumerate(times):
       evt = run.event(t)
@@ -25,7 +25,7 @@ class calib_A(linear_fit):
   def ebeam_as_detidx(self,y):
     return (1./self.m)*y - (self.c/self.m)
   def plot(self,plt):
-    print "expidx vs ebeam energy"
+    print("expidx vs ebeam energy")
     e1 = self.detidx_as_ebeam(200.)
     e2 = self.detidx_as_ebeam(1800.)
     idx1 = self.ebeam_as_detidx(e1)
@@ -71,14 +71,14 @@ for nevent,evt,time in sources[proposal]["gen"](ds):
     # create an "assembled" 2D image (including "fake pixels" in gaps)
     img = det.image(evt)
     if img is None:
-      print 'None',nevent
+      print('None',nevent)
       continue
     ebeam = ebeamDet.get(evt)
     if ebeam is None:
-      print 'None ebeam',nevent
+      print('None ebeam',nevent)
       continue
     with_energy+=1
-    print "Nevent %d, energy %8.2feV, w/energy=%d"%(nevent, ebeam.ebeamPhotonEnergy(),with_energy)
+    print("Nevent %d, energy %8.2feV, w/energy=%d"%(nevent, ebeam.ebeamPhotonEnergy(),with_energy))
 
     import matplotlib.pyplot as plt
     #plt.imshow(img,vmin=-2,vmax=2) # normalization of luminance (doesnt work)
@@ -139,10 +139,10 @@ statsA = GaussFit(sumspectra)
 meanE = CA.detidx_as_ebeam(statsA.mean_index)
 fullheight = sumspectra[int(statsA.mean_index)]
 plt.plot([meanE,meanE],[0.,fullheight],'r-')
-print "Mean energy %8.2feV"%meanE
+print("Mean energy %8.2feV"%meanE)
 lower = CA.detidx_as_ebeam(statsA.mean_index- statsA.stddevidx)
 upper = CA.detidx_as_ebeam(statsA.mean_index+ statsA.stddevidx)
-print "Full width %8.2feV"%(upper-lower)
+print("Full width %8.2feV"%(upper-lower))
 plt.plot([lower,upper],[fullheight/2.,fullheight/2.],'r-')
 
 plt.plot(xenergy,sumspectra,"b-")

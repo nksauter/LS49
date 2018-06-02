@@ -18,7 +18,7 @@ if __name__=="__main__":
   plt.axes().set_ylim((-8.3,4.2))
 
 
-  print list(GS.energy)
-  print list(GS.fdp)
+  print(list(GS.energy))
+  print(list(GS.fdp))
 
   plt.show()

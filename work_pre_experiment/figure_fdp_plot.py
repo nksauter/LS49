@@ -13,7 +13,7 @@ class csv:
       lines = F.readlines()
       for line in lines:
         tokens = [float(f) for f in line.strip().split(",")]
-        print tokens
+        print(tokens)
         self.energy.append(tokens[0])
         self.red_fp.append(tokens[1])
         self.red_fdp.append(tokens[2])
@@ -21,9 +21,9 @@ class csv:
         self.ox_fdp.append(tokens[4])
   def plot_them(self,plt,energies):
     keys = [ round(e,0) for e in energies if e >= 7070. and e<7201.]
-    print keys
+    print(keys)
     elist = list(self.energy)
-    print elist
+    print(elist)
     lookup = [ elist.index(key) for key in keys]
     plt.plot(elist, [ -self.red_fp[idx] for idx in lookup ], "b.")
     plt.plot(elist, [ self.red_fdp[idx] for idx in lookup ], "b.")

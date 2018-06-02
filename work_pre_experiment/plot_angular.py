@@ -12,15 +12,15 @@ if True:
       angular_offset.append(float(value))
 
   order = flex.sort_permutation(angular_offset)
-  print list(angular_offset.select(order))
+  print(list(angular_offset.select(order)))
 
   median = angular_offset[order[len(order)//2]]
   rmsd = math.sqrt(flex.mean(angular_offset*angular_offset))
-  print trial,"%6d measurements; rmsd %7.3f"%(len(angular_offset),
+  print(trial,"%6d measurements; rmsd %7.3f"%(len(angular_offset),
     rmsd
-  ),
-  print "Median is %7.3f"%(median)
-  print "Max is %7.3f"%(flex.max(angular_offset))
+  ), end=' ')
+  print("Median is %7.3f"%(median))
+  print("Max is %7.3f"%(flex.max(angular_offset)))
 
   from matplotlib import pyplot as plt
   zoom="hi"
