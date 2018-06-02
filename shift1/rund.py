@@ -23,7 +23,7 @@ for run in ds.runs():
     ts = cspad_tbx.evt_timestamp((t.seconds(),t.nanoseconds()/1e6))
     print icount,ts,
     icount+=1
-    for key in evt.keys():
+    for key in evt:
       if key.alias() != "":
 
         print key.alias(),

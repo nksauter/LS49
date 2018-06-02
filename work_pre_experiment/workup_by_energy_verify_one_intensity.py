@@ -51,7 +51,7 @@ def lsq_target_function(title,label_table,images_Gi,genfmodel,genmiller):
       genfmodel.reset_specific_at_wavelength(label_has=sitekey,tables=label_table[sitekey],newvalue=W)
     W_state = genfmodel.get_intensities()
     W2i = W_state.indices()
-    matches = miller.match_indices(genmiller.asu.keys(),W2i)
+    matches = miller.match_indices(list(genmiller.asu.keys()),W2i)
     sel0 = flex.size_t([p[0] for p in matches.pairs()])
     sel1 = flex.size_t([p[1] for p in matches.pairs()])
     selected_I = W_state.data().select(sel1)
@@ -96,7 +96,7 @@ class lbfgs_fpfdp_fit:
 
     #W_state = self.intensity # 8437 ASU keys possible
     #W2i = self.miller
-    K = self.G.asu.keys() #2677 unique keys visited in the dataset
+    K = list(self.G.asu.keys()) #2677 unique keys visited in the dataset
     #from IPython import embed; embed()
     #matches = miller.match_indices(self.G.asu.keys(),self.miller) # HKL of the data, HKL of the pdb model
     #sel0 = flex.size_t([p[0] for p in matches.pairs()])
@@ -223,7 +223,7 @@ if __name__=="__main__":
     GF.reset_specific_at_wavelength(label_has="FE2",tables=Fe_reduced_model,newvalue=W)
     W_reduced = GF.get_intensities()
     W2i = W_reduced.indices()
-    matches = miller.match_indices(G.asu.keys(),W2i)
+    matches = miller.match_indices(list(G.asu.keys()),W2i)
     sel0 = flex.size_t([p[0] for p in matches.pairs()])
     sel1 = flex.size_t([p[1] for p in matches.pairs()])
     selected_I = W_reduced.data().select(sel1)

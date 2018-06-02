@@ -19,7 +19,7 @@ for run in ds.runs():
     evt = run.event(t)
     ts = cspad_tbx.evt_timestamp((t.seconds(),t.nanoseconds()/1e6))
     print ts,
-    for key in evt.keys():
+    for key in evt:
       if key.alias() in ['Rayonix', 'Jungfrau1M']:
         print key.alias(),
       if 'FEE-SPEC0' in str(key):

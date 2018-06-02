@@ -78,9 +78,9 @@ if __name__=="__main__":
 
   print "Number of images %d; of all spots %d; of in-resolution spots %d; in position %d"%(
     nitem, nall_spots, nres_range, npos_angle)
-  print "Valid foreground pixels: %d. Number of Miller indices: %d"%(nVF, len(millerd.keys()))
+  print "Valid foreground pixels: %d. Number of Miller indices: %d"%(nVF, len(millerd))
   print "Average",  npos_angle/nitem,"spots/image"
-  print "Average",  npos_angle/len(millerd.keys()), "observations/Miller index"
+  print "Average",  npos_angle/len(millerd), "observations/Miller index"
   print "Average",  nVF/npos_angle," valid foreground pixels /spot"
   nfreq = 0
   print "Analyze Miller indices observed more than 30 times"
