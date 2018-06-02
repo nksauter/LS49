@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 from scitbx.array_family import flex # implicit import
 from scitbx.matrix import sqr,col
 from xfel.command_line.print_pickle import generate_data_from_streams
