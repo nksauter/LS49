@@ -1,4 +1,5 @@
 from __future__ import division
+from six.moves import range
 from scitbx.array_family import flex
 from scitbx.matrix import sqr
 from simtbx.nanoBragg import nanoBragg
@@ -96,15 +97,15 @@ if __name__=="__main__":
   random_orientations = []
   N_total = 20160
   N_stride = 70 # total number of jobs
-  for iteration in xrange(N_total):
+  for iteration in range(N_total):
     random_orientations.append( mt.random_double_r3_rotation_matrix() )
 
   import sys
   job_no = int(sys.argv[1])
-  for idx in xrange(job_no,N_total,N_stride):
-    print "idx------------------->",idx
+  for idx in range(job_no,N_total,N_stride):
+    print(("idx------------------->",idx))
     tst_one(image=idx,spectra=SS,crystal=C,random_orientation=random_orientations[idx])
-  print "OK"
+  print("OK")
 """bsub -n 8 -o job${JOB}.log OMP_NUM_THREADS=8 libtbx.python ~/proj-1217/modules/LS49/sim/step4batch_pad.py ${JOB}
 for JOB in `seq 10 69`; do bsub -q psanaq -n 8 -o job${JOB}.log OMP_NUM_THREADS=8 libtbx.python ~/proj-1217/modules/LS49/sim/step4batch_pad.py ${JOB};done
 

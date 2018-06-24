@@ -1,4 +1,5 @@
-from __future__ import division, absolute_import
+from __future__ import division, absolute_import, print_function
+from six.moves import range
 from post5_ang_misset import parse_postrefine
 from scitbx.matrix import col
 from dials.algorithms.shoebox import MaskCode
@@ -32,7 +33,7 @@ def get_items(key=None):
     from dxtbx.model.experiment_list import ExperimentListFactory
     E = ExperimentListFactory.from_json_file(json_glob%key,check_format=False)[0]
     C = E.crystal
-    import cPickle as pickle
+    from six.moves import cPickle as pickle
     T = pickle.load(open(pickle_glob%key,"rb"))
     resolutions = T["d"]
     millers = T["miller_index"]
@@ -41,11 +42,11 @@ def get_items(key=None):
     return
 
   for key in postreffed:
-    print "image=",key
+    print("image=",key)
     from dxtbx.model.experiment_list import ExperimentListFactory
     E = ExperimentListFactory.from_json_file(json_glob%key,check_format=False)[0]
     C = E.crystal
-    import cPickle as pickle
+    from six.moves import cPickle as pickle
     T = pickle.load(open(pickle_glob%key,"rb"))
     resolutions = T["d"]
     millers = T["miller_index"]
@@ -92,7 +93,7 @@ def plot_energy_scale(d_Ang,ax,ax1,ax2,abs_PA,origin,position0,B,intensity_looku
     ax2.plot(spectrumx, pscale*spectrumy_1,"g-")
     ax2.plot(spectrumx, spectrumy,"r-")
   iterator = SS.generate_recast_renormalized_image(image=key,energy=7120.,total_flux=1e12)
-  wavlen, flux, wavelength_A = iterator.next() # list of lambdas, list of fluxes, average wavelength
+  wavlen, flux, wavelength_A = next(iterator) # list of lambdas, list of fluxes, average wavelength
   ratio = flex.max(flux)/max(spectrumy)
   if plot: ax2.plot(12398.425/wavlen,(flux/ratio),"b-")
 
@@ -100,20 +101,20 @@ def plot_energy_scale(d_Ang,ax,ax1,ax2,abs_PA,origin,position0,B,intensity_looku
   combined_model = flex.double()
   incident_xaxis = 12398.425/wavlen
   int_ix = [int (ix) for ix in incident_xaxis]
-  for ic in xrange(len(spectrumx)):
+  for ic in range(len(spectrumx)):
     ic_idx = int_ix.index(spectrumx[ic])
     combined_model.append(flux[ic_idx] * spectrumy_1[ic])
   cscale = max(spectrumy)/max(combined_model)
   if plot: ax2.plot(spectrumx,cscale * combined_model, "k.")
   CC=flex.linear_correlation(combined_model, flex.double(spectrumy)).coefficient()
-  print "The correlation coefficient is",CC
+  print("The correlation coefficient is",CC)
   return spectrumx,spectrumy,combined_model,CC
 
 if __name__=="__main__":
   origin = col((1500,1500))
   position0 = col((1500,3000))-origin
   postreffed = parse_postrefine()
-  print "# postrefined images",len(postreffed)
+  print("# postrefined images",len(postreffed))
   nitem = 0
   nall_spots = 0
   nres_range = 0
@@ -146,7 +147,7 @@ if __name__=="__main__":
     shoe = item["shoebox"].select(iselect)
     intensity_lookup ={}
     intensity_lookup_1 ={}
-    for x in xrange(len(hkl)):
+    for x in range(len(hkl)):
       slow = xyz[x][1]
       fast = xyz[x][0]
       positionX = col((slow,fast))-origin
@@ -155,7 +156,7 @@ if __name__=="__main__":
        #try:
         npos_angle += 1
         millerd[asu[x]]=millerd.get(asu[x],0)+1
-        print "%20s,asu %20s"%(str(hkl[x]),str(asu[x])),
+        print("%20s,asu %20s"%(str(hkl[x]),str(asu[x])), end=' ')
         sb = shoe[x]
         nsb = sb.mask.size()
         for c in range(nsb):
@@ -225,22 +226,22 @@ if __name__=="__main__":
        #except Exception as e:
          #print "Skipping with Exception",e
     import pickle
-    print "pickling",result
+    print("pickling",result)
     pickle.dump(result,open("data.pickle","ab"))
 
-  print "Number of images %d; of all spots %d; of in-resolution spots %d; in position %d"%(
-    nitem, nall_spots, nres_range, npos_angle)
-  print "Valid foreground pixels: %d. Number of Miller indices: %d"%(nVF, len(millerd.keys()))
-  print "Average",  npos_angle/nitem,"spots/image"
-  print "Average",  npos_angle/len(millerd.keys()), "observations/Miller index"
-  print "Average",  nVF/npos_angle," valid foreground pixels /spot"
+  print("Number of images %d; of all spots %d; of in-resolution spots %d; in position %d"%(
+    nitem, nall_spots, nres_range, npos_angle))
+  print("Valid foreground pixels: %d. Number of Miller indices: %d"%(nVF, len(millerd)))
+  print("Average",  npos_angle/nitem,"spots/image")
+  print("Average",  npos_angle/len(millerd), "observations/Miller index")
+  print("Average",  nVF/npos_angle," valid foreground pixels /spot")
   nfreq = 0
-  print "Analyze Miller indices observed more than 30 times"
+  print("Analyze Miller indices observed more than 30 times")
   for key in millerd:
     if millerd[key]>30:
-      print key, millerd[key]
+      print(key, millerd[key])
       nfreq+=1
-  print "Total of %d observed > 30 times"%nfreq
+  print("Total of %d observed > 30 times"%nfreq)
 
 # 1. why are the two dictionaries of differing lengths
 # 2. why are the imshows inconsistent with green curves

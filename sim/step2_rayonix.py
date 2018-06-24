@@ -75,4 +75,4 @@ if __name__=="__main__":
   import sys
   make_plots = "--plot" in sys.argv
   tst_all(make_plots)
-  print "OK"
+  print("OK")

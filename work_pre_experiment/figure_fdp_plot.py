@@ -1,4 +1,5 @@
-from __future__ import division, absolute_import
+from __future__ import division, absolute_import, print_function
+from six.moves import range
 from scitbx.array_family import flex
 
 class csv:
@@ -12,7 +13,7 @@ class csv:
       lines = F.readlines()
       for line in lines:
         tokens = [float(f) for f in line.strip().split(",")]
-        print tokens
+        print(tokens)
         self.energy.append(tokens[0])
         self.red_fp.append(tokens[1])
         self.red_fdp.append(tokens[2])
@@ -20,9 +21,9 @@ class csv:
         self.ox_fdp.append(tokens[4])
   def plot_them(self,plt,energies):
     keys = [ round(e,0) for e in energies if e >= 7070. and e<7201.]
-    print keys
+    print(keys)
     elist = list(self.energy)
-    print elist
+    print(elist)
     lookup = [ elist.index(key) for key in keys]
     plt.plot(elist, [ -self.red_fp[idx] for idx in lookup ], "b.")
     plt.plot(elist, [ self.red_fdp[idx] for idx in lookup ], "b.")
@@ -55,11 +56,11 @@ if __name__=="__main__":
   from LS49.spectra.generate_spectra import spectra_simulation
   SS = spectra_simulation()
   iterator = SS.generate_recast_renormalized_image(image=0,energy=7150.,total_flux=1e12)
-  T = iterator.next()
+  T = next(iterator)
   energies = list(12398.425/T[0])
   lambd = list(T[0])
 
-  energies = flex.double(xrange(7000,7300))
+  energies = flex.double(range(7000,7300))
   lambd = 12398.425/energies
 
 

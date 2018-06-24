@@ -1,4 +1,5 @@
-from __future__ import division
+from __future__ import division, print_function
+from six.moves import range
 #source /reg/g/psdm/etc/psconda.sh
 from psana import *
 import numpy as np
@@ -19,14 +20,14 @@ for nevent,evt in enumerate(ds.events()):
     # create an "assembled" 2D image (including "fake pixels" in gaps)
     img = det.image(evt)
     if img is None:
-      print 'None',nevent
+      print('None',nevent)
       continue
     ebeam = ebeamDet.get(evt)
     if ebeam is None:
-      print 'None ebeam',nevent
+      print('None ebeam',nevent)
       continue
     with_energy+=1
-    print nevent, ebeam.ebeamPhotonEnergy(),with_energy
+    print(nevent, ebeam.ebeamPhotonEnergy(),with_energy)
 
     import matplotlib.pyplot as plt
     #from IPython import embed; embed()
@@ -37,23 +38,23 @@ for nevent,evt in enumerate(ds.events()):
     summed  = img.sum(axis=0)
     lower = summed[0:50].mean()
     upper = summed[-50:].mean()
-    baseline = (np.array(xrange(len(summed)))/len(summed))*(upper-lower)+lower
+    baseline = (np.array(range(len(summed)))/len(summed))*(upper-lower)+lower
     min_summed = np.min(summed)
-    print "minimum ",min_summed
+    print("minimum ",min_summed)
     real = np.array(list(summed-baseline))
     #from IPython import embed; embed()
     #plt.plot(xrange(len(real)), real, 'r-')
     #plt.show()
     fr = np.fft.rfft(real)
-    print type(fr), len(real)/2, len(fr.real)
+    print(type(fr), len(real)/2, len(fr.real))
     #plt.plot(xrange(len(fr.real)), fr.real, 'b-')
     #plt.show()
     #low_pass_fr:
-    for x in xrange(len(fr)/4, len(fr)):
+    for x in range(len(fr)/4, len(fr)):
       fr[x]=0.+0.j
     filtered_real = np.fft.irfft(fr)
     # get the expectation value of the index
-    numerator = np.sum( xrange(len(filtered_real)) * filtered_real )
+    numerator = np.sum( range(len(filtered_real)) * filtered_real )
     denominator = np.sum( filtered_real )
     mean_index = numerator/denominator
     maxplot = np.max(filtered_real)

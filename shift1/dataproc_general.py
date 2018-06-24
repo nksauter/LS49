@@ -1,4 +1,5 @@
-from __future__ import division
+from __future__ import division, print_function
+from six.moves import range
 #source /reg/g/psdm/etc/psconda.sh
 from psana import *
 import numpy as np
@@ -8,7 +9,7 @@ proposal = sys.argv[1]
 
 def gen_ls49(ds):
   for run in ds.runs():
-    print run
+    print(run)
     times = run.times()
     for nevent, t in enumerate(times):
       evt = run.event(t)
@@ -24,7 +25,7 @@ class calib_A(linear_fit):
   def ebeam_as_detidx(self,y):
     return (1./self.m)*y - (self.c/self.m)
   def plot(self,plt):
-    print "expidx vs ebeam energy"
+    print("expidx vs ebeam energy")
     e1 = self.detidx_as_ebeam(200.)
     e2 = self.detidx_as_ebeam(1800.)
     idx1 = self.ebeam_as_detidx(e1)
@@ -36,7 +37,7 @@ class calib_A(linear_fit):
 class GaussFit:
   def __init__(self,data):
     self.data = data
-    numerator = np.sum( xrange(len(self.data)) * self.data )
+    numerator = np.sum( range(len(self.data)) * self.data )
     denominator = np.sum( self.data )
     self.mean_index = numerator/denominator
     sqnum = np.zeros(len(self.data))
@@ -70,14 +71,14 @@ for nevent,evt,time in sources[proposal]["gen"](ds):
     # create an "assembled" 2D image (including "fake pixels" in gaps)
     img = det.image(evt)
     if img is None:
-      print 'None',nevent
+      print('None',nevent)
       continue
     ebeam = ebeamDet.get(evt)
     if ebeam is None:
-      print 'None ebeam',nevent
+      print('None ebeam',nevent)
       continue
     with_energy+=1
-    print "Nevent %d, energy %8.2feV, w/energy=%d"%(nevent, ebeam.ebeamPhotonEnergy(),with_energy)
+    print("Nevent %d, energy %8.2feV, w/energy=%d"%(nevent, ebeam.ebeamPhotonEnergy(),with_energy))
 
     import matplotlib.pyplot as plt
     #plt.imshow(img,vmin=-2,vmax=2) # normalization of luminance (doesnt work)
@@ -89,31 +90,31 @@ for nevent,evt,time in sources[proposal]["gen"](ds):
     summed  = img.sum(axis=0)
     lower = summed[0:50].mean()
     upper = summed[-50:].mean()
-    baseline = (np.array(xrange(len(summed)))/len(summed))*(upper-lower)+lower # baseline uses the left & right edges
+    baseline = (np.array(range(len(summed)))/len(summed))*(upper-lower)+lower # baseline uses the left & right edges
     min_summed = np.min(summed)
     #print "minimum ",min_summed
     real = np.array(list(summed-baseline))
     if plots>4:
-      plt.plot(xrange(len(real)), real, 'r-')
+      plt.plot(range(len(real)), real, 'r-')
       plt.show() # show baseline-corrected spectrum
 
     fr = np.fft.rfft(real)
     #print type(fr), len(real)//2, len(fr.real)
     if plots>5:
-      plt.plot(xrange(len(fr.real)), fr.real, 'b-')
+      plt.plot(range(len(fr.real)), fr.real, 'b-')
       plt.show()
     #low_pass_fr: # highest 3/4 are zeroed out
-    for x in xrange(len(fr)//4, len(fr)):
+    for x in range(len(fr)//4, len(fr)):
       fr[x]=0.+0.j
     filtered_real = np.fft.irfft(fr)
     # get the expectation value of the index
-    numerator = np.sum( xrange(len(filtered_real)) * filtered_real )
+    numerator = np.sum( range(len(filtered_real)) * filtered_real )
     denominator = np.sum( filtered_real )
     mean_index = numerator/denominator
     maxplot = np.max(filtered_real)
     if plots>3:
       #plt.plot(xrange(len(real)), real, 'r-')
-      plt.plot(xrange(len(filtered_real)), filtered_real, 'g-')
+      plt.plot(range(len(filtered_real)), filtered_real, 'g-')
       plt.plot([mean_index,mean_index],[0.15*maxplot, 1.05*maxplot],'k-')
       plt.show()
     expidx.append(mean_index)
@@ -138,10 +139,10 @@ statsA = GaussFit(sumspectra)
 meanE = CA.detidx_as_ebeam(statsA.mean_index)
 fullheight = sumspectra[int(statsA.mean_index)]
 plt.plot([meanE,meanE],[0.,fullheight],'r-')
-print "Mean energy %8.2feV"%meanE
+print("Mean energy %8.2feV"%meanE)
 lower = CA.detidx_as_ebeam(statsA.mean_index- statsA.stddevidx)
 upper = CA.detidx_as_ebeam(statsA.mean_index+ statsA.stddevidx)
-print "Full width %8.2feV"%(upper-lower)
+print("Full width %8.2feV"%(upper-lower))
 plt.plot([lower,upper],[fullheight/2.,fullheight/2.],'r-')
 
 plt.plot(xenergy,sumspectra,"b-")

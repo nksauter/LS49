@@ -1,4 +1,5 @@
 from __future__ import print_function, division
+from six.moves import range
 from scitbx.matrix import col,sqr
 from dials.algorithms.shoebox import MaskCode
 from scitbx.array_family import flex
@@ -42,13 +43,13 @@ def plot_energy_scale_noplot(SS,d_Ang,abs_PA,origin,position0,B,intensity_lookup
     spectrumy_1.append(specy_1)
 
   iterator = SS.generate_recast_renormalized_image(image=key,energy=7120.,total_flux=1e12)
-  wavlen, flux, wavelength_A = iterator.next() # list of lambdas, list of fluxes, average wavelength
+  wavlen, flux, wavelength_A = next(iterator) # list of lambdas, list of fluxes, average wavelength
   # the "flux" is the spectrum from the FEE spectrometer (simulated)
 
   combined_model = flex.double()
   incident_xaxis = 12398.425/wavlen
   int_ix = [int (ix) for ix in incident_xaxis]
-  for ic in xrange(len(spectrumx)):
+  for ic in range(len(spectrumx)):
     ic_idx = int_ix.index(spectrumx[ic])
     combined_model.append(flux[ic_idx] * spectrumy_1[ic])
   cscale = max(spectrumy)/max(combined_model)
@@ -60,7 +61,7 @@ def plot_energy_scale_noplot(SS,d_Ang,abs_PA,origin,position0,B,intensity_lookup
   # combined model is the partiality x Icalc x spectrum, projected
 
 def parse_postrefine():
-  lines = open("/net/dials/raid1/sauter/LS49_merge/merge5_redo2.log").xreadlines()
+  lines = open("/net/dials/raid1/sauter/LS49_merge/merge5_redo2.log")
   result = {}
   for line in lines:
     if "ASTAR" not in line: continue
@@ -91,7 +92,7 @@ def get_items(myrank):
     E = ExperimentListFactory.from_json_file(json_glob%key,check_format=False)[0]
     C = E.crystal
     C.show()
-    import cPickle as pickle
+    from six.moves import cPickle as pickle
     T = pickle.load(open(pickle_glob%key,"rb"))
     resolutions = T["d"]
     millers = T["miller_index"]
@@ -184,7 +185,7 @@ if __name__=="__main__":
     shoe = item["shoebox"].select(iselect)
     intensity_lookup ={}
     intensity_lookup_1 ={}
-    for x in xrange(len(hkl)):
+    for x in range(len(hkl)):
       slow = xyz[x][1]
       fast = xyz[x][0]
       positionX = col((slow,fast))-origin

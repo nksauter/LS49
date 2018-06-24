@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 import psana
 ds = psana.DataSource('exp=cxig3614:run=201')
 det = psana.Detector('Ds1CsPad')
@@ -19,7 +19,7 @@ for nevent,evt in enumerate(ds.events()):
     img = det.image(evt)
     #from IPython import embed; embed()
     if img is None:
-      print nevent,"None"; continue
+      print(nevent,"None"); continue
     ##-----------------------------
     # graphics
     axim.cla()                                         # clear image axes if necessary...

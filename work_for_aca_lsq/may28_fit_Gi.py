@@ -3,7 +3,7 @@ from __future__ import division
 from cctbx.array_family import flex
 from six.moves import cPickle as pickle
 from six.moves import range
-from make_model_obs_28 import GM # implicit import
+from LS49.work_for_aca_lsq.make_model_obs_28 import GM # implicit import
 from matplotlib import pyplot as plt
 
 def test_Gi_factor(G):
@@ -15,7 +15,7 @@ def test_Gi_factor(G):
     print (key,"of",len(G.images_strong),G.images_Gi[key])
     #trying here to plot the Gi against the integrated spectrum for each event.
     iterator = SS.generate_recast_renormalized_image(image=key,energy=7120.,total_flux=1e12)
-    wavlen, flux, wavelength_A = iterator.next() # list of lambdas, list of fluxes, average wavelength
+    wavlen, flux, wavelength_A = next(iterator) # list of lambdas, list of fluxes, average wavelength
     total_flux = flex.sum(flux)
     x.append(total_flux)
     y.append(G.images_Gi[key])

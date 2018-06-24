@@ -1,4 +1,4 @@
-from __future__ import division, absolute_import
+from __future__ import division, absolute_import, print_function
 from libtbx.phil import parse
 import libtbx.load_env
 from scitbx.matrix import sqr
@@ -45,15 +45,15 @@ class Script:
     # Parse the command line arguments
     params, options = self.parser.parse_args(show_diff_phil=True)
     self.params = params
-    print params.input.experiments
+    print(params.input.experiments)
 
     EC = ExperimentListFactory.from_json_file(T1,check_format=False)[0].crystal
     EC.show()
     direct_A = EC.get_A_inverse_as_sqr()
-    print direct_A
+    print(direct_A)
     permute = sqr((0,0,1,0,1,0,-1,0,0))
     sim_compatible = direct_A*permute # permute columns when post multiplying
-    print sim_compatible
+    print(sim_compatible)
 
 if __name__ == '__main__':
 

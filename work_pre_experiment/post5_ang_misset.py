@@ -1,4 +1,4 @@
-from __future__ import division, absolute_import
+from __future__ import division, absolute_import, print_function
 from scitbx.array_family import flex
 from scitbx.matrix import sqr
 from dxtbx.format.Registry import Registry
@@ -34,7 +34,7 @@ def get_items():
       continue
 
 def parse_postrefine():
-  lines = open("/net/dials/raid1/sauter/LS49_merge/merge5_redo2.log").xreadlines()
+  lines = open("/net/dials/raid1/sauter/LS49_merge/merge5_redo2.log")
   result = {}
   for line in lines:
     if "ASTAR" not in line: continue
@@ -53,13 +53,13 @@ def parse_postrefine():
 
 if __name__=="__main__":
   postrefined = parse_postrefine()
-  print len(postrefined),"postrefined files"
+  print(len(postrefined),"postrefined files")
 
   pdb_lines = open("/net/dials/raid1/sauter/LS49/1m2a.pdb","r").read()
   from LS49.sim.util_fmodel import gen_fmodel
   GF = gen_fmodel(resolution=3.0,pdb_text=pdb_lines,algorithm="fft",wavelength=1.7)
   CB_OP_C_P = GF.xray_structure.change_of_basis_op_to_primitive_setting() # from C to P
-  print str(CB_OP_C_P)
+  print(str(CB_OP_C_P))
 
   icount=0
   from scitbx.array_family import flex
@@ -67,7 +67,7 @@ if __name__=="__main__":
   for stuff in get_items():
     #print stuff
     icount+=1
-    print "Iteration",icount
+    print("Iteration",icount)
     # work up the crystal model from integration
     direct_A = stuff["integrated_crystal_model"].get_A_inverse_as_sqr()
     permute = sqr((0,0,1,0,1,0,-1,0,0))
@@ -94,13 +94,13 @@ if __name__=="__main__":
     cb_op_align = integrated_Ori.best_similarity_transformation(C2_ground_truth,50,1)
     aligned_Ori = integrated_Ori.change_basis(sqr(cb_op_align))
     aligned_Ori.show(legend="integrated, aligned")
-    print "alignment matrix", cb_op_align
+    print("alignment matrix", cb_op_align)
 
     # align postref model with ground truth
     cb_op_align = postref_Ori.best_similarity_transformation(C2_ground_truth,50,1)
     alipost_Ori = postref_Ori.change_basis(sqr(cb_op_align))
     alipost_Ori.show(legend="postrefined, aligned")
-    print "alignment matrix", cb_op_align
+    print("alignment matrix", cb_op_align)
 
     from libtbx.test_utils import approx_equal
     U_postref = alipost_Ori.get_U_as_sqr()
@@ -124,5 +124,5 @@ if __name__=="__main__":
     hyp = flex.mean(flex.double((aoff,boff,coff)))
 
     angles.append(hyp)
-    print "Item %5d angular offset is %12.9f deg."%(icount,hyp)
-  print "RMSD", math.sqrt(flex.mean(angles*angles))
+    print("Item %5d angular offset is %12.9f deg."%(icount,hyp))
+  print("RMSD", math.sqrt(flex.mean(angles*angles)))

@@ -1,4 +1,5 @@
-from __future__ import division
+from __future__ import division, print_function
+from six.moves import range
 #source /reg/g/psdm/etc/psconda.sh
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,17 +14,17 @@ class linear_fit:
   def __init__(self,data):
     self.x = data["expidx"]
     self.y = data["energy"]
-    print len(self.x)
-    print len(self.y)
+    print(len(self.x))
+    print(len(self.y))
     # y = Ap, where A = [[x 1]] and p = [[m], [c]]
     A = np.vstack([self.x, np.ones(len(self.x))]).T
     self.m,self.c = np.linalg.lstsq(A,self.y)[0]
     # y = mx + c
     # x = (1./m) y - (c/m)
   def get_residuals(self):
-    print len(self.y)
+    print(len(self.y))
     calc_idx = (1./self.m)*np.array(self.y) - (self.c/self.m)
-    print len(calc_idx)
+    print(len(calc_idx))
     return self.x - calc_idx
 
 if __name__=="__main__":
@@ -43,11 +44,11 @@ if __name__=="__main__":
   plt.show()
 
   residuals = LF.get_residuals()
-  for image in xrange(len(R["energy"])):
+  for image in range(len(R["energy"])):
     break
     if abs(residuals[image])>75:
-      print image,residuals[image],R["energy"][image]
-      plt.plot(xrange(len(R['spectra'][image])),R['spectra'][image],"b-")
+      print(image,residuals[image],R["energy"][image])
+      plt.plot(range(len(R['spectra'][image])),R['spectra'][image],"b-")
       plt.show()
 
   # plot the fitted mean energies, y = mx+c
@@ -62,19 +63,19 @@ if __name__=="__main__":
   plt.show()
 
   # show a random spectrum
-  spectrum_fitted_energy = LF.m * np.array(xrange(len(R['spectra'][200]))) + LF.c
+  spectrum_fitted_energy = LF.m * np.array(range(len(R['spectra'][200]))) + LF.c
   plt.title('Random spectrum from LG36, run 209 (event 200)')
-  #plt.plot(xrange(len(R['spectra'][200])),R['spectra'][200],"r-")
+  #plt.plot(range(len(R['spectra'][200])),R['spectra'][200],"r-")
   plt.plot(spectrum_fitted_energy,R['spectra'][200],"r-")
   plt.xlabel('Energy (eV)')
   plt.show()
 
   # all spectra added up
   sum_spectrum = np.array(R['spectra'][0])
-  for x in xrange(1,100000):
+  for x in range(1,100000):
     sum_spectrum += np.array(R['spectra'][x])
   plt.title('Average spectrum over LG36, run 209, 100000 events')
-  #plt.plot(xrange(len(R['spectra'][200])),R['spectra'][200],"r-")
+  #plt.plot(range(len(R['spectra'][200])),R['spectra'][200],"r-")
   plt.plot(spectrum_fitted_energy,sum_spectrum,"b-")
   plt.xlabel('Energy (eV)')
   plt.xlim([7040,7140])

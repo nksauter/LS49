@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 
 def hisym_fcalc_from_pdb(resolution,pdb_text,algorithm=None,wavelength=0.9):
   from iotbx import pdb
@@ -132,10 +132,10 @@ class gen_fmodel:
       if label_has in sc.label:
         newfp,newfdp = tables.fp_fdp_at_wavelength(angstroms=newvalue)
         if verbose:
-          print "found",sc.element_symbol(),"label",sc.label,
+          print("found",sc.element_symbol(),"label",sc.label, end=' ')
           lookup_energy=12398.425/newvalue
-          print lookup_energy,
-          print "old",sc.fp,sc.fdp,"new",newfp,newfdp
+          print(lookup_energy, end=' ')
+          print("old",sc.fp,sc.fdp,"new",newfp,newfdp)
         sc.fp = newfp
         sc.fdp = newfdp
   def get_amplitudes(self):

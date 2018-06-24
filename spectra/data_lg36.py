@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 #source /reg/g/psdm/etc/psconda.sh
 from psana import *
 ds = DataSource('exp=cxig3614:run=210')
@@ -13,12 +13,12 @@ for nevent,evt in enumerate(ds.events()):
     # create an "assembled" 2D image (including "fake pixels" in gaps)
     img = det.image(evt)
     if img is None:
-      print 'None',nevent
+      print('None',nevent)
       continue
     #break
     ebeam = ebeamDet.get(evt)
 
-    print nevent, ebeam.ebeamPhotonEnergy()
+    print(nevent, ebeam.ebeamPhotonEnergy())
     #if img.mean() < 10: continue
     import matplotlib.pyplot as plt
     #from IPython import embed; embed()

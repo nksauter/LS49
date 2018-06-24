@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import division
+from six.moves import range
 from cctbx.array_family import flex
 import glob
 from six.moves import cPickle as pickle
@@ -65,7 +66,7 @@ def test_Gi_factor(G):
     print (key,"of",len(G.images_strong),G.images_Gi[key])
     #trying here to plot the Gi against the integrated spectrum for each event.
     iterator = SS.generate_recast_renormalized_image(image=key,energy=7120.,total_flux=1e12)
-    wavlen, flux, wavelength_A = iterator.next() # list of lambdas, list of fluxes, average wavelength
+    wavlen, flux, wavelength_A = next(iterator) # list of lambdas, list of fluxes, average wavelength
     total_flux = flex.sum(flux)
     x.append(total_flux)
     y.append(G.images_Gi[key])
@@ -118,7 +119,7 @@ if __name__=="__main__":
     #print (si, M[sel0[si]], W2i[sel1[si]], W2i[sel0unique[W2i[sel1[si]]]])
 
   per_HKL_I = {}
-  for iE,Energy in enumerate(xrange(7090,7151)):
+  for iE,Energy in enumerate(range(7090,7151)):
     if Energy%10==0: print (Energy)
     W = 12398.425/Energy
     GF.reset_wavelength(W)
@@ -129,7 +130,7 @@ if __name__=="__main__":
     data = this_energy_Fmodel.data()
     if iE==0:
       for key in millers: per_HKL_I[key]=flex.double()
-    for ikey in xrange(len(millers)):
+    for ikey in range(len(millers)):
       if millers[ikey] in per_HKL_I:
         per_HKL_I[millers[ikey]].append(data[ikey])
   exit()
@@ -157,7 +158,7 @@ if __name__=="__main__":
   result_energies = flex.double()
   result_FE1_fpfdp = flex.vec2_double()
   result_FE2_fpfdp = flex.vec2_double()
-  for iE,Energy in enumerate(xrange(7110,7131)):
+  for iE,Energy in enumerate(range(7110,7131)):
     Eidx = iE+20 # index into the G arrays, for that particular energy
     try:
       A = lbfgs_fpfdp_fit(energy = Energy, all_data = G, Eidx = Eidx)

@@ -1,5 +1,6 @@
 from __future__ import print_function, absolute_import
 from __future__ import division
+from six.moves import range
 from cctbx.array_family import flex
 
 class gen_fmodel:
@@ -175,7 +176,7 @@ if __name__=="__main__":
   UC = Fe1zcalc.unit_cell()
   x = flex.double()
   y = flex.double()
-  for i in xrange(len(Fe1calc.indices())):
+  for i in range(len(Fe1calc.indices())):
     K1 = Fe1calc.data()[i]
     K2 = Fe1zcalc.data()[i]
     lhs = (K1/K2)-1.

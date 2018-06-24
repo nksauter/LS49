@@ -1,5 +1,6 @@
 from __future__ import print_function, absolute_import
 from __future__ import division
+from six.moves import range
 from cctbx.array_family import flex
 import pickle
 from LS49.sim.util_fmodel import gen_fmodel
@@ -69,12 +70,12 @@ if __name__=="__main__":
   #@oxidized_ratio = W2_oxidized.select(sel0) / W1_oxidized.select(sel0)
   #reduced_ratio = W2_reduced.select(sel0) / W1_reduced.select(sel0)
 
-  for x in xrange(100):
+  for x in range(100):
     print ("%20s %8.1f %8.1f"%(idx[x],W2_ox[x],W2_re[x]))
   ox_grid = flex.double(flex.grid(100,100))
   re_grid = flex.double(flex.grid(100,100))
-  for ix in xrange(100):
-    for iy in xrange(100):
+  for ix in range(100):
+    for iy in range(100):
       ox_grid[(ix,iy)]=W2_ox[ix]/W2_ox[iy]
       re_grid[(ix,iy)]=W2_re[ix]/W2_re[iy]
   effect = ox_grid/re_grid

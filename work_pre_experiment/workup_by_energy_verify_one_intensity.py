@@ -1,5 +1,6 @@
 from __future__ import print_function, absolute_import
 from __future__ import division
+from six.moves import range
 from cctbx.array_family import flex
 import pickle,glob
 import scitbx
@@ -42,7 +43,7 @@ def lsq_target_function(title,label_table,images_Gi,genfmodel,genmiller):
 
   per_energy_I = {}
   per_HKL_I = {}
-  for iE,Energy in enumerate(xrange(7090,7151)):
+  for iE,Energy in enumerate(range(7090,7151)):
     if Energy%10==0: print (Energy)
     W = 12398.425/Energy
     genfmodel.reset_wavelength(W)
@@ -50,14 +51,14 @@ def lsq_target_function(title,label_table,images_Gi,genfmodel,genmiller):
       genfmodel.reset_specific_at_wavelength(label_has=sitekey,tables=label_table[sitekey],newvalue=W)
     W_state = genfmodel.get_intensities()
     W2i = W_state.indices()
-    matches = miller.match_indices(genmiller.asu.keys(),W2i)
+    matches = miller.match_indices(list(genmiller.asu.keys()),W2i)
     sel0 = flex.size_t([p[0] for p in matches.pairs()])
     sel1 = flex.size_t([p[1] for p in matches.pairs()])
     selected_I = W_state.data().select(sel1)
     selected_H = W_state.indices().select(sel1)
     if iE==0:
       for key in selected_H: per_HKL_I[key]=flex.double()
-    for ikey in xrange(len(selected_H)):
+    for ikey in range(len(selected_H)):
       per_HKL_I[selected_H[ikey]].append(selected_I[ikey])
     per_energy_I[Energy] = selected_I
   # that gives all intensities at all energies
@@ -95,7 +96,7 @@ class lbfgs_fpfdp_fit:
 
     #W_state = self.intensity # 8437 ASU keys possible
     #W2i = self.miller
-    K = self.G.asu.keys() #2677 unique keys visited in the dataset
+    K = list(self.G.asu.keys()) #2677 unique keys visited in the dataset
     #from IPython import embed; embed()
     #matches = miller.match_indices(self.G.asu.keys(),self.miller) # HKL of the data, HKL of the pdb model
     #sel0 = flex.size_t([p[0] for p in matches.pairs()])
@@ -154,7 +155,7 @@ class lbfgs_fpfdp_fit:
     inn = len(debug_d1_naught)
     A = (debug_I_one-debug_I_naught)/0.0001
     B = (self.intensity - self.intensity0)/0.0001
-    for ix in xrange(inn):
+    for ix in range(inn):
       print (ix,A[ix],debug_d1_naught[ix]) # correct result at level of sorted HKL
       #print (ix,self.miller[ix],B[ix],self.d1[ix]) # correct result at the level of all HKL
     #Now can we please verify derivatives for the residual?
@@ -214,7 +215,7 @@ if __name__=="__main__":
 
   per_energy_I = {}
   per_HKL_I = {}
-  for iE,Energy in enumerate(xrange(7090,7151)):
+  for iE,Energy in enumerate(range(7090,7151)):
     if Energy%10==0: print (Energy)
     W = 12398.425/Energy
     GF.reset_wavelength(W)
@@ -222,14 +223,14 @@ if __name__=="__main__":
     GF.reset_specific_at_wavelength(label_has="FE2",tables=Fe_reduced_model,newvalue=W)
     W_reduced = GF.get_intensities()
     W2i = W_reduced.indices()
-    matches = miller.match_indices(G.asu.keys(),W2i)
+    matches = miller.match_indices(list(G.asu.keys()),W2i)
     sel0 = flex.size_t([p[0] for p in matches.pairs()])
     sel1 = flex.size_t([p[1] for p in matches.pairs()])
     selected_I = W_reduced.data().select(sel1)
     selected_H = W_reduced.indices().select(sel1)
     if iE==0:
       for key in selected_H: per_HKL_I[key]=flex.double()
-    for ikey in xrange(len(selected_H)):
+    for ikey in range(len(selected_H)):
       per_HKL_I[selected_H[ikey]].append(selected_I[ikey])
     per_energy_I[Energy] = selected_I
   # that gives all intensities at all energies
@@ -253,7 +254,7 @@ if __name__=="__main__":
   result_energies = flex.double()
   result_FE1_fpfdp = flex.vec2_double()
   result_FE2_fpfdp = flex.vec2_double()
-  for iE,Energy in enumerate(xrange(7110,7131)):
+  for iE,Energy in enumerate(range(7110,7131)):
     if Energy !=7122 and Energy !=7123: continue
     Eidx = iE+20 # index into the G arrays, for that particular energy
     try:

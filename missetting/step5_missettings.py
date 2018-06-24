@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 from scitbx.array_family import flex # implicit import
 from scitbx.matrix import sqr,col
 from xfel.command_line.print_pickle import generate_data_from_streams
@@ -28,7 +28,7 @@ def get_items():
     ABC = Z[1]["DIRECT_SPACE_ABC"]
     abc = tuple([float(a) for a in ABC.split(",")])
     G = generate_data_from_streams([item])
-    stills_process = G.next()
+    stills_process = next(G)
     yield(dict(serial_no=serial_no,ABC=abc,stills_process=stills_process))
     #for key in stills_process:
     #  print key, stills_process[key]
@@ -44,7 +44,7 @@ def plot_unit_cell(ax,Ori):
   veca = col((direct[0],direct[1],direct[2]))
   vecb = col((direct[3],direct[4],direct[5]))
   vecc = col((direct[6],direct[7],direct[8]))
-  print "Lengths",veca.length(), vecb.length(),vecc.length()
+  print("Lengths",veca.length(), vecb.length(),vecc.length())
   pvec(zero,veca,'r')
   pvec(zero,vecb,'g')
   pvec(zero,vecc,'b')
@@ -76,23 +76,23 @@ if __name__=="__main__":
   LI = sqr((0,0,1,1,0,0,0,1,0))
 
   for stuff in get_items():
-    print stuff
-    print
-    print stuff["ABC"]
+    print(stuff)
+    print()
+    print(stuff["ABC"])
     dx_cryst = Crystal(real_space_a=stuff["ABC"][0:3],
                        real_space_b=stuff["ABC"][3:6],
                        real_space_c=stuff["ABC"][6:9],
                        space_group_symbol="C 2")
     Ori = crystal_orientation.crystal_orientation(
       sqr(stuff["ABC"]), crystal_orientation.basis_type.direct)
-    print Ori.unit_cell().parameters()
+    print(Ori.unit_cell().parameters())
     #from IPython import embed; embed()
     sim_U = Ori.crystal_rotation_matrix()
 
     refined_ori = stuff["stills_process"]["current_orientation"][0]
     ground_truth_ori = Ori.change_basis(CB_OP_C.inverse())
-    print "refined ori", refined_ori.unit_cell().parameters()
-    print "truth ori  ", ground_truth_ori.unit_cell().parameters()
+    print("refined ori", refined_ori.unit_cell().parameters())
+    print("truth ori  ", ground_truth_ori.unit_cell().parameters())
 
     DD = ground_truth_ori.best_similarity_transformation(refined_ori,1000,1)
     ground_truth_similar_ori = ground_truth_ori.change_basis(sqr(DD))
@@ -100,7 +100,7 @@ if __name__=="__main__":
     ground_truth_u = ground_truth_similar_ori.crystal_rotation_matrix()
     #missetting_rot = refined_ori.reciprocal_matrix() * ground_truth_ori.reciprocal_matrix().inverse()
     missetting_rot = sqr(refined_ori.direct_matrix()) * sqr(ground_truth_ori.direct_matrix()).inverse()
-    print "deter",missetting_rot.determinant()
+    print("deter",missetting_rot.determinant())
     from LS49.missetting.mark0 import ScoringContainer
     SC = ScoringContainer()
     SC.model = refined_ori
@@ -108,8 +108,8 @@ if __name__=="__main__":
     angle_deg = SC.angular_rotation()*180./math.pi
     #print missetting_rot.elems
     angle,axis = missetting_rot.r3_rotation_matrix_as_unit_quaternion().unit_quaternion_as_axis_and_angle(deg=True)
-    print "Angle %8.5f degrees"%angle
-    print angle
+    print("Angle %8.5f degrees"%angle)
+    print(angle)
     import matplotlib as mpl
     from mpl_toolkits.mplot3d import Axes3D # import dependency
     import numpy as np
@@ -132,7 +132,7 @@ if __name__=="__main__":
     ax.plot(zeros,zeros,unit,c='b',label="z-axis")
     ax.legend()
     test = R90*LI*LI
-    print "Test",test.determinant()
+    print("Test",test.determinant())
     trial_ori = ground_truth_ori.change_basis(test)
     #plot_unit_cell(ax,ground_truth_ori)
     plot_unit_cell(ax,trial_ori)
