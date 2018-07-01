@@ -35,6 +35,7 @@ class gen_fmodel:
     if self.method=="f_model":
       import mmtbx.command_line.fmodel
       phil2 = mmtbx.command_line.fmodel.fmodel_from_xray_structure_master_params
+      #phil2.show()
       params2 = phil2.extract()
       # adjust the cutoff of the generated intensities to assure that
       # statistics will be reported to the desired high-resolution limit
@@ -44,6 +45,9 @@ class gen_fmodel:
       params2.fmodel.k_sol = kwargs["k_sol"]
       params2.fmodel.b_sol = kwargs["b_sol"]
       params2.structure_factors_accuracy.algorithm = kwargs["algorithm"]
+      params2.structure_factors_accuracy.grid_resolution_factor = kwargs["grid_resolution_factor"]
+      if kwargs["k_sol"]>0 and kwargs["b_sol"]>0:
+        params2.mask.grid_step_factor = kwargs["grid_step_factor"]
       self.params2 = params2
 
   def make_P1_primitive(self):
@@ -113,7 +117,9 @@ def get_unit_cell():
     return xray_structure.unit_cell()
 
 def run(**kwargs):
-  # the kwargs are: sfall<f_calc|f_model>, k_sol, b_sol, algorithm<direct|fft>
+  # the kwargs are: sfall<f_calc|f_model>, k_sol, b_sol, algorithm<direct|fft>,
+  # grid_resolution_factor <as in f_model/f_model> default 1/3.
+  # grid_step_factor <as in mmtbx/masks/__init__.py> default 4.
   print()
   print(kwargs)
   C2_model = reproduce_C2_model(resolution=global_res,**kwargs)
@@ -140,9 +146,29 @@ if __name__=="__main__":
   print (message)
   download_coords("1m2a")
   global_res = 1.7
+
   run(sfall="f_calc",algorithm="direct")
   run(sfall="f_calc",algorithm="fft")
-  run(sfall="f_model",k_sol=0.0,b_sol=0.0,algorithm="direct")
-  run(sfall="f_model",k_sol=0.0,b_sol=0.0,algorithm="fft")
-  run(sfall="f_model",k_sol=0.35,b_sol=46.,algorithm="direct")
-  run(sfall="f_model",k_sol=0.35,b_sol=46.,algorithm="fft")
+
+  print ("==========")
+  run(sfall="f_model",k_sol=0.0,b_sol=0.0,algorithm="direct",
+       grid_resolution_factor=1/3.)
+  run(sfall="f_model",k_sol=0.0,b_sol=0.0,algorithm="fft",
+      grid_resolution_factor=1/3.)
+  run(sfall="f_model",k_sol=0.0,b_sol=0.0,algorithm="fft",
+      grid_resolution_factor=1/5.)
+
+  print ("==========")
+  run(sfall="f_model",k_sol=0.35,b_sol=46.,algorithm="direct",
+      grid_resolution_factor=1/3.,grid_step_factor=4.)
+  run(sfall="f_model",k_sol=0.35,b_sol=46.,algorithm="fft",
+      grid_resolution_factor=1/3.,grid_step_factor=4.)
+  run(sfall="f_model",k_sol=0.35,b_sol=46.,algorithm="fft",
+      grid_resolution_factor=1/5.,grid_step_factor=4.)
+  print ("==========")
+  run(sfall="f_model",k_sol=0.35,b_sol=46.,algorithm="direct",
+      grid_resolution_factor=1/3.,grid_step_factor=10.)
+  run(sfall="f_model",k_sol=0.35,b_sol=46.,algorithm="fft",
+      grid_resolution_factor=1/3.,grid_step_factor=10.)
+  run(sfall="f_model",k_sol=0.35,b_sol=46.,algorithm="fft",
+      grid_resolution_factor=1/5.,grid_step_factor=10.)
