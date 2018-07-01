@@ -7,9 +7,11 @@ import numpy as np
 import math
 from matplotlib import pyplot as plt
 
-json_glob = "/net/dials/raid1/sauter/LS49_integ_step5cori/idx-step5_MPIbatch_0%05d.img_integrated_experiments.json"
+#json_glob = "/net/dials/raid1/sauter/LS49_integ_step5cori/idx-step5_MPIbatch_0%05d.img_integrated_experiments.json"
+json_glob = "/global/cscratch1/sd/nksauter/proj-e/LS49_integ_step5/idx-step5_MPIbatch_0%05d.img_integrated_experiments.json"
 image_glob = "/net/dials/raid1/sauter/LS49/step5_MPIbatch_0%05d.img.gz"
-pickle_glob = "/net/dials/raid1/sauter/LS49_integ_step5cori/idx-step5_MPIbatch_0%05d.img_integrated.pickle"
+#pickle_glob = "/net/dials/raid1/sauter/LS49_integ_step5cori/idx-step5_MPIbatch_0%05d.img_integrated.pickle"
+pickle_glob = "/global/cscratch1/sd/nksauter/proj-e/LS49_integ_step5/idx-step5_MPIbatch_0%05d.img_integrated.pickle"
 
 #specialize this file to look at one particular index
 distance_mm = 141.7
@@ -61,7 +63,8 @@ def plot_energy_scale_noplot(SS,d_Ang,abs_PA,origin,position0,B,intensity_lookup
   # combined model is the partiality x Icalc x spectrum, projected
 
 def parse_postrefine():
-  lines = open("/net/dials/raid1/sauter/LS49_merge/merge5_redo2.log")
+  #lines = open("/net/dials/raid1/sauter/LS49_merge/merge5_redo2.log")
+  lines = open("./LS49_merge/merge5_redo2.log")
   result = {}
   for line in lines:
     if "ASTAR" not in line: continue
@@ -87,6 +90,7 @@ def get_items(myrank):
     #each rank should only allow keys in the range from myrank*N_stride to (myrank+1)*N_stride
     if key<myrank*N_stride: continue
     if key >= (myrank+1) * N_stride: continue
+    if key >= N_total : continue
 
     from dxtbx.model.experiment_list import ExperimentListFactory
     E = ExperimentListFactory.from_json_file(json_glob%key,check_format=False)[0]
@@ -120,9 +124,9 @@ if __name__=="__main__":
   else:
     import sys
     rank = int (sys.argv[1])
-    size=50
+    size=64
   N_total = 100000 # number of items to simulate
-  N_stride = 2000 # total number of tasks per rank
+  N_stride = 1563 # total number of tasks per rank
   print ("hello from rank %d of %d"%(rank,size))
 
   if (not usingMPI) or rank == 0:

@@ -6,6 +6,7 @@ from six.moves import range
 from LS49.work_for_aca_lsq.make_model_obs_28 import GM # implicit import
 from matplotlib import pyplot as plt
 
+
 def test_Gi_factor(G):
   from LS49.spectra.generate_spectra import spectra_simulation
   SS = spectra_simulation()
@@ -57,28 +58,37 @@ if __name__=="__main__":
 
   def method2_include_pehHKL_I_explicitly():
    # There's no reason why we can't get the Gi's by analytical least squares
-   for key in G.images_strong:
+   skeys = list(G.images_strong.keys())
+   skeys.sort()
+   for key in skeys:
+    print ("image",key)
     numerator = 0.; denominator = 0.
     nkeys = len(G.images_strong[key])
 
     for ikey, HKL in enumerate(G.images_strong[key]):
-      plt.subplot(nkeys,1,1+ikey)
+      #plt.subplot(nkeys,1,1+ikey)
       MD = G.images_strong[key][HKL]
-      print (HKL,MD,"7122 lookup",per_HKL_I_7122[HKL],per_HKL_I_7122[HKL]/MD["simtbx_intensity"])
-
-      plt.plot(range(7090,7151),MD["model"] * per_HKL_I[HKL] / MD["simtbx_intensity"],"k-")
-      plt.plot(range(7090,7151),1E10*MD["obs"],"r-")
+      #print (HKL,MD,"7122 lookup",per_HKL_I_7122[HKL],per_HKL_I_7122[HKL]/MD["simtbx_intensity"])
+      #plt.plot(range(7090,7151),MD["model"] * per_HKL_I[HKL] / MD["simtbx_intensity"],"k-")
+      #plt.plot(range(7090,7151),1E10*MD["obs"],"r-")
       terms1 = MD["model"] * per_HKL_I[HKL] / MD["simtbx_intensity"]
       terms2 = terms1 * terms1
       terms0 = MD["obs"] * terms1
       numerator+=flex.sum(terms0)
       denominator+=flex.sum(terms2)
-    plt.show()
     G.images_Gi[key]=numerator/denominator
+
+    for ikey, HKL in enumerate(G.images_strong[key]):
+      plt.subplot(nkeys,1,1+ikey)
+      MD = G.images_strong[key][HKL]
+      print (HKL,MD,"7122 lookup",per_HKL_I_7122[HKL],per_HKL_I_7122[HKL]/MD["simtbx_intensity"])
+      plt.plot(range(7090,7151),(G.images_Gi[key]) * MD["model"] * per_HKL_I[HKL] / MD["simtbx_intensity"],"b-")
+      plt.plot(range(7090,7151),MD["obs"],"r-")
+
+    plt.show()
     if key%100==0: print (key, "Gi:", G.images_Gi[key])
 
   method2_include_pehHKL_I_explicitly()
   print ("FINISHED LSQ GI, now testing against total flux")
   test_Gi_factor(G)
   """start here.  why are our Gi factors so screwed up?"""
-

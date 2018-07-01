@@ -2,6 +2,7 @@ from __future__ import print_function
 from __future__ import division
 from six.moves import range
 from cctbx.array_family import flex
+from LS49.work_for_aca_lsq.make_model_obs_28 import GM # implicit import
 import pickle
 import scitbx.lbfgs
 from LS49.work_pre_experiment.seriously_deal_with_f_derivatives import at_one_eV
@@ -46,13 +47,14 @@ class lbfgs_fpfdp_fit:
     for key in self.G.images_strong:  # 733 images
       for HKL in self.G.images_strong[key]:  # should be 3414 terms visited in the double loop
         self.nvisited+=1
-        terms1 = self.G.images_strong[key][HKL]["model"][self.Eidx] * per_step_per_HKL_I[HKL] / per_HKL_I_7122[HKL]
+        MD = self.G.images_strong[key][HKL]
+        terms1 = self.G.images_strong[key][HKL]["model"][self.Eidx] * per_step_per_HKL_I[HKL] / MD["simtbx_intensity"]
         termsm = self.G.images_Gi[key] * terms1
         termsr = self.G.images_strong[key][HKL]["obs"][self.Eidx] - termsm
         sumrsq = termsr*termsr
         if debug is not None: self.debug_terms.append(0.5*sumrsq)
         LSQ += 0.5 * sumrsq
-        gvec_fac = -2.0 * termsr * self.G.images_Gi[key] * self.G.images_strong[key][HKL]["model"][self.Eidx] / per_HKL_I_7122[HKL]
+        gvec_fac = -2.0 * termsr * self.G.images_Gi[key] * self.G.images_strong[key][HKL]["model"][self.Eidx] / MD["simtbx_intensity"]
         if debug is not None: termsdr = -2.0 * self.G.images_Gi[key] * self.G.images_strong[key][HKL]["model"][self.Eidx]
         self.gvec[0] += gvec_fac * self.d1[miller_lookup[HKL]]
         self.gvec[1] += gvec_fac * self.d2[miller_lookup[HKL]]
@@ -115,7 +117,7 @@ if __name__=="__main__":
 
     for ikey, HKL in enumerate(G.images_strong[key]):
       MD = G.images_strong[key][HKL]
-      terms1 = G.images_strong[key][HKL]["model"] * per_HKL_I[HKL] / per_HKL_I_7122[HKL]
+      terms1 = G.images_strong[key][HKL]["model"] * per_HKL_I[HKL] / MD["simtbx_intensity"]
       terms2 = terms1 * terms1
       terms0 = G.images_strong[key][HKL]["obs"] * terms1
       numerator+=flex.sum(terms0)
@@ -152,6 +154,6 @@ if __name__=="__main__":
   plt.plot(result_energies, result_FE2_fpfdp.parts()[1], "m-")
   plt.xlabel('Energy (eV)')
   plt.xlim([7088,7152])
-  plt.ylim([-8.2,4.2])
+  plt.ylim([-10.2,6.2])
   plt.show()
   exit("STOP")
