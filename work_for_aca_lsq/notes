@@ -138,3 +138,46 @@ tomorrow:
 3) Now analyze the Gi model with may28_fit_Gi.  Modify the code to properly mode what we have done here,
    writing out the simtbx intensity.
    We seem to be off by a factor of 4.  Not sure why.  Something to do with expand to P1?
+
+June 3.
+Just finished re-running the partiality models for all images, on cori, with MPI:
+#!/bin/bash -l
+
+#SBATCH -q debug
+#SBATCH -N 4
+#SBATCH -t 00:10:00
+#SBATCH -J my_job
+#SBATCH -L SCRATCH
+#SBATCH -C haswell
+#SBATCH -A m2859
+
+srun -n 64 -c 4 libtbx.python ../modules/LS49/work_for_aca_lsq/may27_gen_data_mpi.py
+
+Now put the new dataXX files into a single file: make_model_obs_28.py
+72838 Bragg spots measured
+7180 Unique Miller indices
+make_7122_intensities.py:
+make_7090_7150_intensities.py:
+libtbx.python may28_fit_Gi.py
+
+There are two outstanding questions right now:
+1) Will the model curves be smoother if we go to a simulation granularity of 1 eV instead
+of 2 eV?
+2) why the factor of about 4?
+(-1, 11, 16) {'cc': 0.9338447328352854, 'simtbx_miller': (5, -6, -16), 'simtbx_intensity': 11447.806296503186, 'orig_index': (-1, 11, 16), 'simtbx_miller_DIALS_setting': (-1, 11, 16), 'model': <scitbx_array_family_flex_ext.double object at 0x2aaabcde60a8>, 'obs': <scitbx_array_family_flex_ext.double object at 0x2aaabcde6158>} 7122 lookup 44549.2673037 3.89151127734
+(-1, 15, 18) {'cc': 0.9461387524920425, 'simtbx_miller': (7, -8, -18), 'simtbx_intensity': 4217.8942000323295, 'orig_index': (-1, 15, 18), 'simtbx_miller_DIALS_setting': (-1, 15, 18), 'model': <scitbx_array_family_flex_ext.double object at 0x2aaabcde6208>, 'obs': <scitbx_array_family_flex_ext.double object at 0x2aaabcde62b8>} 7122 lookup 17324.0397036 4.10727222687
+(-9, 17, 15) {'cc': 0.8320417526793316, 'simtbx_miller': (4, -13, -15), 'simtbx_intensity': 2655.4687851343247, 'orig_index': (-9, 17, 15), 'simtbx_miller_DIALS_setting': (-9, 17, 15), 'model': <scitbx_array_family_flex_ext.double object at 0x2aaabcde6368>, 'obs': <scitbx_array_family_flex_ext.double object at 0x2aaabcde6418>} 7122 lookup 10682.7213739 4.02291355623
+(-23, 19, 9) {'cc': 0.8650928968831253, 'simtbx_miller': (-2, -21, -9), 'simtbx_intensity': 1605.9834509879763, 'orig_index': (-23, 19, 9), 'simtbx_miller_DIALS_setting': (-23, 19, 9), 'model': <scitbx_array_family_flex_ext.double object at 0x2aaabcde64c8>, 'obs': <scitbx_array_family_flex_ext.double object at 0x2aaabcde6578>} 7122 lookup 6833.44313895 4.25498976017
+
+may27_bugfix.py. No help so far.
+Maybe the thing to do is to refine the per-image Gi after all.  Or figure out the factor of ~4 discrepancy.
+
+First sort out the 1eV vs. 2eV granularity.  Do a second simulation in the work1eV directory
+Hard code changes in util_partiality.py and may27_gen_data_mpi.py
+June 8, 2018.
+Waited 3 days, but the result is not qualitatively different.  The black model curves appear congruent (even though
+numerical values differ.)
+
+Next, try to investigate the structure factor intensities in greater detail--why the ratio of about 4?
+Also, can we please make the red & black plots to already include the Gi factor, so they are mutually scaled? Yes,
+at least this seems to work.  It is imperfect, but in the right ballpark.  Modifications are in may28_fit_Gi.py
