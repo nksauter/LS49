@@ -62,7 +62,7 @@ def plot_energy_scale_noplot(SS,d_Ang,abs_PA,origin,position0,B,intensity_lookup
 
 def parse_postrefine():
   #lines = open("/net/dials/raid1/sauter/LS49_merge/merge5_redo2.log")
-  lines = open("./LS49_merge/merge5_redo2.log").xreadlines()
+  lines = open("./LS49_merge/merge5_redo2.log")
   result = {}
   for line in lines:
     if "ASTAR" not in line: continue
