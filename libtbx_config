@@ -1,0 +1,5 @@
+{
+  "modules_required_for_use": ["mmtbx","simtbx"],
+  "modules_required_for_build": [],
+}
+
