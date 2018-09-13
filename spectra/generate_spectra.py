@@ -15,7 +15,12 @@ class linear_fit:
     print(len(self.y))
     # y = Ap, where A = [[x 1]] and p = [[m], [c]]
     A = np.vstack([self.x, np.ones(len(self.x))]).T
+# workaround allows use of non-thread-safe numpy lstsq, even if openMP is enabled elsewhere in the Python program
+    import os,omptbx
+    workaround_nt = int(os.environ["OMP_NUM_THREADS"])
+    omptbx.omp_set_num_threads(1)
     self.m,self.c = np.linalg.lstsq(A,self.y)[0]
+    omptbx.omp_set_num_threads(workaround_nt)
     # y = mx + c
     # x = (1./m) y - (c/m)
   def get_residuals(self):
