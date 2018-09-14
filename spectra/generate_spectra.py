@@ -17,7 +17,7 @@ class linear_fit:
     A = np.vstack([self.x, np.ones(len(self.x))]).T
 # workaround allows use of non-thread-safe numpy lstsq, even if openMP is enabled elsewhere in the Python program
     import os,omptbx
-    workaround_nt = int(os.environ["OMP_NUM_THREADS"])
+    workaround_nt = int(os.environ.get("OMP_NUM_THREADS",1))
     omptbx.omp_set_num_threads(1)
     self.m,self.c = np.linalg.lstsq(A,self.y)[0]
     omptbx.omp_set_num_threads(workaround_nt)
