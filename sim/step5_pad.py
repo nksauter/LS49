@@ -1,5 +1,6 @@
 from __future__ import division,print_function
 from six.moves import range
+from six.moves import StringIO
 from scitbx.array_family import flex
 from scitbx.matrix import sqr,col
 from simtbx.nanoBragg import shapetype
@@ -103,7 +104,8 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator):
 
   from libtbx.development.timers import Profiler
   P = Profiler("nanoBragg")
-  SIM.add_nanoBragg_spots_nks()
+  from boost.python import streambuf # will deposit printout into dummy StringIO as side effect
+  SIM.add_nanoBragg_spots_nks(streambuf(StringIO()))
   del P
   return SIM
 
