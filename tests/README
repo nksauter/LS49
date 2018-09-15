@@ -1,0 +1,20 @@
+Complete instructions to test nanoBragg + Sauter simulations + DIALS. Purpose:
+1) Develop with confidence that nothing has broken
+2) Use regression tests for port to peta- and exascale
+
+Pre-requisites.
+1) Linux box with many cores (like 64)
+2) untar big data file from Nick "ls49_big_data.tgz". export LS49_BIG_DATA=<untarred directory path>
+3) Python dependency state file "dials_env.txt"
+4) Make sure your conda environment file (~/.condarc) has the following:
+channels:
+  - cctbx
+  - conda-forge 
+  - defaults
+  - bioconda
+
+report_errors: false
+5) Create a working directory ${WORK}
+
+
+
