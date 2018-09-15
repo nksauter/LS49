@@ -4,6 +4,8 @@ import libtbx.load_env
 
 tst_list = (
   "$D/tests/tst_numpy_lsq.py",
+  "$D/tests/tst_spectrum_iterator.py",
+  "$D/tests/tst_input_pdb.py",
   )
 
 def run_standalones():
