@@ -53,5 +53,5 @@ def compare_two_images(reference, test):
 
 if __name__=="__main__":
   run_monochromatic()
-  compare_two_images(reference=os.path.join(ls49_big_data,"reference","step5_000000.img.gz", test="./step5_000000.img.gz")
+  compare_two_images(reference=os.path.join(ls49_big_data,"reference","step5_000000.img.gz"), test="./step5_000000.img.gz")
   print("OK")
