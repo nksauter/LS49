@@ -7,6 +7,7 @@ tst_list = (
   "$D/tests/tst_spectrum_iterator.py",
   "$D/tests/tst_input_pdb.py",
   "$D/tests/tst_structure_factors.py",
+  "$D/tests/tst_sf_energies.py",
   )
 
 def run_standalones():
@@ -29,13 +30,16 @@ tst_input_pdb.py:
   fetches PDB code 1m2a and checks identity to old reference file
 tst_structure_factors.py:
   the computed structure factors without energy dependence, in both P1 and C2
-the computed structure factors at selected energies
+tst_sf_energies.py:
+  the computed structure factors at selected energies
 the mosaic domains
 the 100000 random orientations
+Sunday
 the standard-wavelength raw image
 a sample wavelength energy contribution to raw image
 the air and water scatters
 the final 100-channel image
+Monday
 Make sure that I can test the original JH code as well!!!
 In other words, equivalence of add_nanobragg_spots() and add_nanobragg_spots_nks
 ()
