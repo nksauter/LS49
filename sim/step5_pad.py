@@ -11,11 +11,18 @@ import math
 import scitbx
 from LS49.sim.util_fmodel import gen_fmodel
 
-pdb_lines = open("1m2a.pdb","r").read()
+big_data = "." # directory location for reference files
+def full_path(filename):
+  import os
+  return os.path.join(big_data,filename)
 
-from LS49.sim.fdp_plot import george_sherrell
-Fe_oxidized_model = george_sherrell("data_sherrell/pf-rd-ox_fftkk.out")
-Fe_reduced_model = george_sherrell("data_sherrell/pf-rd-red_fftkk.out")
+def data():
+  from LS49.sim.fdp_plot import george_sherrell
+  return dict(
+    pdb_lines = open(full_path("1m2a.pdb"),"r").read(),
+    Fe_oxidized_model = george_sherrell(full_path("data_sherrell/pf-rd-ox_fftkk.out")),
+    Fe_reduced_model = george_sherrell(full_path("data_sherrell/pf-rd-red_fftkk.out"))
+  )
 
 from LS49.sim.step4_pad import microcrystal
 
@@ -63,12 +70,12 @@ def write_safe(fname):
   import os
   return (not os.path.isfile(fname)) and (not os.path.isfile(fname+".gz"))
 
-def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator):
+def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,local_data):
   fmodel_generator.reset_wavelength(wavelength_A)
   fmodel_generator.reset_specific_at_wavelength(
-                   label_has="FE1",tables=Fe_oxidized_model,newvalue=wavelength_A)
+                   label_has="FE1",tables=local_data.get("Fe_oxidized_model"),newvalue=wavelength_A)
   fmodel_generator.reset_specific_at_wavelength(
-                   label_has="FE2",tables=Fe_reduced_model,newvalue=wavelength_A)
+                   label_has="FE2",tables=local_data.get("Fe_reduced_model"),newvalue=wavelength_A)
   print("USING scatterer-specific energy-dependent scattering factors")
   sfall_channel = fmodel_generator.get_amplitudes()
   SIM = nanoBragg(detpixels_slowfast=(3000,3000),pixel_size_mm=0.11,Ncells_abc=(N,N,N),
@@ -110,6 +117,7 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator):
   return SIM
 
 def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
+  local_data = data()
   smv_fileout = prefix + ".img"
   if quick is not True:
     if not write_safe(smv_fileout):
@@ -124,7 +132,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
     flux = flex.double([flex.sum(flux)])
     print("Quick sim, lambda=%f, flux=%f"%(wavelength_A,flux[0]))
 
-  GF = gen_fmodel(resolution=direct_algo_res_limit,pdb_text=pdb_lines,algorithm="fft",wavelength=wavelength_A)
+  GF = gen_fmodel(resolution=direct_algo_res_limit,pdb_text=local_data.get("pdb_lines"),algorithm="fft",wavelength=wavelength_A)
   GF.set_k_sol(0.435)
   GF.make_P1_primitive()
   sfall_main = GF.get_amplitudes()
@@ -287,7 +295,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
 
   for x in range(len(flux)):
     print("+++++++++++++++++++++++++++++++++++++++ Wavelength",x)
-    CH = channel_pixels(wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,GF)
+    CH = channel_pixels(wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,GF,local_data)
     SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal;
     CH.free_all()
   if quick:  SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
@@ -361,8 +369,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
     data=img.get_raw_data(),path=prefix + ".cbf")
   SIM.free_all()
 
-
-def tst_all():
+def tst_all(quick=False):
   from LS49.spectra.generate_spectra import spectra_simulation
   SS = spectra_simulation()
   iterator = SS.generate_recast_renormalized_images(20,energy=7120.,total_flux=1e12)
@@ -371,7 +378,6 @@ def tst_all():
   C = microcrystal(Deff_A = 4000, length_um = 4., beam_diameter_um = 1.0) # assume smaller than 10 um crystals
   mt = flex.mersenne_twister(seed=0)
 
-  quick = False
   if quick: prefix_root="step5_%06d"
   else: prefix_root="step5poly_%06d"
 

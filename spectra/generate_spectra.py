@@ -2,9 +2,13 @@ from __future__ import division, print_function
 from six.moves import range
 import numpy as np
 
+big_data = "." # directory location for reference files
+def full_path(filename):
+  import os
+  return os.path.join(big_data,filename)
 def get_results():
   import pickle
-  R = pickle.load(open("data/spectra209.pickle","rb"))
+  R = pickle.load(open(full_path("data/spectra209.pickle"),"rb"))
   return R
 
 class linear_fit:

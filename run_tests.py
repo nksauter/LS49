@@ -10,6 +10,7 @@ tst_list = (
   "$D/tests/tst_sf_energies.py",
   "$D/tests/tst_mosaic_orientations.py",
   "$D/tests/tst_crystal_orientations.py",
+  "$D/tests/tst_monochromatic_image.py",
   )
 
 def run_standalones():
@@ -38,8 +39,8 @@ tst_mosaic_orientations.py:
   the mosaic domains
 tst_crystal_orientations.py
   the 100000 random orientations
-Sunday
-the standard-wavelength raw image
+tst_monochromatic_image.py
+  monochromatic "quick" simulation of raw image 0
 a sample wavelength energy contribution to raw image
 the air and water scatters
 the final 100-channel image

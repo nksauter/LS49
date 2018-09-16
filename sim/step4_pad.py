@@ -20,7 +20,12 @@ ATOM      5  O   HOH A   5      46.896  37.790  41.629  1.00 20.00           O
 ATOM      6 SED  MSE A   6       1.000   2.000   3.000  1.00 20.00          SE
 END
 """
-pdb_lines = open("1m2a.pdb","r").read()
+big_data = "." # directory location for reference files
+def full_path(filename):
+  import os
+  return os.path.join(big_data,filename)
+def data():
+  return dict(pdb_lines = open(full_path("1m2a.pdb"),"r").read())
 #pdb_lines = open("4tnl.pdb","r").read()
 
 class microcrystal(object):
