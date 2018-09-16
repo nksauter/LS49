@@ -43,7 +43,9 @@ tst_monochromatic_image.py
   monochromatic "quick" simulation of raw image 0
 a sample wavelength energy contribution to raw image
 the air and water scatters
-the final 100-channel image
+tst_polychromatic_image.py
+  the final 100-channel polychromatic image
+  includes the energy-dependent effects of Fe site absorption, for oxidized & reduced Fe
 Monday
 Make sure that I can test the original JH code as well!!!
 In other words, equivalence of add_nanobragg_spots() and add_nanobragg_spots_nks
