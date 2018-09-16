@@ -8,6 +8,8 @@ tst_list = (
   "$D/tests/tst_input_pdb.py",
   "$D/tests/tst_structure_factors.py",
   "$D/tests/tst_sf_energies.py",
+  "$D/tests/tst_mosaic_orientations.py",
+  "$D/tests/tst_crystal_orientations.py",
   )
 
 def run_standalones():
@@ -32,8 +34,10 @@ tst_structure_factors.py:
   the computed structure factors without energy dependence, in both P1 and C2
 tst_sf_energies.py:
   the computed structure factors at selected energies
-the mosaic domains
-the 100000 random orientations
+tst_mosaic_orientations.py:
+  the mosaic domains
+tst_crystal_orientations.py
+  the 100000 random orientations
 Sunday
 the standard-wavelength raw image
 a sample wavelength energy contribution to raw image
