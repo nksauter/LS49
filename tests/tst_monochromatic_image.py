@@ -54,4 +54,10 @@ def compare_two_images(reference, test):
 if __name__=="__main__":
   run_monochromatic()
   compare_two_images(reference=os.path.join(ls49_big_data,"reference","step5_000000.img.gz"), test="./step5_000000.img.gz")
+  # test the raw photons due to Bragg scatter:
+  compare_two_images(reference=os.path.join(ls49_big_data,"reference","step5_000000_intimage_001.img"), test="./step5_000000_intimage_001.img")
+  # add in the effects of water scatter:
+  compare_two_images(reference=os.path.join(ls49_big_data,"reference","step5_000000_intimage_002.img"), test="./step5_000000_intimage_002.img")
+  # add in the effects of air scatter:
+  compare_two_images(reference=os.path.join(ls49_big_data,"reference","step5_000000_intimage_003.img"), test="./step5_000000_intimage_003.img")
   print("OK")

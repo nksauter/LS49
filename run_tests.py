@@ -11,6 +11,7 @@ tst_list = (
   "$D/tests/tst_mosaic_orientations.py",
   "$D/tests/tst_crystal_orientations.py",
   "$D/tests/tst_monochromatic_image.py",
+  "$D/tests/tst_polychromatic_image.py",
   )
 
 def run_standalones():
@@ -41,11 +42,12 @@ tst_crystal_orientations.py
   the 100000 random orientations
 tst_monochromatic_image.py
   monochromatic "quick" simulation of raw image 0
-a sample wavelength energy contribution to raw image
-the air and water scatters
+  the air and water scatterers
 tst_polychromatic_image.py
   the final 100-channel polychromatic image
   includes the energy-dependent effects of Fe site absorption, for oxidized & reduced Fe
+  includes separate verification of each-wavelength energy contribution to raw image
+
 Monday
 Make sure that I can test the original JH code as well!!!
 In other words, equivalence of add_nanobragg_spots() and add_nanobragg_spots_nks

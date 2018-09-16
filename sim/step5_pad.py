@@ -116,6 +116,9 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,loca
   del P
   return SIM
 
+from LS49.sim.debug_utils import channel_extractor
+CHDBG_singleton = channel_extractor()
+
 def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
   local_data = data()
   smv_fileout = prefix + ".img"
@@ -297,6 +300,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
     print("+++++++++++++++++++++++++++++++++++++++ Wavelength",x)
     CH = channel_pixels(wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,GF,local_data)
     SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal;
+    CHDBG_singleton.extract(channel_no=x, data=CH.raw_pixels)
     CH.free_all()
   if quick:  SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
 
