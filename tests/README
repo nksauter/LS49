@@ -5,8 +5,7 @@ Complete instructions to test nanoBragg + Sauter simulations + DIALS. Purpose:
 Pre-requisites.
 1) Linux box with many cores (like 64).  Use bash shell.
 2) untar big data file from Nick "ls49_big_data.tgz". export LS49_BIG_DATA=<untarred directory path>
-3) Python dependency state file "dials_env.txt"
-4) Make sure your conda environment file (~/.condarc) has the following:
+3) Make sure your conda environment file (~/.condarc) has the following:
 channels:
   - cctbx
   - conda-forge 
@@ -14,11 +13,10 @@ channels:
   - bioconda
 
 report_errors: false
-5) Create and change to a working directory ${WORK}
+4) Create and change to a working directory ${WORK}
 
 Download three files to configure the environment
-  (cctbx bootstrap installer, and conda-Python dependency definitions, and
-  miniconda installer [tested with conda 4.5.2]):
+  (cctbx bootstrap installer, conda-Python dependency definitions, and miniconda installer [tested with conda 4.5.2]):
 
 wget https://raw.githubusercontent.com/cctbx/cctbx_project/master/libtbx/auto_build/bootstrap.py --no-check-certificate
 wget https://raw.githubusercontent.com/nksauter/LS49/master/tests/dials_env.txt --no-check-certificate
