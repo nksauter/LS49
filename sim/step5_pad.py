@@ -70,6 +70,7 @@ def write_safe(fname):
   import os
   return (not os.path.isfile(fname)) and (not os.path.isfile(fname+".gz"))
 
+add_spots_algorithm = "NKS"
 def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,local_data):
   fmodel_generator.reset_wavelength(wavelength_A)
   fmodel_generator.reset_specific_at_wavelength(
@@ -111,8 +112,11 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,loca
 
   from libtbx.development.timers import Profiler
   P = Profiler("nanoBragg")
-  from boost.python import streambuf # will deposit printout into dummy StringIO as side effect
-  SIM.add_nanoBragg_spots_nks(streambuf(StringIO()))
+  if add_spots_algorithm is "NKS":
+    from boost.python import streambuf # will deposit printout into dummy StringIO as side effect
+    SIM.add_nanoBragg_spots_nks(streambuf(StringIO()))
+  else:
+    SIM.add_nanoBragg_spots()
   del P
   return SIM
 
@@ -373,7 +377,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
     data=img.get_raw_data(),path=prefix + ".cbf")
   SIM.free_all()
 
-def tst_all(quick=False):
+def tst_all(quick=False,prefix="step5"):
   from LS49.spectra.generate_spectra import spectra_simulation
   SS = spectra_simulation()
   iterator = SS.generate_recast_renormalized_images(20,energy=7120.,total_flux=1e12)
@@ -382,8 +386,8 @@ def tst_all(quick=False):
   C = microcrystal(Deff_A = 4000, length_um = 4., beam_diameter_um = 1.0) # assume smaller than 10 um crystals
   mt = flex.mersenne_twister(seed=0)
 
-  if quick: prefix_root="step5_%06d"
-  else: prefix_root="step5poly_%06d"
+  if quick: prefix_root=prefix + "_%06d"
+  else: prefix_root=prefix + "poly_%06d"
 
   Nimages = 1# 10000
   for iteration in range(Nimages):

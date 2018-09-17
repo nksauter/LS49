@@ -25,9 +25,9 @@ def run_polychromatic(create):
       open(os.path.join(ls49_big_data,"reference",filename),"wb"),cPickle.HIGHEST_PROTOCOL)
   else:
     CH_ref = cPickle.load(open(os.path.join(ls49_big_data,"reference",filename),"rb"))
-    assert len(CHDBG_singleton)==20,"Should have recorded 20 energy channels"
-    for key in CHDBG_singleton:
-        assert CHDBG_singleton[key] == CH_ref[key],"Energy-channel results should agree with reference"
+    assert len(CHDBG_singleton.data)==10,"Should have recorded 10 energy channels"
+    for key in CHDBG_singleton.data:
+        assert CHDBG_singleton.data[key] == CH_ref[key],"Energy-channel results should agree with reference"
 
 if __name__=="__main__":
   run_polychromatic(create=False)

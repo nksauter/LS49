@@ -22,7 +22,7 @@ Download three files to configure the environment
 
 wget https://raw.githubusercontent.com/cctbx/cctbx_project/master/libtbx/auto_build/bootstrap.py --no-check-certificate
 wget https://raw.githubusercontent.com/nksauter/LS49/master/tests/dials_env.txt --no-check-certificate
-wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh
+wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh --no-check-certificate
 chmod u+x Miniconda2-latest-Linux-x86_64.sh
 ./Miniconda2-latest-Linux-x86_64.sh
 # install in directory ${WORK}/miniconda2
@@ -31,26 +31,29 @@ chmod u+x Miniconda2-latest-Linux-x86_64.sh
 source miniconda2/etc/profile.d/conda.sh
 conda create -y --name myEnv --file dials_env.txt
 conda activate myEnv
+which python # verify that you are using the miniconda myEnv python
 
 python -m pip install procrunner
-
-#sources have already been installed in modules directory
-#python bootstrap.py hot --builder=dials
-#python bootstrap.py update --builder=dials
-#python bootstrap.py build --builder=dials --with-python=`which python` --nproc=16
-
+python bootstrap.py hot --builder=dials
+python bootstrap.py update --builder=dials
 mkdir build
 cd build
-which python # verify that you are using the miniconda myEnv python
-python ../modules/cctbx_project/libtbx/configure.py --enable_openmp_if_possible=True LS49 dials_regression xfel_regression labelit_regression prime iota
+python ../modules/cctbx_project/libtbx/configure.py --enable_openmp_if_possible=True LS49 prime iota
 
 source build/setpaths.sh
-cd build; make;cd -
-mkdir tests3
-cd tests3
+cd build; make; cd -
+mkdir test
+cd test
 rm -rf *
 export OMP_NUM_THREADS=8
-libtbx.python ../cctbx-test-nightly-all.py
+libtbx.python ${WORK}/modules/LS49/tests/public-test-all.py
 
+# optional -- add more tests if you have log in access to LBL
+svn checkout svn+ssh://sauter@cci.lbl.gov/dials_regression/trunk dials_regression
+svn checkout svn+ssh://sauter@cci.lbl.gov/xfel_regression/trunk xfel_regression
+svn checkout svn+ssh://sauter@cci.lbl.gov/labelit/trunk labelit
+svn checkout svn+ssh://sauter@cci.lbl.gov/labelit_regression/trunk labelit_regression
+libtbx.configure dials_regression xfel_regression labelit labelit_regression
+# edit the public-test-all.py script to add these tests
 
 

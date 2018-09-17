@@ -12,6 +12,7 @@ tst_list = (
   "$D/tests/tst_crystal_orientations.py",
   "$D/tests/tst_monochromatic_image.py",
   "$D/tests/tst_polychromatic_image.py",
+  "$D/tests/tst_jh_add_spots.py",
   )
 
 def run_standalones():
@@ -47,11 +48,10 @@ tst_polychromatic_image.py
   the final 100-channel polychromatic image
   includes the energy-dependent effects of Fe site absorption, for oxidized & reduced Fe
   includes separate verification of each-wavelength energy contribution to raw image
-
-Monday
-Make sure that I can test the original JH code as well!!!
-In other words, equivalence of add_nanobragg_spots() and add_nanobragg_spots_nks
-()
-Or alternatively, re-express my step5 problem in terms of his code.
-Write tests that replicate my Bayesian estimates.
+tst_jh_add_spots.py
+  Test the original JH code before refactoring for OpenMP
+  Equivalence of add_nanobragg_spots(original) and add_nanobragg_spots_nks(refactored)
+Future:
+break down Fmodel into bulk solvent, site-scatterer, anomalous site-scatterer, and redox-dependent anomalous site-scatterer
+Write tests that replicate ACA-2018 Bayesian estimates.
 """
