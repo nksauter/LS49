@@ -35,7 +35,7 @@ def tst_iterators():
     wavlen, flux, wavelength_A = next(iterator) # list of lambdas, list of fluxes, average wavelength
     assert approx_equal(wavlen,reference[x][0]), "wavelength axis"
     assert approx_equal(flux, reference[x][1]), "flux axis"
-    assert wavelength_A == reference[x][2], "mean wavelength"
+    assert approx_equal(wavelength_A,reference[x][2],eps=1E-10), "mean wavelength"
 
   # get a new iterator for every event
   for x in range(10):
@@ -43,7 +43,7 @@ def tst_iterators():
     wavlen, flux, wavelength_A = next(iterator) # list of lambdas, list of fluxes, average wavelength
     assert approx_equal(wavlen,reference[x][0]), "iterator 2 wavelength axis"
     assert approx_equal(flux, reference[x][1]), "iterator 2 flux axis"
-    assert wavelength_A == reference[x][2], "iterator 2 mean wavelength"
+    assert approx_equal(wavelength_A, reference[x][2],eps=1E-10), "iterator 2 mean wavelength"
 
 if __name__=="__main__":
   # create_reference_results() # create the test case
