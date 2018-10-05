@@ -15,6 +15,12 @@ tst_list = (
   "$D/tests/tst_jh_add_spots.py",
   )
 
+OPT = libtbx.env.build_options
+if OPT.enable_cuda:
+  tst_list = tst_list + (
+  ["$D/tests/tst_cuda_add_spots.py","mono"],
+  ["$D/tests/tst_cuda_add_spots.py","poly"])
+
 def run_standalones():
   build_dir = libtbx.env.under_build("LS49")
   dist_dir = libtbx.env.dist_path("LS49")
