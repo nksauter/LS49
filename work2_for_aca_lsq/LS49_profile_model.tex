@@ -1,0 +1,303 @@
+\documentclass[12pt, letterpaper]{article}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{unicode-math}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{graphicx}
+%\usepackage{mathrsfs}
+\usepackage{fontspec}
+\setmainfont{Calibri}
+% must be compiled with XeLaTeX, not pdfLaTeX
+
+  %%%%%%%%%%%%
+  % PREAMBLE %
+  %%%%%%%%%%%%
+\begin{document}
+\selectlanguage{english}
+
+\section*{LS49: Profile modeling for spatially resolved anomalous dispersion. }
+  \par The Jungfrau-measured Bragg spots are radially elongated, and the goal is to use the
+  spot profiles to deduce the $f\prime$ and $f\prime\prime$ parameters for individual
+  metal centers in the protein.  Section 1 will establish the general methodology and apply it 
+  to background modeling.  Then the spot profile will be brought in and scale factors will be fit.
+  Finally, the anomalous dispersion curves will be modeled. 
+\subsection*{1 Modeling the backgound with a Bayesian approach}
+
+  \par In this initial section we will consider every Bragg spot on every image separately.  
+  The program \textit{DIALS} has already been run, and 2D shoeboxes defined for each Bragg 
+  spot.  Furthermore the program has already identified which pixels in the rectangular shoebox are
+  ``foreground'' and thus correspond to the Bragg signal, and which are background.  Since our
+  Bragg spots are unusually elongated, the \textit{DIALS} analysis is not necessarily accurate, 
+  but for our first demonstration we will use the pixels as currently flagged without further
+  question.  In the next section, we will no longer need to make a distinction between foreground 
+  and background, as all pixels in the shoebox will be treated uniformly.
+  
+  \par We'll use a planar model for the background, as used by Michael Rossmann and 
+  subsequently by Andrew Leslie.  The $i^{th}$ pixel in the shoebox will have coordinates 
+  $x_i, y_i$, taking $x$ as slow and $y$ as fast, with both zero-based.  The model background will then
+  be expressed as 
+    \begin{equation}
+    \lambda_{i} = ax_i + by_i + c 
+    \text{,}
+    \label{eqn:RossmannB}
+  \end{equation}
+  where $a, b,$ and $c$ are the model parameters to be fit.  Importantly, the model is expressed in
+  units of photons per pixel.
+ 
+ \par   We'll take a Bayesian approach.  The probability of the model given the data is equal to the
+ probability of the data given the model, times the probability of the model:
+ 
+    \begin{equation}
+    P(\textrm{model|data}) = P(\textrm{data|model}) \times P(\textrm{model})
+    \text{.}
+    \label{eqn:Bayes}
+  \end{equation}
+
+  For this section we'll treat the probability of the model as identically 1.  Furthermore the probability 
+  of the data is assumed to be independent for each pixel, therefore the collective probability is the
+  product of individual pixel probabilities, and the model likelihood $L(a,b,c)$ expressed as 
+      \begin{equation}
+    P(\textrm{model|data}) = \prod_{i=1}^{N_p} {P_i(\textrm{data|model}) }
+    \text{,}
+    \label{eqn:Bayes2}
+  \end{equation}
+  
+  where $N_p$ is the number pixels. Taking the usual approach, we will minimize the negative 
+  log likelihood function,
+      \begin{equation}
+    L(a,b,c) = -\ln (\prod_{i=1}^{N_p} {P_i(\textrm{data|model}) }) =
+    -\sum_{i=1}^{N_p} \ln {P_i(\textrm{data|model}) }
+    \text{,}
+    \label{eqn:Bayes2}
+  \end{equation}
+ 
+   to find optimize the values of $a, b,$ and $c$.
+   \par The data probability will be taken as arising from shot noise.  If photons reach the pixel at
+   an average rate of $\lambda_i$ (so says our model), then the probability of observing $k_i$ 
+   photons in a particular interval is given by the Poissonian distribution (see wikipedia):
+   
+    \begin{equation}
+   P(k_i) = \frac{\lambda_i^{k_i} e^{-\lambda_i}}{k!}
+    \text{.}
+    \label{eqn:Poisson}
+  \end{equation}
+
+\par Combine the two equations and expand,
+   
+    \begin{equation}
+   L =  -\sum_{i=1}^{N_p} \ln ( \frac{\lambda_i^{k_i} e^{-\lambda_i}}{k!} )
+  = \sum_{i=1}^{N_p} ( \lambda_i - k_i \ln \lambda_i + \ln k! )
+    \text{.}
+    \label{eqn:terms}
+  \end{equation}
+\par The last term involving $k!$ is independent of the model parameters, is therefore constant, 
+and of no consequence for our parameter fitting, so we drop it:
+
+    \begin{equation}
+   L = \sum_{i=1}^{N_p} ( \lambda_i - k_i \ln \lambda_i )
+    \text{.}
+    \label{eqn:simple}
+  \end{equation}
+\par The derivatives with respect to the model parameters are remarkably simple:
+
+  \begin{equation}
+   \dfrac{\partial L} {\partial a} = 
+  \sum_{i=1}^{N_p} x_i (1 - \frac{ k_i}{ \lambda_i } )
+    \text{,}
+    \label{eqn:grada}
+  \end{equation}
+  \begin{equation}
+   \dfrac{\partial L} {\partial b} = 
+  \sum_{i=1}^{N_p} y_i (1 - \frac{ k_i}{ \lambda_i } )
+    \text{.}
+    \label{eqn:gradb}
+  \end{equation}
+ \begin{equation}
+   \dfrac{\partial L} {\partial c} = 
+  \sum_{i=1}^{N_p}  (1 - \frac{ k_i}{ \lambda_i } )
+    \text{.}
+    \label{eqn:gradb}
+  \end{equation}
+
+  \subsection*{2 The formula of Einsle \textit{et al.}}
+
+  \par Consider the wavelength-dependent atomic scattering factor for X-rays, $f(\lambda)$. We 
+  express it as a complex sum of a wavelength-independent part $f^0$ and a 
+  wavelength-dependent term: 
+  
+    \begin{equation}
+    f (\lambda)=f^0 + \Delta{f}\prime(\lambda) + i\Delta{f''}(\lambda)
+    \text{.}
+    \label{eqn:part}
+  \end{equation}
+  
+  The structure factor for a Miller index $\mathbf{h}$ is 
+     \begin{equation}
+    \mathbf{F_h} =\left( \begin{array}{c}
+      A \\
+      B
+    \end{array}\right)
+    \text{.}
+    \label{eqn:vecF}
+  \end{equation}
+
+  $\mathbf{F}$ is treated as a vector in the complex plane with real and imaginary parts A and B respectively.  We use
+  vector notation expressed in the complex basis (1 $i$). As usual the structure is a linear combination of its parts:
+  
+       \begin{equation}
+    \mathbf{F_h} =\left( \begin{array}{c}
+      A \\
+      B
+    \end{array}\right)_{\textrm{bulk solvent}} +
+    \left( \begin{array}{c}
+      A \\
+      B
+    \end{array}\right)_{\textrm{protein atoms}} + \textrm{metals, etc.}
+    \text{}
+    \label{eqn:parts}
+  \end{equation}
+
+  Now focus on the contribution of one metal atom, $m$.
+      \begin{equation}
+    \mathbf{F}_{\mathbf{h},m} = f_m (\lambda)\exp(2\pi{i}(\mathbf{r}_m\cdot\mathbf{h}))
+    \text{,}
+    \label{eqn:vecF}
+  \end{equation}
+  where $\mathbf{r}_m$ is the position vector of metal $m$ in unit cell-fractional coordinates. Expand this
+  and change form,
+        \begin{equation}
+    \mathbf{F}_{\mathbf{h},m} = [f^0_m + \Delta{f_m}\prime(\lambda) + i\Delta{{f_m}''}(\lambda)]
+    \exp(2\pi{i}(\mathbf{r}_m\cdot\mathbf{h}))
+    \text{,}
+    \label{eqn:vecF}
+  \end{equation}
+
+  Utilizing Euler's formula, $\exp(i\theta)=\cos(\theta)+i\sin(\theta)$ and expanding,
+  
+     \begin{equation}
+    \mathbf{F}_{\mathbf{h},m} = [f^0_m + \Delta{f_m}\prime(\lambda) + i\Delta{{f_m}''}(\lambda)]
+    [\cos(2\pi(\mathbf{r}_m\cdot\mathbf{h})) + i \sin(2\pi(\mathbf{r}_m\cdot\mathbf{h}))
+    ]
+    \text{,}
+    \label{eqn:vecF}
+  \end{equation}
+  
+      \begin{equation}
+    \begin{array}{c}\mathbf{F}_{\mathbf{h},m} =  (f^0_m + \Delta{f_m}\prime(\lambda)) \cos(2\pi(\mathbf{r}_m\cdot\mathbf{h})) - 
+    \Delta{{f_m}''}(\lambda)\sin(2\pi(\mathbf{r}_m\cdot\mathbf{h})) + \\
+    i[ (f^0_m + \Delta{f_m}\prime(\lambda))\sin(2\pi(\mathbf{r}_m\cdot\mathbf{h})) +\Delta{{f_m}''}(\lambda)\cos(2\pi(\mathbf{r}_m\cdot\mathbf{h})) ]
+
+    \end{array}
+    \text{.}
+    \label{eqn:vec2F}
+  \end{equation}
+  
+  Switching to vector notation and rearranging,
+   \begin{equation}
+    \begin{array}{c}\mathbf{F}_{\mathbf{h},m} =  f^0_m [(1 + \dfrac{\Delta{f_m}\prime(\lambda)}{f^0_m}) \cos(2\pi(\mathbf{r}_m\cdot\mathbf{h})) - 
+    \dfrac{\Delta{{f_m}''}(\lambda)}{f^0_m}\sin(2\pi(\mathbf{r}_m\cdot\mathbf{h})) ]+ \\
+    if^0_m[ (1 + \dfrac{\Delta{f_m}\prime(\lambda)}{f^0_m})\sin(2\pi(\mathbf{r}_m\cdot\mathbf{h})) +
+    \dfrac{\Delta{{f_m}''}(\lambda)}{f^0_m}\cos(2\pi(\mathbf{r}_m\cdot\mathbf{h})) ]
+
+    \end{array}
+    \text{,}
+    \label{eqn:vecvecF}
+  \end{equation}
+    \begin{equation}
+    \mathbf{F}_{\mathbf{h},m} =  f^0_m 
+    \left(\begin{array} {c c} 
+    1 + \dfrac{\Delta{f_m}\prime(\lambda)}{f^0_m}  & 
+    \dfrac{-\Delta{{f_m}''}(\lambda)}{f^0_m} \\
+     \dfrac{\Delta{{f_m}''}(\lambda)}{f^0_m} & 1 + \dfrac{\Delta{f_m}\prime(\lambda)}{f^0_m}
+    \end{array}\right)
+    \left(
+    \begin{array}{c}
+    \cos(2\pi(\mathbf{r}_m\cdot\mathbf{h})) \\
+    \sin(2\pi(\mathbf{r}_m\cdot\mathbf{h}))
+    \end{array}\right)
+    \text{.}
+    \label{eqn:matvecF}
+  \end{equation}
+    
+  The purpose of expressing $\mathbf{F}_{\mathbf{h},m}$ in this form is so that there is a compact 
+  notation for calculating derivatives for parameter optimization, where the relevant unknown parameters to
+  determine are $\Delta{f_m}\prime(\lambda)$ and $\Delta{{f_m}''}$.  Specifically we have 
+  
+  \begin{equation}
+   \dfrac{\partial\mathbf{F}_{\mathbf{h},m}} {\partial\Delta{f_m}\prime(\lambda)} = 
+    \left(\begin{array} {c c} 
+    1   & 0 \\
+     0& 1 
+    \end{array}\right)
+    \left(
+    \begin{array}{c}
+    \cos(2\pi(\mathbf{r}_m\cdot\mathbf{h})) \\
+    \sin(2\pi(\mathbf{r}_m\cdot\mathbf{h}))
+    \end{array}\right)
+    \text{,}
+     \label{eqn:qthx}
+  \end{equation}
+and
+\begin{equation}
+   \dfrac{\partial\mathbf{F}_{\mathbf{h},m}} {\partial\Delta{{f_m}''}(\lambda)} =  
+    \left(\begin{array} {c c} 
+    0  & 
+   -1 \\
+     1 & 0
+    \end{array}\right)
+    \left(
+    \begin{array}{c}
+    \cos(2\pi(\mathbf{r}_m\cdot\mathbf{h})) \\
+    \sin(2\pi(\mathbf{r}_m\cdot\mathbf{h}))
+    \end{array}\right)
+    \text{.}
+    \label{eqn:qthy}
+  \end{equation}
+
+ Further modifications in the future to handle B-factors, ADPs, and occupancies.
+  
+ \subsection*{3 Derivatives of the intensity}
+ 
+The intensity of a Miller index is 
+     \begin{equation}
+    I_{\mathbf{h}} = \mathbf{F}_{\mathbf{h}} \cdot \mathbf{F}_{\mathbf{h}}
+    \text{.}
+    \label{eqn:iall}
+  \end{equation}
+Suppose we wish to find the derivative of the model intensity with respect to some parameter $q$, for example
+the $\Delta{f_m}\prime(\lambda)$ of a particular metal $m$.  Then
+     \begin{equation}
+    \frac{\partial{I}_{\mathbf{h}}}{\partial{q}} = 2\mathbf{F}_{\mathbf{h}} \cdot 
+    \frac{\partial\mathbf{F}_{\mathbf{h}}} {\partial{q}}
+    \text{.}
+    \label{eqn:ialld}
+  \end{equation}
+Repeating the formula for structure factor:  it is a linear sum over many components in the unit cell:
+       \begin{equation}
+    \mathbf{F_h} =\left( \begin{array}{c}
+      A \\
+      B
+    \end{array}\right)_{\textrm{bulk solvent}} +
+    \sum_{\textrm{protein atoms}, p}\left( \begin{array}{c}
+      a_p \\
+      b_p
+    \end{array}\right)+ 
+    \sum_{m=1}^{N_m} \mathbf{F}_{\mathbf{h},m}+\textrm{other metals, etc.}
+    \text{}
+    \label{eqn:partsrecap}
+  \end{equation}
+where $N_m$ is the number of metals of that particular class, and  $\mathbf{F}_{\mathbf{h},m}$ is given by eqn. 
+\eqref{eqn:matvecF}.
+(Further modifications to add symmetry operators,
+but for now assume we are in space group $P$1.)
+Due to the linear nature of the structure factor summation the derivative passes through the sum, and the 
+only terms to remain are those that specifically contain metals in that class:
+       \begin{equation}
+  \frac{\partial\mathbf{F}_{\mathbf{h}}} {\partial{q}} =   \sum_{m=1}^{N_m} 
+  \frac {\partial\mathbf{F}_{\mathbf{h},m}}{\partial{q}}
+      \text{.}
+    \label{eqn:derOnq}
+  \end{equation}
+
+%%%%%%%%%%%%%%%%%%%%%
+\end{document}
