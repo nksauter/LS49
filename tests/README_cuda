@@ -65,5 +65,6 @@ rm -rf ${WORK}/test/*
 libtbx.python ${WORK}/modules/LS49/tests/public-test-all.py
 rm -rf ${WORK}/test/*
 libtbx.run_tests_parallel module=LS49 nproc=12
-
+rm -rf ${WORK}/test/*
+libtbx.python ${WORK}/modules/LS49/tests/tst_cuda_add_spots.py poly
 
