@@ -1,0 +1,69 @@
+Slim instructions to test nanoBragg + Sauter simulations + DIALS.
+
+Pre-requisites.
+1) Linux box with many cores (like 64).  Use bash shell.
+bash
+2) Create and change to a working directory ${WORK}
+cd ${WORK}
+3) untar big data file from Nick "ls49.tgz". 
+scp <ls49.tgz> .
+export LS49_BIG_DATA=${WORK}/ls49_big_data 
+4) Make sure your conda environment file (~/.condarc) has the following:
+channels:
+  - cctbx
+  - conda-forge 
+  - defaults
+  - bioconda
+
+report_errors: false
+
+Download three files to configure the environment
+  (cctbx bootstrap installer, conda-Python dependency definitions, and miniconda installer [tested with conda 4.5.2]):
+
+wget https://raw.githubusercontent.com/cctbx/cctbx_project/master/libtbx/auto_build/bootstrap.py --no-check-certificate
+wget https://raw.githubusercontent.com/nksauter/LS49/master/tests/dials_env.txt --no-check-certificate
+wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh --no-check-certificate
+source /usr/local/cuda/cuda-setup.csh # however cuda is locally configured
+chmod u+x Miniconda2-latest-Linux-x86_64.sh
+./Miniconda2-latest-Linux-x86_64.sh
+# install in directory ${WORK}/miniconda2
+# do not prepend Miniconda2 to .bashrc
+
+source miniconda2/etc/profile.d/conda.sh
+conda create -y --name myEnv --file dials_env.txt
+conda activate myEnv
+which python # verify that you are using the miniconda myEnv python
+
+python -m pip install procrunner
+python bootstrap.py hot --builder=dials
+python bootstrap.py update --builder=dials
+cd ${WORK}/modules
+git clone git@github.com:nksauter/LS49.git
+cp ${LS49_BIG_DATA}/nanoBraggCUDA.cu ${WORK}/modules/cctbx_project/simtbx/nanoBragg/
+mkdir ${WORK}/build
+cd ${WORK}/build
+python ../modules/cctbx_project/libtbx/configure.py --enable_openmp_if_possible=True --enable_cuda LS49 prime iota
+source ${WORK}/build/setpaths.sh
+cd ${WORK}/build; make; cd -
+cd ${WORK}/build; make; cd -
+mkdir ${WORK}/test
+
+
+Subsequent run-through after installation:
+ssh -YAC <${CUDAHOST}>
+source /usr/local/cuda/cuda-setup.csh # however cuda is locally configured
+bash
+export WORK=<your work directory>
+export LS49_BIG_DATA=${WORK}/ls49_big_data
+export OMP_NUM_THREADS=32
+cd ${WORK}
+source miniconda2/etc/profile.d/conda.sh
+conda activate myEnv
+source ${WORK}/build/setpaths.sh
+cd ${WORK}/test
+rm -rf ${WORK}/test/*
+libtbx.python ${WORK}/modules/LS49/tests/public-test-all.py
+rm -rf ${WORK}/test/*
+libtbx.run_tests_parallel module=LS49 nproc=12
+
+
