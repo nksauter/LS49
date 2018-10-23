@@ -13,7 +13,8 @@ def run_monochromatic():
   from LS49.sim.step5_pad import tst_all
   tst_all(quick=True)
 
-def compare_two_images(reference, test):
+def compare_two_images(reference, test, tolerance_count=10):
+  print ("Comparing",reference,test)
   from dxtbx.format.Registry import Registry
   beam=[]
   data = []
@@ -48,11 +49,12 @@ def compare_two_images(reference, test):
   ndiff = 0
   for idiff,diff in enumerate(diff_data):
     if diff!=0:
-      if ndiff < 200: print ("difference index",idiff,diff) # only print the first 200 differences
+      if ndiff < 200: print ("difference index %d:(%d,%d)"%(idiff,idiff//3000,idiff%3000),diff) # only print the first 200 differences
       ndiff += 1
       no_differences=False
+  print("There are %d differences"%ndiff)
   #assert no_differences
-  assert ndiff < 10, "There are %d differences"%ndiff
+  assert ndiff < tolerance_count, "There are %d differences"%ndiff
 
 if __name__=="__main__":
   run_monochromatic()
