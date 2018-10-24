@@ -14,7 +14,7 @@ from LS49.sim.util_fmodel import gen_fmodel
 from LS49.sim.step5_pad import data
 
 from LS49.sim.step4_pad import microcrystal
-
+n_mosaic_domains=25
 """Changes in Step4K relative to Step4
 k_sol is now hard-coded to 0.435 instead of 0.35 to reduce solvent contrast
 Simulation out to 1.7 Angstrom resolution
@@ -78,7 +78,7 @@ class channel_pixels:
   SIM = nanoBragg(detpixels_slowfast=(3000,3000),pixel_size_mm=0.11,Ncells_abc=(N,N,N),
     wavelength_A=self.wavlen[0],verbose=0)
   SIM.adc_offset_adu = 10 # Do not offset by 40
-  SIM.mosaic_domains = 25  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
+  SIM.mosaic_domains = n_mosaic_domains  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
   SIM.mosaic_spread_deg = 0.05 # interpreted by UMAT_nm as a half-width stddev
   SIM.distance_mm=141.7
   SIM.set_mosaic_blocks(UMAT_nm)
@@ -120,6 +120,7 @@ class channel_pixels:
     print ("USING JH")
     SIM.add_nanoBragg_spots()
   elif add_spots_algorithm is "cuda":
+    print ("USING cuda")
     SIM.add_nanoBragg_spots_cuda()
   else: raise Exception("unknown spots algorithm")
   del P
@@ -162,7 +163,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
     print("GOTHERE seed=",SIM.seed)
   if len(sys.argv)>1:
     if sys.argv[1]=="random" : SIM.randomize_orientation()
-  SIM.mosaic_domains = 25  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
+  SIM.mosaic_domains = n_mosaic_domains  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
                            # 3000000 images would be 100000 hours on a 60-core machine (dials), or 11.4 years
                            # using 2 nodes, 5.7 years.  Do this at SLAC? NERSC? combination of all?
                            # SLAC downtimes: Tues Dec 5 (24 hrs), Mon Dec 11 (72 hrs), Mon Dec 18 light use, 24 days

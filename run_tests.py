@@ -19,7 +19,8 @@ OPT = libtbx.env.build_options
 if OPT.enable_cuda:
   tst_list = tst_list + (
   ["$D/tests/tst_cuda_add_spots.py","mono"],
-  ["$D/tests/tst_cuda_add_spots.py","poly"])
+  ["$D/tests/tst_cuda_add_spots.py","poly"],
+  ["$D/tests/tst_cuda_add_spots.py","laue"])
 
 def run_standalones():
   build_dir = libtbx.env.under_build("LS49")
