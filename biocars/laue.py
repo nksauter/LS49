@@ -14,7 +14,9 @@ from LS49.sim.util_fmodel import gen_fmodel
 from LS49.sim.step5_pad import data
 
 from LS49.sim.step4_pad import microcrystal
-n_mosaic_domains=25
+n_mosaic_domains = 50
+mosaic_spread_deg = 0.025
+distance_mm = 200
 """Changes in Step4K relative to Step4
 k_sol is now hard-coded to 0.435 instead of 0.35 to reduce solvent contrast
 Simulation out to 1.7 Angstrom resolution
@@ -79,8 +81,8 @@ class channel_pixels:
     wavelength_A=self.wavlen[0],verbose=0)
   SIM.adc_offset_adu = 10 # Do not offset by 40
   SIM.mosaic_domains = n_mosaic_domains  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
-  SIM.mosaic_spread_deg = 0.05 # interpreted by UMAT_nm as a half-width stddev
-  SIM.distance_mm=141.7
+  SIM.mosaic_spread_deg = mosaic_spread_deg # interpreted by UMAT_nm as a half-width stddev
+  SIM.distance_mm=distance_mm
   SIM.set_mosaic_blocks(UMAT_nm)
 
   #SIM.detector_thick_mm = 0.5 # = 0 for Rayonix
@@ -98,7 +100,8 @@ class channel_pixels:
   SIM.progress_meter=False
   # flux is always in photons/s
 
-  SIM.flux=self.flux_sum
+  #SIM.flux=0.8E10 # number of photons per 100 ps integrated pulse, 24-bunch APS
+  SIM.flux=0.8E12 # number of photons per 100 ps integrated pulse, 24-bunch APS
   SIM.xray_source_wavelengths_A = self.wavlen
   SIM.xray_source_intensity_fraction = self.norm_intensity
   SIM.xray_source_XYZ = self.source_XYZ
@@ -135,8 +138,9 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
       return
 
   direct_algo_res_limit = 1.7
-
-  wavlen, flux, wavelength_A = next(spectra) # list of lambdas, list of fluxes, average wavelength
+  from LS49.biocars.generate_spectra import simple_spectrum
+  SS = simple_spectrum()
+  wavlen, flux, wavelength_A = SS.get_input_for_simulation() # list of lambdas, list of fluxes, average wavelength
   if quick:
     wavlen = flex.double([wavelength_A]);
     flux = flex.double([flex.sum(flux)])
@@ -167,8 +171,8 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
                            # 3000000 images would be 100000 hours on a 60-core machine (dials), or 11.4 years
                            # using 2 nodes, 5.7 years.  Do this at SLAC? NERSC? combination of all?
                            # SLAC downtimes: Tues Dec 5 (24 hrs), Mon Dec 11 (72 hrs), Mon Dec 18 light use, 24 days
-  SIM.mosaic_spread_deg = 0.05 # interpreted by UMAT_nm as a half-width stddev
-  SIM.distance_mm=141.7
+  SIM.mosaic_spread_deg = mosaic_spread_deg # interpreted by UMAT_nm as a half-width stddev
+  SIM.distance_mm=distance_mm
 
   UMAT_nm = flex.mat3_double()
   mersenne_twister = flex.mersenne_twister(seed=0)
@@ -323,6 +327,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
   CH.free_all()
   if quick:  SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
 
+  # this will have to be redone in CUDA for Laue beam
   # rough approximation to water: interpolation points for sin(theta/lambda) vs structure factor
   bg = flex.vec2_double([(0,2.57),(0.0365,2.58),(0.07,2.8),(0.12,5),(0.162,8),(0.2,6.75),(0.18,7.32),(0.216,6.75),(0.236,6.5),(0.28,4.5),(0.3,4.3),(0.345,4.36),(0.436,3.77),(0.5,3.17)])
   SIM.Fbg_vs_stol = bg
@@ -335,6 +340,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
   SIM.add_background()
   if quick:  SIM.to_smv_format(fileout=prefix + "_intimage_002.img")
 
+  # this will have to be redone in CUDA for Laue beam
   # rough approximation to air
   bg = flex.vec2_double([(0,14.1),(0.045,13.5),(0.174,8.35),(0.35,4.78),(0.5,4.22)])
   SIM.Fbg_vs_stol = bg
@@ -357,7 +363,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
   #SIM.detector_psf_type=shapetype.Fiber # rayonix=Fiber, CSPAD=None (or small Gaussian)
   SIM.detector_psf_type=shapetype.Unknown # for CSPAD
   SIM.detector_psf_fwhm_mm=0
-  #SIM.apply_psf()
+  SIM.apply_psf()
   print("One pixel-->",SIM.raw_pixels[500000])
 
   # at this point we scale the raw pixels so that the output array is on an scale from 0 to 50000.

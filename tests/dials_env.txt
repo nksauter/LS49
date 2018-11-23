@@ -126,6 +126,7 @@ subprocess32=3.5.2=py27_0
 tabulate=0.8.2=py_0
 tk=8.5.19=2
 tornado=5.1=py27h470a237_1
+tqdm=4.26.0=py_0
 traceback2=1.4.0=py27_0
 traitlets=4.3.2=py27_0
 typing=3.6.6=py27_0
