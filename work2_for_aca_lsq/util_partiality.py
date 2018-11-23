@@ -271,6 +271,7 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,tophat_spectrum=True,qu
     print("+++++++++++++++++++++++++++++++++++++++ Wavelength",x)
     CH = channel_pixels(ROI,wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,GF,output)
     incremental_signal = CH.raw_pixels * crystal.domains_per_crystal
+    make_response_plot.append_channel(x,ROI,incremental_signal)
     if x in [26,40,54,68]: # subsample 7096, 7110, 7124, 7138 eV
       print ("----------------------> subsample", x)
       make_response_plot.incr_subsample(x,ROI,incremental_signal)
@@ -288,7 +289,8 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,tophat_spectrum=True,qu
   print("Reducing full shape of",pixels.focus(),"to ROI of",roi_pixels.focus())
   SIM.free_all()
   make_response_plot.plot(roi_pixels,miller)
-  return dict(roi_pixels=roi_pixels,miller=miller,intensity=intensity)
+  return dict(roi_pixels=roi_pixels,miller=miller,intensity=intensity,
+              channels=make_response_plot.channels)
 
 class response_plot:
   def __init__(self,enable=True,title=""):
@@ -297,6 +299,10 @@ class response_plot:
     self.subsample = None # sample just a few wavelengths
     self.denominator = None # to normalize the sum
     self.title=title
+    self.channels = {}
+  def append_channel(self, channel, ROI, incr):
+    roi_incr = incr[ROI[1][0]:ROI[1][1], ROI[0][0]:ROI[0][1]]
+    self.channels[channel] = roi_incr
   def increment(self, channel, ROI, incr):
     if not self.enable: return
     roi_incr = incr[ROI[1][0]:ROI[1][1], ROI[0][0]:ROI[0][1]]

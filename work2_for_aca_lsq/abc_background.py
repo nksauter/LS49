@@ -1,5 +1,6 @@
 from __future__ import print_function, division
 from six.moves import range
+from six.moves import cPickle as pickle
 from scitbx.matrix import col,sqr
 from dials.algorithms.shoebox import MaskCode
 from scitbx.array_family import flex
@@ -336,14 +337,14 @@ class fit_roi:
         print()
       print()
 
-      # Modelled ROI
+      print ("# Modelled ROI")
       for x in range(F[1]):
         for y in range(F[2]):
             print ("%4.0f"%(self.a[3] * roi[x,y]),end=' ')
         print()
       print()
 
-      self.show_residual(plot=True)
+      self.show_residual(plot=False)
 
   def show_residual(self,plot=False):
     F = self.sb.data.focus()
@@ -405,6 +406,47 @@ class fit_roi:
     self.print_step("LBFGS stp",f)
     return f, flex.double([ga,gb,gc,gG])
 
+class fit_roi_multichannel:
+  def __init__(self,bkgrd,channels,rescale,verbose=True,basic_verbose=True):
+    import scitbx
+    self.sb_data = bkgrd.sb.data # shoebox
+    self.bkgrd_a = bkgrd.a
+    self.channels = channels
+    self.roi = rescale[0] * self.channels[0]
+    assert (len(self.channels) == 50) # there are only 50 channels, spaced 2 eV
+    for ichannel in range(1,len(self.channels)):
+      if flex.sum(self.channels[2*ichannel])>50:
+        print (ichannel, 2*ichannel, rescale[2*ichannel])
+      self.roi += rescale[2*ichannel] * self.channels[2*ichannel]
+    self.x = flex.double([self.bkgrd_a[0],self.bkgrd_a[1],self.bkgrd_a[2],1.]
+             ) # setting background model paramteres to previously determined values
+    self.n = 4 # four parameters
+    self.minimizer = scitbx.lbfgs.run(target_evaluator=self)
+    self.a = self.x
+
+  def print_step(self,message,target):
+    print ("%s %10.4f"%(message,target),
+           "["," ".join(["%10.4f"%a for a in self.x]),"]")
+
+  def compute_functional_and_gradients(self):
+    self.a = self.x
+    f = 0.; ga = 0.; gb = 0.; gc = 0. ; gG = 0.
+    F = self.sb_data.focus()
+    for x in range(F[1]):
+      for y in range(F[2]):
+        model_lambda = self.a[0]*x+self.a[1]*y+self.a[2]+self.a[3]*self.roi[x,y]
+        if model_lambda<=0:
+          f+= model_lambda # complete kludge, guard against math domain error
+        else:
+          datapt = self.sb_data[0,x,y]
+          f += model_lambda - datapt * math.log(model_lambda)
+        ga += x * (1. - datapt/model_lambda) # from handwritten notes
+        gb += y * (1. - datapt/model_lambda)
+        gc += (1. - datapt/model_lambda)
+        gG += self.roi[x,y] * (1. - datapt/model_lambda)
+    #self.print_step("LBFGS stp",f)
+    return f, flex.double([ga,gb,gc,gG])
+
 
 from LS49.work2_for_aca_lsq.util_partiality import get_partiality_response
 
@@ -413,7 +455,7 @@ if __name__=="__main__":
   Usage = """mpirun -n 50 libtbx.python gen_data_mpi.py
              rather: for x in `seq 0 64`; do libtbx.python jun24_gen_data_mpi.py $x & done
              for x in `seq 0 3`; do time libtbx.python may27_gen_data_mpi.py $x > /dev/null & done"""
-  usingMPI = False # XXXYYY
+  usingMPI = True # XXXYYY
   if usingMPI:
     from mpi4py import MPI
     comm = MPI.COMM_WORLD
@@ -422,10 +464,12 @@ if __name__=="__main__":
   else:
     import sys
     rank = int (sys.argv[1])
-    size=64
+    #size=64
+    size=1024
   N_total = 100000 # number of items to simulate
-  N_stride = 1563 # total number of tasks per rank
-  print ("hello from rank %d of %d"%(rank,size))
+  #N_stride = 1563 # total number of tasks per rank
+  N_stride = int(math.ceil(N_total/size)) # total number of tasks per rank
+  print ("hello from rank %d of %d with stride %d"%(rank,size,N_stride))
 
   if (not usingMPI) or rank == 0:
     print ("set up in rank 0")
@@ -448,6 +492,11 @@ if __name__=="__main__":
                             amplitudes = A,
                             orientations = random_orientations,
     )
+    with (open("confirm_P1_range_intensities_dict.pickle","rb")) as F: # Einsle reduced
+    #with (open("confirm_P1_range_oxidized_intensities_dict.pickle","rb")) as F: # Einsle oxidized
+    #with (open("confirm_P1_range_metallic_intensities_dict.pickle","rb")) as F: # Einsle metallic
+      intensity_dict = pickle.load(F)
+      transmitted_info["intensity_dict"] = intensity_dict
     print ("finished setup in rank 0")
   else:
     transmitted_info = None
@@ -466,11 +515,12 @@ if __name__=="__main__":
   npos_angle = 0
   nVF = 0
   millerd = {}
-
+  intensity_dict = transmitted_info["intensity_dict"]
   #for item,key in get_items(key=3271):
   for item,key in get_items(rank):
     result = dict(image=key,asu_idx_C2_setting=[],orig_idx_C2_setting=[],pick=pickle_glob%key,spectrumx=[],obs=[],model=[],cc=[],
                   simtbx_millers=[],simtbx_intensity=[])
+    roi_results = []
     #good indices: 3271, 2301: continue
     d = item["d"]
     nitem += 1
@@ -532,7 +582,69 @@ if __name__=="__main__":
         pr_value=PRD["roi_pixels"]
         miller=PRD["miller"]
         intensity=PRD["intensity"]
+        channels = PRD["channels"]
+
         FR = fit_roi(fb_ml, pr_value)
+
+        # commented out code proves that pr_value is the sum of the channels
+        if False:
+          F = sb.data.focus()
+          for x in range(F[1]):
+            for y in range(F[2]):
+              print ("%4.0f"%(FR.a[3] * pr_value[x,y]),end=' ')
+            print()
+          print()
+          monoband_residual = pr_value.deep_copy()
+          for ckey in channels:
+            monoband_residual -= channels[ckey]
+            print("monoband residual %d"%ckey)
+            for x in range(F[1]):
+              for y in range(F[2]):
+                print ("%4.0f"%(FR.a[3] * monoband_residual[x,y]),end=' ')
+              print()
+            print()
+        rescale_factor = intensity_dict[miller]/intensity
+        if False:
+          from matplotlib import pyplot as plt
+          plt.plot(range (len(rescale_factor)),rescale_factor,'r-')
+          plt.show()
+        FRC = fit_roi_multichannel(fb_ml, channels, rescale_factor)
+        # condition the FRC for pickling:
+        if True: # pickle it
+           del FRC.minimizer
+           FRC.simtbx_intensity_7122 = intensity
+           FRC.simtbx_P1_miller = miller
+           FRC.orig_idx_C2_setting=hkl[x]
+           FRC.asu_idx_C2_setting=asu[x]
+           FRC.image_no = key
+           roi_results.append(FRC)
+        print ("FR.a",list(FR.a))
+        print ("FRC.a",list(FRC.a))
+        print ("# Modelled ROI with rescaling")
+        F = sb.data.focus()
+        for ix in range(F[1]):
+          for iy in range(F[2]):
+              print ("%4.0f"%(FRC.a[3] * FRC.roi[ix,iy] - FR.a[3]*FR.roi[ix,iy]),end=' ')
+              #print ("%4.0f"%(FRC.roi[ix,iy] - FR.roi[ix,iy]),end=' ')
+          print()
+        print()
+
+
+        print (""" *************************
+ *********************
+ *********************
+ LLG Image %06d Miller %s NLL constant F = %9.1f     channels F = %9.1f
+ *********************
+ *********************
+"""%(key, hkl[x], FR.compute_functional_and_gradients()[0], FRC.compute_functional_and_gradients()[0]))
+        if False: # confirm the consistency of structure factor models
+          print ("P1 miller index, presumably",miller,"intensity",intensity)
+          print (list(intensity_dict[miller]))
+          x_axis = [7070.5 + i for i in range(100)]
+          from matplotlib import pyplot as plt
+          plt.plot(x_axis,intensity_dict[miller],'r-')
+          plt.plot([7122,],intensity,"b.")
+          plt.show()
 
         for c in range(nsb):
           intensity_lookup_1[(int(sb.coords()[c][1]),int(sb.coords()[c][0]))] = pr_value[c]
@@ -585,6 +697,8 @@ if __name__=="__main__":
     result["cb_op_simtbx_to_dials"] = CBOP.inverse()
 
     # At this point we optionally restrict the data
-    #import pickle
     #print ("pickling key %d in rank %d"%(key,rank),result)
     #pickle.dump(result,open("dataX%04d.pickle"%rank,"ab"))
+    print ("pickling key %d in rank %d"%(key,rank),roi_results)
+    with open("abc_coverage/abcX%06d.pickle"%key,"ab") as F:
+      pickle.dump(roi_results,F, pickle.HIGHEST_PROTOCOL)
