@@ -82,7 +82,7 @@ def fmodel_from_pdb(resolution,pdb_text,algorithm=None,wavelength=0.9):
   f_model_real.show_summary(prefix="FMODEL ")
   return f_model_real
 
-class gen_fmodel:
+class gen_fmodel(object):
   def __init__(self,resolution,pdb_text,algorithm=None,wavelength=0.9):
     from iotbx import pdb
     pdb_inp = pdb.input(source_info=None,lines = pdb_text)
