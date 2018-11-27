@@ -25,12 +25,11 @@ if __name__=="__main__":
   from scipy.interpolate import interp1d
   fFe0fp = interp1d(GS.energy, GS.fp, kind="cubic")
   fFe0fdp= interp1d(GS.energy, GS.fdp, kind="linear")
-  xnew = range(7088,7153)
+  xnew = range(7070,7180)
   plt.plot(xnew, fFe0fp(xnew), "g+")
   plt.plot(xnew, fFe0fdp(xnew), "g+")
   for item in xnew:
     print ("%11.2f%15.7f%15.7f"%(float(item),fFe0fp(item),fFe0fdp(item)))
-
 
   plt.axes().set_xlim((7088,7152))
   plt.axes().set_ylim((-8.3,4.2))

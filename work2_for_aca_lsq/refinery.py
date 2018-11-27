@@ -4,9 +4,6 @@ from six.moves import cPickle as pickle
 from scitbx.array_family import flex
 import math
 
-json_glob = "/global/cscratch1/sd/nksauter/proj-e/LS49_integ_step5/idx-step5_MPIbatch_0%05d.img_integrated_experiments.json"
-image_glob = "/net/dials/raid1/sauter/LS49/step5_MPIbatch_0%05d.img.gz"
-
 #specialize this file to look at one particular index
 distance_mm = 141.7
 pixel_sz_mm = 0.11
@@ -127,17 +124,18 @@ if __name__=="__main__":
              rather: for x in `seq 0 64`; do libtbx.python jun24_gen_data_mpi.py $x & done
              for x in `seq 0 3`; do time libtbx.python may27_gen_data_mpi.py $x > /dev/null & done"""
   usingMPI = True # XXXYYY
-  if usingMPI:
-    from mpi4py import MPI
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    size = comm.Get_size()
-  else:
-    import sys
-    rank = int (sys.argv[1])
-    #size=64
-    size=1024
+  from libtbx.mpi4py import MPI
+  comm = MPI.COMM_WORLD
+  rank = comm.Get_rank()
+  size = comm.Get_size()
   N_total = 100000 # number of items to simulate
+  if rank==0 and size==1: # special case of testing it
+    import sys
+    try:
+      rank = int (sys.argv[1])
+      size=1024
+      usingMPI = False
+    except Exception: pass
   N_stride = int(math.ceil(N_total/size)) # total number of tasks per rank
   print ("hello from rank %d of %d with stride %d"%(rank,size,N_stride))
 
@@ -145,9 +143,9 @@ if __name__=="__main__":
     print ("set up in rank 0")
     transmitted_info = dict(
     )
-    #with (open("confirm_P1_range_intensities_dict.pickle","rb")) as F: # Einsle reduced
+    with (open("confirm_P1_range_reduced_intensities_dict.pickle","rb")) as F: # Einsle reduced
     #with (open("confirm_P1_range_oxidized_intensities_dict.pickle","rb")) as F: # Einsle oxidized
-    with (open("confirm_P1_range_metallic_intensities_dict.pickle","rb")) as F: # Einsle metallic
+    #with (open("confirm_P1_range_metallic_intensities_dict.pickle","rb")) as F: # Einsle metallic
       intensity_dict = pickle.load(F)
       transmitted_info["intensity_dict"] = intensity_dict
     print ("finished setup in rank 0")

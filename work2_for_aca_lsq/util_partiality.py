@@ -4,29 +4,27 @@ from six.moves import cPickle as pickle
 from scitbx.array_family import flex
 from LS49.sim.step5_pad import microcrystal
 from scitbx.matrix import sqr,col
-from LS49.sim.step5_pad import pdb_lines
+from LS49.sim.step5_pad import data
 from LS49.sim.util_fmodel import gen_fmodel
 from simtbx.nanoBragg import shapetype
 from simtbx.nanoBragg import nanoBragg
 from six.moves import StringIO
 import scitbx
 import math
-from LS49.sim.fdp_plot import george_sherrell
-Fe_oxidized_model = george_sherrell("data_sherrell/pf-rd-ox_fftkk.out")
-Fe_reduced_model = george_sherrell("data_sherrell/pf-rd-red_fftkk.out")
 
 # use local file with (open(something,"wb")) as F:
 with (open("confirm_sfall_P1_7122_amplitudes.pickle","rb")) as F:
   sfall_P1_7122_amplitudes = pickle.load(F)
 
 def channel_pixels(ROI,wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,output):
+  local_data = data()
   energy_dependent_fmodel=False
   if energy_dependent_fmodel:
     fmodel_generator.reset_wavelength(wavelength_A)
     fmodel_generator.reset_specific_at_wavelength(
-                   label_has="FE1",tables=Fe_oxidized_model,newvalue=wavelength_A)
+                   label_has="FE1",tables=local_data.get("Fe_oxidized_model"),newvalue=wavelength_A)
     fmodel_generator.reset_specific_at_wavelength(
-                   label_has="FE2",tables=Fe_reduced_model,newvalue=wavelength_A)
+                   label_has="FE2",tables=local_data.get("Fe_reduced_model"),newvalue=wavelength_A)
     print("USING scatterer-specific energy-dependent scattering factors")
     sfall_channel = fmodel_generator.get_amplitudes()
   else:
@@ -103,7 +101,7 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,tophat_spectrum=True,qu
   #plt.title(smv_fileout)
   #plt.show()
 
-  GF = gen_fmodel(resolution=direct_algo_res_limit,pdb_text=pdb_lines,algorithm="fft",wavelength=wavelength_A)
+  GF = gen_fmodel(resolution=direct_algo_res_limit,pdb_text=data().get("pdb_lines"),algorithm="fft",wavelength=wavelength_A)
   GF.set_k_sol(0.435)
   GF.make_P1_primitive()
   sfall_main = GF.get_amplitudes()

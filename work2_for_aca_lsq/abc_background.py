@@ -8,9 +8,19 @@ import numpy as np
 import math
 from matplotlib import pyplot as plt
 
-json_glob = "/global/cscratch1/sd/nksauter/proj-e/LS49_integ_step5/idx-step5_MPIbatch_0%05d.img_integrated_experiments.json"
-image_glob = "/net/dials/raid1/sauter/LS49/step5_MPIbatch_0%05d.img.gz"
-pickle_glob = "/global/cscratch1/sd/nksauter/proj-e/LS49_integ_step5/idx-step5_MPIbatch_0%05d.img_integrated.pickle"
+json_glob = "LS49_integ_step5/idx-step5_MPIbatch_0%05d.img_integrated_experiments.json"
+pickle_glob = "LS49_integ_step5/idx-step5_MPIbatch_0%05d.img_integrated.pickle"
+
+# %%% boilerplate specialize to packaged big data %%%
+import os
+from LS49.sim import step5_pad
+from LS49.sim import step4_pad
+from LS49.spectra import generate_spectra
+ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+step5_pad.big_data = ls49_big_data
+step4_pad.big_data = ls49_big_data
+generate_spectra.big_data = ls49_big_data
+# %%%%%%
 
 #specialize this file to look at one particular index
 distance_mm = 141.7
@@ -83,7 +93,7 @@ def parse_postrefine():
 def get_items(myrank):
   postreffed = parse_postrefine()
   print ("# postrefined images",len(postreffed))
-  maxy = 2001
+  maxy = None
   ycount = 0
   for key in postreffed:
     #each rank should only allow keys in the range from myrank*N_stride to (myrank+1)*N_stride
@@ -101,13 +111,13 @@ def get_items(myrank):
     millers = T["miller_index"]
     nitem = len(resolutions)
     ycount+=1
-    if ycount>maxy:
+    if maxy is not None and ycount>maxy:
       print("maxy break %d"%maxy)
       break
     print ("THE ACTUAL JSON / PICKLE USED:",json_glob%key,pickle_glob%key)
     yield T,key
 
-class fit_background_abc_lsq:
+class fit_background_abc_lsq(object):
   def __init__(self,shoebox,verbose=False):
     self.sb = shoebox
     data = self.sb.data - self.sb.background
@@ -187,7 +197,7 @@ class fit_background_abc_lsq:
     print ("mean=%4.0f, stddev=%4.0f"%(MV.mean(),MV.unweighted_sample_standard_deviation()))
     print ("mean Poisson stddev=%4.0f"%(flex.mean(approx_poisson_sigma)))
 
-class fit_background_abc_ml:
+class fit_background_abc_ml(object):
   def __init__(self,shoebox,verbose=False,basic_verbose=False):
     import scitbx
     self.sb = shoebox
@@ -282,7 +292,7 @@ class fit_background_abc_ml:
     self.print_step("LBFGS stp",f)
     return f, flex.double([ga,gb,gc])
 
-class fit_roi:
+class fit_roi(object):
   def __init__(self,bkgrd,roi,verbose=True,basic_verbose=True):
     import scitbx
     self.sb = bkgrd.sb # shoebox
@@ -406,7 +416,7 @@ class fit_roi:
     self.print_step("LBFGS stp",f)
     return f, flex.double([ga,gb,gc,gG])
 
-class fit_roi_multichannel:
+class fit_roi_multichannel(object):
   def __init__(self,bkgrd,channels,rescale,verbose=True,basic_verbose=True):
     import scitbx
     self.sb_data = bkgrd.sb.data # shoebox
@@ -447,7 +457,6 @@ class fit_roi_multichannel:
     #self.print_step("LBFGS stp",f)
     return f, flex.double([ga,gb,gc,gG])
 
-
 from LS49.work2_for_aca_lsq.util_partiality import get_partiality_response
 
 if __name__=="__main__":
@@ -455,25 +464,27 @@ if __name__=="__main__":
   Usage = """mpirun -n 50 libtbx.python gen_data_mpi.py
              rather: for x in `seq 0 64`; do libtbx.python jun24_gen_data_mpi.py $x & done
              for x in `seq 0 3`; do time libtbx.python may27_gen_data_mpi.py $x > /dev/null & done"""
-  usingMPI = True # XXXYYY
-  if usingMPI:
-    from mpi4py import MPI
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    size = comm.Get_size()
-  else:
-    import sys
-    rank = int (sys.argv[1])
-    #size=64
-    size=1024
+  from libtbx.mpi4py import MPI
+  comm = MPI.COMM_WORLD
+  rank = comm.Get_rank()
+  size = comm.Get_size()
   N_total = 100000 # number of items to simulate
-  #N_stride = 1563 # total number of tasks per rank
+  usingMPI = True
+  if rank==0 and size==1: # special case of testing it
+    import sys
+    try:
+      rank = int (sys.argv[1])
+      size=1024
+      usingMPI = False
+    except Exception: pass
+    print("MPI rank %d of %d"%(rank,size))
   N_stride = int(math.ceil(N_total/size)) # total number of tasks per rank
   print ("hello from rank %d of %d with stride %d"%(rank,size,N_stride))
 
   if (not usingMPI) or rank == 0:
     print ("set up in rank 0")
-    pdb_lines = open("./1m2a.pdb","r").read()
+    from LS49.sim.step5_pad import data
+    pdb_lines = data().get("pdb_lines")
     from LS49.sim.util_fmodel import gen_fmodel
 
     GF = gen_fmodel(resolution=10.0,pdb_text=pdb_lines,algorithm="fft",wavelength=1.7)
@@ -492,7 +503,7 @@ if __name__=="__main__":
                             amplitudes = A,
                             orientations = random_orientations,
     )
-    with (open("confirm_P1_range_intensities_dict.pickle","rb")) as F: # Einsle reduced
+    with (open("confirm_P1_range_reduced_intensities_dict.pickle","rb")) as F: # Einsle reduced
     #with (open("confirm_P1_range_oxidized_intensities_dict.pickle","rb")) as F: # Einsle oxidized
     #with (open("confirm_P1_range_metallic_intensities_dict.pickle","rb")) as F: # Einsle metallic
       intensity_dict = pickle.load(F)
@@ -525,7 +536,7 @@ if __name__=="__main__":
     d = item["d"]
     nitem += 1
 
-    print ("key %d in rank %d"%(key,rank))
+    print ("ENTER key %d in rank %d"%(key,rank))
 
     nall_spots += len(item)
     iselect = ((d < 2.5) & (d > 2.1))
@@ -544,13 +555,15 @@ if __name__=="__main__":
     shoe = item["shoebox"].select(iselect)
     intensity_lookup ={}
     intensity_lookup_1 ={}
+
     for x in range(len(hkl)):
       slow = xyz[x][1]
       fast = xyz[x][0]
       positionX = col((slow,fast))-origin
       position_angle = positionX.angle(position0,deg=True)
       if position_angle > 150.:
-        print ("key %d in rank %d hkl %s"%(key,rank,hkl[x]))
+        print ("PA key %d in rank %d hkl %s"%(key,rank,hkl[x]))
+
         npos_angle += 1
         millerd[asu[x]]=millerd.get(asu[x],0)+1
         sb = shoe[x]
@@ -564,8 +577,12 @@ if __name__=="__main__":
         abs_PA = math.atan2(spotvec[1],spotvec[0]) # clockwise plotted on image_viewer (because vertical axis upside down)
         B = sb.bbox
         ROI = ((B[0],B[1]),(B[2],B[3]))
-        fb_lsq = fit_background_abc_lsq(sb,verbose=False)
-        fb_ml  = fit_background_abc_ml(sb,verbose=False)
+        try:
+          fb_lsq = fit_background_abc_lsq(sb,verbose=False)
+          fb_ml  = fit_background_abc_ml(sb,verbose=False)
+        except Exception as e:
+          print ("FAILing fit_background_abc on",e)
+          continue # avoid LBFGS Runtime and other exceptions
         values = sb.data-sb.background # ADU above background
         # intensity_lookup consists of the "observed" data from shoeboxes
 
@@ -603,12 +620,19 @@ if __name__=="__main__":
                 print ("%4.0f"%(FR.a[3] * monoband_residual[x,y]),end=' ')
               print()
             print()
+        if intensity==0.:
+          print ("FAILing on divide by zero")
+          continue
         rescale_factor = intensity_dict[miller]/intensity
         if False:
           from matplotlib import pyplot as plt
           plt.plot(range (len(rescale_factor)),rescale_factor,'r-')
           plt.show()
-        FRC = fit_roi_multichannel(fb_ml, channels, rescale_factor)
+        try:
+          FRC = fit_roi_multichannel(fb_ml, channels, rescale_factor)
+        except Exception as e:
+          print ("FAILing fit_roi_multichannel on",e)
+          continue
         # condition the FRC for pickling:
         if True: # pickle it
            del FRC.minimizer
@@ -648,7 +672,9 @@ if __name__=="__main__":
 
         for c in range(nsb):
           intensity_lookup_1[(int(sb.coords()[c][1]),int(sb.coords()[c][0]))] = pr_value[c]
-        assert len(intensity_lookup_1) == len(intensity_lookup)
+        if len(intensity_lookup_1) != len(intensity_lookup):
+          print ("FAILing on intensity lookup unequal", len(intensity_lookup_1),len(intensity_lookup))
+          continue
         assert len(pr_value) == len(sb.data)
         # intensity_lookup_1 consists of partiality model data from posthoc simulator (partiality x Icalc)
 

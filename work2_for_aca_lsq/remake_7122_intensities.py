@@ -5,8 +5,22 @@ from six.moves import range
 
 if __name__=="__main__":
 
+  # %%% boilerplate specialize to packaged big data %%%
+  import os
+  from LS49.sim import step5_pad
+  from LS49.sim import step4_pad
+  from LS49.spectra import generate_spectra
+  ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+  step5_pad.big_data = ls49_big_data
+  step4_pad.big_data = ls49_big_data
+  generate_spectra.big_data = ls49_big_data
+  # %%%%%%
+
   from LS49.sim.util_fmodel import gen_fmodel
-  from LS49.sim.step5_pad import pdb_lines,Fe_oxidized_model,Fe_reduced_model
+  from LS49.sim.step5_pad import data
+  pdb_lines = data().get("pdb_lines")
+  Fe_oxidized_model = data().get("Fe_oxidized_model")
+  Fe_reduced_model = data().get("Fe_reduced_model")
 
   W2 = 12398.425/7122.
 
