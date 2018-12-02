@@ -138,6 +138,16 @@ class gen_fmodel(object):
           print("old",sc.fp,sc.fdp,"new",newfp,newfdp)
         sc.fp = newfp
         sc.fdp = newfdp
+  def reset_specific_at_energy(self,label_has,tables,newvalue,verbose=False):
+    wavelength = 12398.425/newvalue
+    self.reset_specific_at_wavelength(label_has,tables,wavelength,verbose)
+  def get_fmodel(self):
+    import mmtbx
+    return mmtbx.utils.fmodel_from_xray_structure(
+      xray_structure = self.xray_structure,
+      f_obs          = None,
+      add_sigmas     = False,
+      params         = self.params2)
   def get_amplitudes(self):
     import mmtbx
     f_model_complex = mmtbx.utils.fmodel_from_xray_structure(
