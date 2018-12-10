@@ -148,6 +148,13 @@ class gen_fmodel(object):
       f_obs          = None,
       add_sigmas     = False,
       params         = self.params2)
+  def get_defined_indices_fmodel(self,miller_set):
+    import mmtbx
+    return mmtbx.utils.fmodel_from_xray_structure(
+      xray_structure = self.xray_structure,
+      f_obs          = miller_set,
+      add_sigmas     = False,
+      params         = self.params2)
   def get_amplitudes(self):
     import mmtbx
     f_model_complex = mmtbx.utils.fmodel_from_xray_structure(
