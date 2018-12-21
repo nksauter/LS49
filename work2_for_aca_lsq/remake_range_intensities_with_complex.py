@@ -540,12 +540,12 @@ def get_intensity_structure(base,FE1_model,FE2_model):
     energy = 7070.5 + incr
 
     GF_FE1.reset_specific_at_energy(label_has="FE1",tables=FE1_model,newvalue=energy)
-    f_container = GF_FE1.get_fmodel()
-    Fcalc_FE1 = f_container.fmodel.f_calc()
+    # not sure if I need this, takes a lot of time # f_container = GF_FE1.get_fmodel()
+    # not sure if I need this, takes a lot of time # Fcalc_FE1 = f_container.fmodel.f_calc()
 
     GF_FE2.reset_specific_at_energy(label_has="FE2",tables=FE2_model,newvalue=energy)
-    f_container = GF_FE2.get_fmodel()
-    Fcalc_FE2 = f_container.fmodel.f_calc()
+    # not sure if I need this, takes a lot of time # f_container = GF_FE2.get_fmodel()
+    # not sure if I need this, takes a lot of time # Fcalc_FE2 = f_container.fmodel.f_calc()
 
     ALGO = structure_factors.from_scatterers(crystal_symmetry=CS,
                                              d_min=GF_whole7070.params2.high_resolution)
