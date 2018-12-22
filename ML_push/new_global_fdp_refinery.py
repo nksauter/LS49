@@ -173,7 +173,8 @@ class george_sherrell_star(george_sherrell):
     self.fdp = fdp
 
 class rank_0_fit_all_f:
-  def __init__(self,FE1_model=Fe_oxidized_model,FE2_model=Fe_reduced_model):
+  def __init__(self,params,FE1_model=Fe_oxidized_model,FE2_model=Fe_reduced_model):
+    self.params = params
     self.n = 400
     self.x = flex.double(self.n)    #lay out the parameters.
     for incr in range(100):
@@ -184,11 +185,14 @@ class rank_0_fit_all_f:
       newfp,newfdp = FE2_model.fp_fdp_at_wavelength(angstroms=wavelength)
       self.x[incr+200]=newfp; self.x[incr+300]=newfdp
 
-  def reinitialize(self, rank, per_rank_items, per_rank_keys, per_rank_G,
+  def reinitialize(self, logical_rank, comm_size, per_rank_items, per_rank_keys, per_rank_G,
                    HKL_lookup, static_fcalcs, model_intensities):
     from libtbx import adopt_init_args
     adopt_init_args(self, locals())
-    self.model_intensities_reinitialized_for_these_parameters = True
+    self.model_intensities_reinitialized_for_debug_iteration_1 = (
+       self.params.starting_model.preset.FE1 == "Fe_oxidized_model" and
+       self.params.starting_model.preset.FE2 == "Fe_reduced_model"
+    )
     self.starting_params_cached = False
     self.iteration = 0
 
@@ -236,14 +240,15 @@ class rank_0_fit_all_f:
     f = 0.;
     g = flex.double(self.n)
     self.iteration += 1
-    print("inside compute rank",self.rank,"for iteration",self.iteration)
-    if self.rank==0:  self.plot_em()
+    print("inside compute rank",self.logical_rank,"for iteration",self.iteration)
+    if self.logical_rank==0 or self.comm_size==1:
+      if self.params.LLG_evaluator.enable_plot:  self.plot_em()
 
-    #Should plot the first two function calls (rank0) before failing on assert
-    #assert self.model_intensities_reinitialized_for_these_parameters
-    if not self.model_intensities_reinitialized_for_these_parameters:
+    #For debug: should plot the first two function calls (rank0) before failing on assert
+    #assert self.model_intensities_reinitialized_for_debug_iteration_1
+    if not self.model_intensities_reinitialized_for_debug_iteration_1:
       # recalculate model intensities for each target evaluation
-      if True: #self.rank == 0:
+      if self.logical_rank == 0 or self.comm_size==1:
 
         FE1 = george_sherrell_star(fp = self.x[0:100],fdp = self.x[100:200])
         FE2 = george_sherrell_star(fp = self.x[200:300],fdp = self.x[300:400])
@@ -252,13 +257,13 @@ class rank_0_fit_all_f:
         self.model_intensities = get_intensity_structure(
            self.static_fcalcs,FE1_model=FE1,FE2_model=FE2)
 
-        #transmitted_info = model_intensities
+        transmitted_info = self.model_intensities
       else:
         transmitted_info = None
-      #from libtbx.mpi4py import MPI
-      #comm = MPI.COMM_WORLD
-      #self.model_intensities = comm.bcast(transmitted_info, root = 0)
-      #comm.barrier()
+      from libtbx.mpi4py import MPI
+      comm = MPI.COMM_WORLD
+      self.model_intensities = comm.bcast(transmitted_info, root = 0)
+      comm.barrier()
 
     this_rank_N_images = len(self.per_rank_keys)
     for i_image in range(this_rank_N_images):
@@ -302,8 +307,8 @@ class rank_0_fit_all_f:
                                            energy_dependent_derivatives[derivative_address]
             #print (x,y,bkgrd,model_lambda,datapt,int(model_lambda - datapt))
 
-    self.model_intensities_reinitialized_for_these_parameters = False
-    if self.rank == 0: self.print_step("LBFGS Iteration %d"%self.iteration,f,g)
+    self.model_intensities_reinitialized_for_debug_iteration_1 = False
+    if self.logical_rank == 0: self.print_step("LBFGS Iteration %d"%self.iteration,f,g)
     return f, g
   def print_step(self,message,target,g):
     print ("%s %10.4f"%(message,target),
@@ -396,8 +401,10 @@ class MPI_Run(object):
         transmitted_info = None
     transmitted_info = self.mpi_helper.comm.bcast(transmitted_info, root = 0)
     self.mpi_helper.comm.barrier()
-    # -----------------------------------------------------------------------
 
+    # -----------------------------------------------------------------------
+    if self.mpi_helper.rank==0:
+      print ("Finding initial G and abc factors")
     per_rank_items = []
     per_rank_keys = []
     per_rank_G = []
@@ -421,10 +428,10 @@ class MPI_Run(object):
         per_rank_G.append( FOI.a[-1] )
 
     print ("rank %d has %d refined images"%(logical_rank,len(per_rank_items)))
-    from libtbx.mpi4py import MPI
-    N_ranks = self.mpi_helper.comm.reduce(1, MPI.SUM, 0)
-    N_refined_images = self.mpi_helper.comm.reduce(len(per_rank_items), MPI.SUM, 0)
-    N_input_images = self.mpi_helper.comm.reduce(N_input, MPI.SUM, 0)
+
+    N_ranks = self.mpi_helper.comm.reduce(1, self.mpi_helper.MPI.SUM, 0)
+    N_refined_images = self.mpi_helper.comm.reduce(len(per_rank_items), self.mpi_helper.MPI.SUM, 0)
+    N_input_images = self.mpi_helper.comm.reduce(N_input, self.mpi_helper.MPI.SUM, 0)
     self.mpi_helper.comm.barrier()
     if self.mpi_helper.rank==0:
       print ("final report %d ranks, %d input images, %d refined models"%(
@@ -433,36 +440,39 @@ class MPI_Run(object):
       print ("Initiating the full minimization")
     # -----------------------------------------------------------------------
 
-def run_mpi():
 
-  W = rank_0_fit_all_f()
-  W.reinitialize(logical_rank, per_rank_items, per_rank_keys, per_rank_G,
+    W = rank_0_fit_all_f( self.params,
+                          FE1_model=local_data.get(self.params.starting_model.preset.FE1),
+                          FE2_model=local_data.get(self.params.starting_model.preset.FE2))
+    W.reinitialize(logical_rank, self.mpi_helper.size, per_rank_items, per_rank_keys, per_rank_G,
                  transmitted_info["HKL_lookup"],
                  transmitted_info["static_fcalcs"],transmitted_info["model_intensities"])
 
-  minimizer = mpi_split_evaluator_run(target_evaluator=W,
+    minimizer = mpi_split_evaluator_run(target_evaluator=W,
         termination_params=scitbx.lbfgs.termination_parameters(
         traditional_convergence_test=True,
         traditional_convergence_test_eps=1.e-2,
-        max_calls=10)
+        max_calls=self.params.LLG_evaluator.max_calls)
       )
-  if rank==0:
-    print("Minimizer ended at iteration",W.iteration)
-    for ir in range(0):
-      raw_input("press return %d of 10..."%ir)
-    #W.plt.ioff() # interactive off, preserve screen display
-  comm.barrier()
+    if logical_rank==0:
+      print("Minimizer ended at iteration",W.iteration)
+      raw_input("Dismiss the plot %d of %d..."%(W.iteration,self.params.LLG_evaluator.max_calls))
+    self.mpi_helper.comm.barrier()
+
   """
+intensities only in rank 0
 implement the default option of calculating the intensities on the fly first time
+remove teh distinction between all and not all
 0) possibly crucial is the p(model) smoothing restraint
 Scale up to 12000 images and 64 cores
 1) starting points with all four pre-set ox/red states
+1.5) In this context, not really right to use pre-packaged model intensities, they should come from pre-set
 2) use 100 channels instead of 50
 3) use macrocycle over abcG / fdp refinement
   """
 if __name__=="__main__":
   Usage = """srun -n 32 -c 2 libtbx.python new_global_fdp_refinery.py #smallish test case, 1 node
-             libtbx.python new_global_fdp_refinery.py 45
+libtbx.python ../modules/LS49/ML_push/new_global_fdp_refinery.py LLG_evaluator.enable_plot=True # plot test
              ...either works only under: salloc -C haswell -N1 -q interactive -t 04:00:00
   """
 

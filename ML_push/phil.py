@@ -7,7 +7,7 @@ implement Max Likelihood refinement of the fp, fdp parameters.
 '''
 
 master_phil="""
-N_total = 2000
+N_total = 1000
     .type = int(value_min=0, value_max=100000)
     .help = How many elements of the total simulation to use for parameter refinement
     .help = Possible max working size for 64-core rack server is 6400
@@ -20,16 +20,30 @@ tester{
     .help = For the purpose of testing a single worker rank, what total MPI size to simulate
 }
 starting_model{
-  algorithm = to_file from_file_static from_file_all
+  algorithm = to_file from_file_static *from_file_all
   .type = choice
   .help = Compute the energy-dependent intensities and derivatives using chosen procedure
   .help = from_file_static choice indicates the intensities will be computed on the fly for
   .help =   each iteration, however the static Fcalcs still come from the file.
   .help = to_file choice computes the array in rank 0, then pickles it and exits the program
-  .help = from_file reads intensities from file for the initial iteration, then compute on the fly
+  .help = from_file_all reads intensities from file for the initial iteration, then compute on the fly
   filename = new_global_fdp_big_data.pickle
       .type = path
       .help = write out
+  preset
+    .help = Starting assumptions about the state of FE1 and FE2 scatterers
+  {
+    FE1 = *Fe_oxidized_model Fe_reduced_model Fe_metallic_model
+      .type = choice
+    FE2 = Fe_oxidized_model *Fe_reduced_model Fe_metallic_model
+      .type = choice
+  }
+}
+LLG_evaluator{
+  max_calls = 10
+    .type = int
+  enable_plot = False
+    .type = bool
 }
 """
 
