@@ -1,4 +1,33 @@
-Dec. 21, 2018
+Nov. 23
+
+Looks like the NERSC scratch obliterated a lot of my July 4 result files.  
+
+Pop the stack:
+can't run refinery.py without re-generating abc_background.py
+can't do that without re-running remake_7122_intensities.py
+
+Refactor all of these scripts with the ls49_big_data model
+
+Can't grok the plot.  Refactor sim/fdp_plot.py
+libtbx.python ../modules/LS49/work_pre_experiment/interpolate_fdp_plot.py # generate 1-eV spacings for metal Fe
+
+edit Fe-fake.dat
+
+libtbx.python ../modules/LS49/work2_for_aca_lsq/remake_7122_intensities.py
+
+libtbx.python ../modules/LS49/work2_for_aca_lsq/remake_range_intensities.py
+
+libtbx.python ../modules/LS49/work2_for_aca_lsq/abc_background.py
+
+Had to restore integration results and merging results from dials.lbl.gov:
+scp -pr sauter@dials.lbl.gov:/net/dials/raid1/sauter/LS49_merge .
+rsync -r sauter@dials.lbl.gov:/net/dials/raid1/sauter/LS49_integ_step5cori ./
+(Then linked it to the LS49_integ_step5 directory)
+
+finally refinery.py followed by plotLLG.py to reproduce July 4-5 results.
+-----------------------------------------------------
+Dec. 21, 2018.  Move over to dials.lbl.gov:/dev/shm
+rsync -r nksauter@cori.nersc.gov:/global/cscratch1/sd/nksauter/proj-h0918/ls49nov/abc_coverage ./
 
 A calculation done to implement Max Likelihood refinement of the fp, fdp parameters.
 

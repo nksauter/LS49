@@ -4,6 +4,8 @@ from six.moves import cPickle as pickle
 from scitbx.array_family import flex
 import scitbx
 import math
+from LS49.work2_for_aca_lsq.abc_background import fit_roi_multichannel # implicit import
+# multichannel needed for unpickling
 
 # %%% boilerplate specialize to packaged big data %%%
 import os
@@ -381,71 +383,61 @@ class MPI_Run(object):
           pickle.dump(static_fcalcs,out,pickle.HIGHEST_PROTOCOL)
           pickle.dump(model_intensities,out,pickle.HIGHEST_PROTOCOL)
       return
-
-def run_mpi():
-
-  if rank == 0:
-    print ("set up in rank 0")
-    #get initial model
-    if False: # generate initial conditions for the first time
-      HKL_lookup,static_fcalcs = get_static_fcalcs_with_HKL_lookup()
-      from LS49.work2_for_aca_lsq.remake_range_intensities_with_complex \
-           import get_intensity_structure
-      model_intensities = get_intensity_structure(
-           static_fcalcs,FE1_model=Fe_oxidized_model,FE2_model=Fe_reduced_model)
-      with (open("new_global_fdp_big_data.pickle","wb")) as out:
-        pickle.dump(HKL_lookup,out,pickle.HIGHEST_PROTOCOL)
-        pickle.dump(static_fcalcs,out,pickle.HIGHEST_PROTOCOL)
-        pickle.dump(model_intensities,out,pickle.HIGHEST_PROTOCOL)
     else:
-      with (open("new_global_fdp_big_data.pickle","rb")) as inp:
-        HKL_lookup = pickle.load(inp)
-        static_fcalcs = pickle.load(inp)
-        model_intensities = pickle.load(inp)
+      if self.mpi_helper.rank == 0:
+        with (open(self.params.starting_model.filename,"rb")) as inp:
+          HKL_lookup = pickle.load(inp)
+          static_fcalcs = pickle.load(inp)
+          model_intensities = pickle.load(inp)
 
-    transmitted_info = dict(HKL_lookup = HKL_lookup,
-        static_fcalcs = static_fcalcs, model_intensities = model_intensities
-    )
-    print ("finished setup in rank 0")
-  else:
-    transmitted_info = None
-  transmitted_info = comm.bcast(transmitted_info, root = 0)
-  comm.barrier()
-  per_rank_items = []
-  per_rank_keys = []
-  per_rank_G = []
-  min_spots = 3
-  N_input=0
-  for item,key in get_items(logical_rank,N_total,N_stride):
-    N_input+=1
-    if len(item) >= min_spots:
-      per_rank_items.append(item)
-      per_rank_keys.append(key)
-      FOI = fit_one_image_multispot(list_of_images=item,
+        transmitted_info = dict(HKL_lookup = HKL_lookup,
+        static_fcalcs = static_fcalcs, model_intensities = model_intensities)
+      else:
+        transmitted_info = None
+    transmitted_info = self.mpi_helper.comm.bcast(transmitted_info, root = 0)
+    self.mpi_helper.comm.barrier()
+    # -----------------------------------------------------------------------
+
+    per_rank_items = []
+    per_rank_keys = []
+    per_rank_G = []
+    min_spots = 3
+    N_input=0
+    for item,key in get_items(logical_rank,N_total,N_stride):
+      N_input+=1
+      if len(item) >= min_spots:
+        per_rank_items.append(item)
+        per_rank_keys.append(key)
+        FOI = fit_one_image_multispot(list_of_images=item,
             HKL_lookup = transmitted_info["HKL_lookup"],
             model_intensities = transmitted_info["model_intensities"])
 
-      print ("""LLG Image %06d on %d Bragg spots NLL    channels F = %9.1f"""%(
+        print ("""LLG Image %06d on %d Bragg spots NLL    channels F = %9.1f"""%(
         key, len(item), FOI.compute_functional_and_gradients()[0]))
-      # put the newly refined background model back into the item
-      for ihkl in range(FOI.n_spots):
-        per_rank_items[-1][ihkl].bkgrd_a = flex.double(
+        # put the newly refined background model back into the item
+        for ihkl in range(FOI.n_spots):
+          per_rank_items[-1][ihkl].bkgrd_a = flex.double(
                     [FOI.a[3*ihkl+0],FOI.a[3*ihkl+1],FOI.a[3*ihkl+2]])
-      per_rank_G.append( FOI.a[-1] )
+        per_rank_G.append( FOI.a[-1] )
 
-  print ("rank %d has %d refined images"%(logical_rank,len(per_rank_items)))
-  N_ranks = comm.reduce(1, MPI.SUM, 0)
-  N_refined_images = comm.reduce(len(per_rank_items), MPI.SUM, 0)
-  N_input_images = comm.reduce(N_input, MPI.SUM, 0)
-  comm.barrier()
-  if rank==0:
-    print ("final report %d ranks, %d input images, %d refined models"%(
-    N_ranks, N_input_images, N_refined_images))
-    print ("Finished finding initial G and abc factors")
-    print ("Initiating the full minimization")
+    print ("rank %d has %d refined images"%(logical_rank,len(per_rank_items)))
+    from libtbx.mpi4py import MPI
+    N_ranks = self.mpi_helper.comm.reduce(1, MPI.SUM, 0)
+    N_refined_images = self.mpi_helper.comm.reduce(len(per_rank_items), MPI.SUM, 0)
+    N_input_images = self.mpi_helper.comm.reduce(N_input, MPI.SUM, 0)
+    self.mpi_helper.comm.barrier()
+    if self.mpi_helper.rank==0:
+      print ("final report %d ranks, %d input images, %d refined models"%(
+      N_ranks, N_input_images, N_refined_images))
+      print ("Finished finding initial G and abc factors")
+      print ("Initiating the full minimization")
+    # -----------------------------------------------------------------------
+
+def run_mpi():
 
   W = rank_0_fit_all_f()
-  W.reinitialize(rank, per_rank_items, per_rank_keys, per_rank_G, transmitted_info["HKL_lookup"],
+  W.reinitialize(logical_rank, per_rank_items, per_rank_keys, per_rank_G,
+                 transmitted_info["HKL_lookup"],
                  transmitted_info["static_fcalcs"],transmitted_info["model_intensities"])
 
   minimizer = mpi_split_evaluator_run(target_evaluator=W,
@@ -461,33 +453,14 @@ def run_mpi():
     #W.plt.ioff() # interactive off, preserve screen display
   comm.barrier()
   """
-Actual work on Dec. 21
-1) Try to instrument get_intensities to develop plan for making it 10x more efficient.
----
-multi-rank MPI doesn't seem to work.
-Try disabling maptplotib (use a flag)
-Try doing work on dials; avoid necessity for shifter; avoid lustre file system
-Try refactoring get_intensities in case there is a problem with workers timing out
-Try using only two ranks
-Try turning off any try....except loops in lbfgs
-Try removing the zero-gradient parameters
-Is there a way to spoof get_intensities so it skips the calculation?
-Or a way to put it into C++ so it goes much faster?
-Is it using up too much memory?
+implement the default option of calculating the intensities on the fly first time
 0) possibly crucial is the p(model) smoothing restraint
-1) confirm that we can get further than iteration 2 with srun 32
-2) scale up to 100000?
-3) scale up to 1024 cores?
-4) refactor get_intensities to use MPI?
-"""
-  #from IPython import embed; embed()
-  """once done with all this, try
-  1) starting points with all four pre-set ox/red states
-  2) use 100 channels instead of 50
-  3) use macrocycle over abcG / fdp refinement
+Scale up to 12000 images and 64 cores
+1) starting points with all four pre-set ox/red states
+2) use 100 channels instead of 50
+3) use macrocycle over abcG / fdp refinement
   """
 if __name__=="__main__":
-  # 242 sec.
   Usage = """srun -n 32 -c 2 libtbx.python new_global_fdp_refinery.py #smallish test case, 1 node
              libtbx.python new_global_fdp_refinery.py 45
              ...either works only under: salloc -C haswell -N1 -q interactive -t 04:00:00
