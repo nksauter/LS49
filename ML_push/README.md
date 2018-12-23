@@ -42,3 +42,28 @@ Step 2: tests
   mpirun -c 32 libtbx.python ../modules/LS49/ML_push/new_global_fdp_refinery.py \ 
     starting_model.algorithm=to_file  --> output file new_global_fdp_big_data.pickle
 
+bash
+export WORK=/dev/shm/sauter
+cd ${WORK}
+source miniconda2/etc/profile.d/conda.sh
+conda activate myEnv
+export LS49_BIG_DATA=${WORK}/ls49_big_data
+export OMP_NUM_THREADS=64
+source build/setpaths.sh
+
+Installation:
+used junit-xml=1.7 instead of 1.8
+conda install mpich2
+conda install mpi openmpi mpi4py
+conda install mrcfile
+mpirun -c 32 libtbx.python modules/cctbx_project/scitbx/lbfgs/tst_mpi_split_eval
+uator.py
+
+cd ${WORK}/test
+rm -rf ${WORK}/test/*
+libtbx.python ${WORK}/modules/LS49/tests/public-test-all.py
+rm -rf ${WORK}/test/*
+libtbx.run_tests_parallel module=LS49 nproc=12
+git branch ml_push
+git push -u origin ml_push
+

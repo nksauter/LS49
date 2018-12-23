@@ -229,7 +229,7 @@ class rank_0_fit_all_f:
     GS.plot_them(self.plt,f1="r.",f2="r.")
 
     self.plt.axes().set_xlim((7088,7152))
-    self.plt.axes().set_ylim((-8.3,4.2))
+    self.plt.axes().set_ylim((-8.6,4.5))
     self.plt.title("Iteration %d"%self.iteration)
     self.plt.draw()
     self.plt.pause(0.2)
@@ -460,18 +460,22 @@ class MPI_Run(object):
     self.mpi_helper.comm.barrier()
 
   """
-intensities only in rank 0
-implement the default option of calculating the intensities on the fly first time
-remove teh distinction between all and not all
+DONE intensities only in rank 0
+DONE implement the default option of calculating the intensities on the fly first time
+DONE remove the distinction between all and not all
+DELAY use 100 channels instead of 50
 0) possibly crucial is the p(model) smoothing restraint
-Scale up to 12000 images and 64 cores
-1) starting points with all four pre-set ox/red states
-1.5) In this context, not really right to use pre-packaged model intensities, they should come from pre-set
-2) use 100 channels instead of 50
+1.5) When using wrong-redox initial state, not right to use pre-packaged model intensities, rather on-the-fly
 3) use macrocycle over abcG / fdp refinement
+Scale up to 12000 images, 64 cores, and iteration to convergence
+1) starting points with all four pre-set ox/red states
+Make movies, and set regular list of trials needed for publication
+Migrate to cori
+
   """
 if __name__=="__main__":
   Usage = """srun -n 32 -c 2 libtbx.python new_global_fdp_refinery.py #smallish test case, 1 node
+mpirun -c 64 libtbx.python ../modules/LS49/ML_push/new_global_fdp_refinery.py LLG_evaluator.enable_plot=True starting_model.preset.FE1=Fe_metallic_model starting_model.preset.FE2=Fe_metallic_model N_total=8000
 libtbx.python ../modules/LS49/ML_push/new_global_fdp_refinery.py LLG_evaluator.enable_plot=True # plot test
              ...either works only under: salloc -C haswell -N1 -q interactive -t 04:00:00
   """
