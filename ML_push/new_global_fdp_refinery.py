@@ -171,6 +171,16 @@ class george_sherrell_star(george_sherrell):
     self.energy = flex.double([7071. + incr for incr in range(100)])
     self.fp = fp
     self.fdp = fdp
+  def plot_them(self,fine_flag,plt,f1,f2):
+    if fine_flag:
+      E = self.energy; fp = self.fp; fdp = self.fdp
+    else:
+      E = self.energy[0:len(self.energy):2]
+      fp = self.fp[0:len(self.fp):2]
+      fdp = self.fdp[0:len(self.fdp):2]
+    plt.plot(E, fp, f1)
+    plt.plot(E, fdp, f2)
+
 
 class rank_0_fit_all_f:
   def __init__(self,params,FE1_model=Fe_oxidized_model,FE2_model=Fe_reduced_model):
@@ -202,6 +212,7 @@ class rank_0_fit_all_f:
       self.plt = plt
       self.plt.ion() # interactive - on
     self.plt.cla() #clear last access
+    fine = self.params.LLG_evaluator.plot_interpolation # plot the non-modeled f values
 
     # ground truth
     from LS49.sim.step5_pad import full_path
@@ -218,15 +229,15 @@ class rank_0_fit_all_f:
       self.starting_params_FE2 = self.x[200:400]
       self.starting_params_cached = True
     GS = george_sherrell_star(fp = self.starting_params_FE1[0:100],fdp = self.starting_params_FE1[100:200])
-    GS.plot_them(self.plt,f1="bx",f2="bx")
+    GS.plot_them(fine,self.plt,f1="bx",f2="bx")
     GS = george_sherrell_star(fp = self.starting_params_FE2[0:100],fdp = self.starting_params_FE2[100:200])
-    GS.plot_them(self.plt,f1="rx",f2="rx")
+    GS.plot_them(fine,self.plt,f1="rx",f2="rx")
 
     # current values
     GS = george_sherrell_star(fp = self.x[0:100],fdp = self.x[100:200])
-    GS.plot_them(self.plt,f1="b.",f2="b.")
+    GS.plot_them(fine,self.plt,f1="b.",f2="b.")
     GS = george_sherrell_star(fp = self.x[200:300],fdp = self.x[300:400])
-    GS.plot_them(self.plt,f1="r.",f2="r.")
+    GS.plot_them(fine,self.plt,f1="r.",f2="r.")
 
     self.plt.axes().set_xlim((7088,7152))
     self.plt.axes().set_ylim((-8.6,4.5))
@@ -497,6 +508,9 @@ Migrate to cori
 if __name__=="__main__":
   Usage = """srun -n 32 -c 2 libtbx.python new_global_fdp_refinery.py #smallish test case, 1 node
 mpirun -c 64 libtbx.python ../modules/LS49/ML_push/new_global_fdp_refinery.py LLG_evaluator.enable_plot=True starting_model.preset.FE1=Fe_metallic_model starting_model.preset.FE2=Fe_metallic_model N_total=8000
+
+mpirun -c 56 libtbx.python ../modules/LS49/ML_push/new_global_fdp_refinery.py LLG_evaluator.enable_plot=True starting_model.preset.FE1=Fe_metallic_model starting_model.preset.FE2=Fe_metallic_model N_total=8000 LLG_evaluator.max_calls=19 LLG_evaluator.plot_interpolation=False
+
 libtbx.python ../modules/LS49/ML_push/new_global_fdp_refinery.py LLG_evaluator.enable_plot=True # plot test
              ...either works only under: salloc -C haswell -N1 -q interactive -t 04:00:00
   """

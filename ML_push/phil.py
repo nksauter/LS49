@@ -47,6 +47,8 @@ LLG_evaluator{
     .type = int
   enable_plot = False
     .type = bool
+  plot_interpolation = True
+    .type = bool
   restraints{
     fp{
       mean = 0.0
