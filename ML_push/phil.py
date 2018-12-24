@@ -47,6 +47,20 @@ LLG_evaluator{
     .type = int
   enable_plot = False
     .type = bool
+  restraints{
+    fp{
+      mean = 0.0
+        .type = float
+      sigma = 0.1
+        .type = float
+    }
+    fdp{
+      mean = 0.03
+        .type = float
+      sigma = 0.2
+        .type = float
+    }
+  }
 }
 """
 

@@ -307,6 +307,27 @@ class rank_0_fit_all_f:
                                            energy_dependent_derivatives[derivative_address]
             #print (x,y,bkgrd,model_lambda,datapt,int(model_lambda - datapt))
 
+    if self.logical_rank == 0 or self.comm_size==1:
+      from LS49.ML_push.pModel import compute_functional_and_gradients_fp
+      if self.params.LLG_evaluator.restraints.fp.mean is not None:
+        # add in restraints on the fp model
+        ffp,g1fp,g2fp = compute_functional_and_gradients_fp(
+          FE1_fp = a[0:100], FE2_fp = a[200:300],
+          mean = self.params.LLG_evaluator.restraints.fp.mean,
+          sigma = self.params.LLG_evaluator.restraints.fp.sigma)
+        f += ffp
+        for gidx in range(100):
+          g[gidx] += g1fp[gidx]; g[200+gidx] += g2fp[gidx]
+      if self.params.LLG_evaluator.restraints.fdp.mean is not None:
+        # add in restraints on the fdp model
+        ffp,g1fp,g2fp = compute_functional_and_gradients_fp(
+          FE1_fp = a[100:200], FE2_fp = a[300:400],
+          mean = self.params.LLG_evaluator.restraints.fdp.mean,
+          sigma = self.params.LLG_evaluator.restraints.fdp.sigma)
+        f += ffp
+        for gidx in range(100):
+          g[100+gidx] += g1fp[gidx]; g[300+gidx] += g2fp[gidx]
+
     self.model_intensities_reinitialized_for_debug_iteration_1 = False
     if self.logical_rank == 0: self.print_step("LBFGS Iteration %d"%self.iteration,f,g)
     return f, g
