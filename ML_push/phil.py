@@ -15,7 +15,7 @@ tester{
   rank = 45
     .type = int
     .help = For the purpose of testing a single worker rank, which rank number to simulate
-  size = 1024
+  size = 512
     .type = int
     .help = For the purpose of testing a single worker rank, what total MPI size to simulate
 }
