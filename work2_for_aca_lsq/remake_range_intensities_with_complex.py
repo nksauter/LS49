@@ -549,6 +549,16 @@ def get_intensity_structure(base,FE1_model,FE2_model):
 
     ALGO = structure_factors.from_scatterers(crystal_symmetry=CS,
                                              d_min=GF_whole7070.params2.high_resolution)
+    #hack cctbx/xray/structure_factors/structure_factors_direct.h
+    """
+/*#if !defined(CCTBX_XRAY_STRUCTURE_FACTORS_DIRECT_NO_PRAGMA_OMP)
+#if !defined(__DECCXX_VER) || (defined(_OPENMP) && _OPENMP > 199819)
+        #pragma omp parallel for schedule(static)
+#endif
+#endif
+*/
+        #pragma omp parallel for
+    """
     from_scatterers_direct_fe1 = ALGO(xray_structure=GF_FE1.xray_structure,
                                       miller_set=MS,algorithm="direct")
     Fcalc_FE1_dir = from_scatterers_direct_fe1.f_calc().data()
@@ -586,6 +596,9 @@ def get_intensity_structure(base,FE1_model,FE2_model):
                                 occupancy  = gradient_flags.occupancy,
                                 fp         = gradient_flags.fp,
                                 fdp        = gradient_flags.fdp)
+
+    #hack cctbx/xray/structure_factors/each_hkl_gradients_direct.h
+    #pragma omp parallel for (line 226)
     sf1 = xray.ext.each_hkl_gradients_direct(
     MS.unit_cell(), MS.space_group(), MS.indices(), GF_FE1.xray_structure.scatterers(), None,
     GF_FE1.xray_structure.scattering_type_registry(), GF_FE1.xray_structure.site_symmetry_table(),
