@@ -49,6 +49,9 @@ LLG_evaluator{
     .type = bool
   plot_interpolation = True
     .type = bool
+  title = None
+    .type = str
+    .help = save plot sequence to files with this root title
   restraints{
     fp{
       mean = 0.0

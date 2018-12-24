@@ -210,9 +210,12 @@ class rank_0_fit_all_f:
     if not self.starting_params_cached:
       from matplotlib import pyplot as plt
       self.plt = plt
-      self.plt.ion() # interactive - on
-    self.plt.cla() #clear last access
+      if self.params.LLG_evaluator.title is None:
+        self.plt.ion() # interactive - on
+    if self.params.LLG_evaluator.title is None:
+      self.plt.cla() #clear last access
     fine = self.params.LLG_evaluator.plot_interpolation # plot the non-modeled f values
+    fig = self.plt.figure()
 
     # ground truth
     from LS49.sim.step5_pad import full_path
@@ -242,8 +245,11 @@ class rank_0_fit_all_f:
     self.plt.axes().set_xlim((7088,7152))
     self.plt.axes().set_ylim((-8.6,4.5))
     self.plt.title("Iteration %d"%self.iteration)
-    self.plt.draw()
-    self.plt.pause(0.2)
+    if self.params.LLG_evaluator.title is not None:
+      fig.savefig("%s_iteration_%02d.png"%(self.params.LLG_evaluator.title,self.iteration))
+    else:
+      self.plt.draw()
+      self.plt.pause(0.2)
     #self.plt.show()
 
   def compute_functional_and_gradients(self):
@@ -285,7 +291,8 @@ class rank_0_fit_all_f:
         this_spot = this_image[i_spot]
         miller_index = this_spot.simtbx_P1_miller
         this_ref_intensity = this_spot.simtbx_intensity_7122
-
+        # negative control test point here:
+        # miller_index = (miller_index[0],miller_index[1],miller_index[2]-1)
         lookup_idx = self.HKL_lookup[miller_index]
         energy_dependent_intensity = self.model_intensities.matrix_copy_block(
                       i_row=lookup_idx,i_column=0,n_rows=1,n_columns=100)
@@ -472,7 +479,6 @@ class MPI_Run(object):
       print ("Initiating the full minimization")
     # -----------------------------------------------------------------------
 
-
     W = rank_0_fit_all_f( self.params,
                           FE1_model=local_data.get(self.params.starting_model.preset.FE1),
                           FE2_model=local_data.get(self.params.starting_model.preset.FE2))
@@ -488,7 +494,7 @@ class MPI_Run(object):
       )
     if logical_rank==0:
       print("Minimizer ended at iteration",W.iteration)
-      raw_input("Dismiss the plot %d of %d..."%(W.iteration,self.params.LLG_evaluator.max_calls))
+      #raw_input("Dismiss the plot %d of %d..."%(W.iteration,self.params.LLG_evaluator.max_calls))
     self.mpi_helper.comm.barrier()
 
   """
@@ -496,12 +502,13 @@ DONE intensities only in rank 0
 DONE implement the default option of calculating the intensities on the fly first time
 DONE remove the distinction between all and not all
 DELAY use 100 channels instead of 50
-0) possibly crucial is the p(model) smoothing restraint
+DONE 0) possibly crucial is the p(model) smoothing restraint
 1.5) When using wrong-redox initial state, not right to use pre-packaged model intensities, rather on-the-fly
 3) use macrocycle over abcG / fdp refinement
 Scale up to 12000 images, 64 cores, and iteration to convergence
-1) starting points with all four pre-set ox/red states
-Make movies, and set regular list of trials needed for publication
+DONE in large part. 1) starting points with all four pre-set ox/red states
+Make movies
+set regular list of trials needed for publication
 Migrate to cori
 
   """
@@ -513,6 +520,7 @@ mpirun -c 56 libtbx.python ../modules/LS49/ML_push/new_global_fdp_refinery.py LL
 
 libtbx.python ../modules/LS49/ML_push/new_global_fdp_refinery.py LLG_evaluator.enable_plot=True # plot test
              ...either works only under: salloc -C haswell -N1 -q interactive -t 04:00:00
+convert -delay 12 -loop 0 *.png Fe_metal_iteration.gif
   """
 
   script = MPI_Run()
