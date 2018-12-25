@@ -196,22 +196,37 @@ class rank_0_fit_all_f:
       self.x[incr+200]=newfp; self.x[incr+300]=newfdp
 
   def reinitialize(self, logical_rank, comm_size, per_rank_items, per_rank_keys, per_rank_G,
-                   HKL_lookup, static_fcalcs, model_intensities):
+                   HKL_lookup, static_fcalcs, model_intensities,force_recompute=False):
     from libtbx import adopt_init_args
     adopt_init_args(self, locals())
     self.model_intensities_reinitialized_for_debug_iteration_1 = (
        self.params.starting_model.preset.FE1 == "Fe_oxidized_model" and
        self.params.starting_model.preset.FE2 == "Fe_reduced_model"
     )
+    if force_recompute: self.model_intensities_reinitialized_for_debug_iteration_1=False
+    self.plot_plt_imported = False
     self.starting_params_cached = False
+    if not self.starting_params_cached:
+      self.starting_params_FE1 = self.x[0:200]
+      self.starting_params_FE2 = self.x[200:400]
+      self.starting_params_cached = True
     self.iteration = 0
+    self.macrocycle = None
+  def set_macrocycle(self, value, FE1_starting_params=None, FE2_starting_params=None):
+    # allows macrocycler to set the initial values as of cycle 1
+    self.macrocycle = value
+    if FE1_starting_params is not None:
+      self.starting_params_FE1 = FE1_starting_params
+      self.starting_params_FE2 = FE2_starting_params
+      self.starting_params_cached = True
 
   def plot_em(self):
-    if not self.starting_params_cached:
+    if not self.plot_plt_imported:
       from matplotlib import pyplot as plt
       self.plt = plt
       if self.params.LLG_evaluator.title is None:
         self.plt.ion() # interactive - on
+      self.plot_plt_imported = True
     if self.params.LLG_evaluator.title is None:
       self.plt.cla() #clear last access
     fine = self.params.LLG_evaluator.plot_interpolation # plot the non-modeled f values
@@ -227,10 +242,6 @@ class rank_0_fit_all_f:
     GS.plot_them(self.plt,f1="m-",f2="m-")
 
     # starting values
-    if not self.starting_params_cached:
-      self.starting_params_FE1 = self.x[0:200]
-      self.starting_params_FE2 = self.x[200:400]
-      self.starting_params_cached = True
     GS = george_sherrell_star(fp = self.starting_params_FE1[0:100],fdp = self.starting_params_FE1[100:200])
     GS.plot_them(fine,self.plt,f1="bx",f2="bx")
     GS = george_sherrell_star(fp = self.starting_params_FE2[0:100],fdp = self.starting_params_FE2[100:200])
@@ -246,7 +257,9 @@ class rank_0_fit_all_f:
     self.plt.axes().set_ylim((-8.6,4.5))
     self.plt.title("Iteration %d"%self.iteration)
     if self.params.LLG_evaluator.title is not None:
-      fig.savefig("%s_iteration_%02d.png"%(self.params.LLG_evaluator.title,self.iteration))
+      macrocycle_tell = "" if self.macrocycle is None else "macrocycle_%02d_"%self.macrocycle
+      fig.savefig("%s_%siteration_%02d.png"%(self.params.LLG_evaluator.title,
+                  macrocycle_tell,self.iteration))
     else:
       self.plt.draw()
       self.plt.pause(0.2)
