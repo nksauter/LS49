@@ -57,9 +57,11 @@ def fp_distro(plt):
   plt.axis([-1,1,0,40])
   plt.show()
 
-def compute_functional_and_gradients_fp(FE1_fp,FE2_fp,mean,sigma):
+def compute_functional_and_gradients_fp(FE1_fp,FE2_fp,mean,sigma,constrain_endpoints=False):
   f = 0.
-  for i in range(1,100):
+  if constrain_endpoints:  effective_range=range(1,99)
+  else: effective_range=range(100)
+  for i in effective_range:
     f += (0.5/(sigma*sigma) * (FE1_fp[i] - FE1_fp[i-1] -mean)**2)
     f += (0.5/(sigma*sigma) * (FE2_fp[i] - FE2_fp[i-1] -mean)**2)
   g1 = flex.double(len(FE1_fp))

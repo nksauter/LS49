@@ -263,6 +263,7 @@ class rank_0_fit_all_f:
     else:
       self.plt.draw()
       self.plt.pause(0.2)
+    del fig
     #self.plt.show()
 
   def compute_functional_and_gradients(self):
@@ -273,6 +274,7 @@ class rank_0_fit_all_f:
     print("inside compute rank",self.logical_rank,"for iteration",self.iteration)
     if self.logical_rank==0 or self.comm_size==1:
       if self.params.LLG_evaluator.enable_plot:  self.plot_em()
+      print ("Macrocycle",self.macrocycle,"Iteration",self.iteration,list(self.x))
 
     #For debug: should plot the first two function calls (rank0) before failing on assert
     #assert self.model_intensities_reinitialized_for_debug_iteration_1
@@ -345,7 +347,7 @@ class rank_0_fit_all_f:
         ffp,g1fp,g2fp = compute_functional_and_gradients_fp(
           FE1_fp = a[0:100], FE2_fp = a[200:300],
           mean = self.params.LLG_evaluator.restraints.fp.mean,
-          sigma = self.params.LLG_evaluator.restraints.fp.sigma)
+          sigma = self.params.LLG_evaluator.restraints.fp.sigma,constrain_endpoints=True)
         f += ffp
         for gidx in range(100):
           g[gidx] += g1fp[gidx]; g[200+gidx] += g2fp[gidx]
@@ -354,7 +356,7 @@ class rank_0_fit_all_f:
         ffp,g1fp,g2fp = compute_functional_and_gradients_fp(
           FE1_fp = a[100:200], FE2_fp = a[300:400],
           mean = self.params.LLG_evaluator.restraints.fdp.mean,
-          sigma = self.params.LLG_evaluator.restraints.fdp.sigma)
+          sigma = self.params.LLG_evaluator.restraints.fdp.sigma,constrain_endpoints=True)
         f += ffp
         for gidx in range(100):
           g[100+gidx] += g1fp[gidx]; g[300+gidx] += g2fp[gidx]
