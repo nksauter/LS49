@@ -11,6 +11,11 @@ N_total = 2000
     .type = int(value_min=0, value_max=100000)
     .help = How many elements of the total simulation to use for parameter refinement
     .help = Possible max working size for 64-core rack server is 6400
+cohort = 0
+    .type = int
+    .help = allows the import of an alternate set of data, for CC1/2 calculation
+    .help = for example, with cohort 0 and N_total=2000, use first 2000 images,
+    .help = but cohort = 1 uses 2000 to 3999
 tester{
   rank = 45
     .type = int

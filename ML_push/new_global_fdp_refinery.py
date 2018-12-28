@@ -66,12 +66,13 @@ distance_mm = 141.7
 pixel_sz_mm = 0.11
 mos_rotation_deg = 0.05
 
-def get_items(myrank,N_total,N_stride):
+def get_items(myrank,N_total,N_stride,cohort=0):
   for key in range(N_total):
-    #each rank should only allow keys in the range from myrank*N_stride to (myrank+1)*N_stride
-    if key<myrank*N_stride: continue
-    if key >= (myrank+1) * N_stride: continue
-    if key >= N_total : continue
+    #each rank should only allow keys in the range from
+    # cohort*N_total + myrank*N_stride to cohort*N_total + (myrank+1)*N_stride
+    if key < cohort*N_total + myrank*N_stride: continue
+    if key >= cohort*N_total + (myrank+1) * N_stride: continue
+    if key >= (cohort+1) * N_total : continue
     try:
       with open("abc_coverage/abcX%06d.pickle"%key,"rb") as F:
         T = pickle.load(F)
@@ -465,7 +466,7 @@ class MPI_Run(object):
     per_rank_G = []
     min_spots = 3
     N_input=0
-    for item,key in get_items(logical_rank,N_total,N_stride):
+    for item,key in get_items(logical_rank,N_total,N_stride,self.params.cohort):
       N_input+=1
       if len(item) >= min_spots:
         per_rank_items.append(item)
