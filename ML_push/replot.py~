@@ -171,7 +171,7 @@ def plot_em_broken(self,key,values):
       if self.macrocycle==3 and self.iteration==12:
         fig.savefig("replot_%s_%siteration_%02d.pdf"%(self.params.LLG_evaluator.title,
                   macrocycle_tell,self.iteration))
-      print ("%s_%siteration_%02d CC=%6.3f%%"%(self.params.LLG_evaluator.title,
+      print ("%s_%siteration_%02d CC=%5.2f%%"%(self.params.LLG_evaluator.title,
                   macrocycle_tell,self.iteration,100*cc.get_cc()))
     else:
       self.plt.draw()
