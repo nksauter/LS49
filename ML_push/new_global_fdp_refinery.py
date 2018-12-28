@@ -271,8 +271,9 @@ class rank_0_fit_all_f:
     f = 0.;
     g = flex.double(self.n)
     self.iteration += 1
-    print("inside compute rank",self.logical_rank,"for iteration",self.iteration)
+    #print("inside compute rank",self.logical_rank,"for iteration",self.iteration)
     if self.logical_rank==0 or self.comm_size==1:
+      print("inside compute rank",self.logical_rank,"for iteration",self.iteration)
       if self.params.LLG_evaluator.enable_plot:  self.plot_em()
       print ("Macrocycle",self.macrocycle,"Iteration",self.iteration,list(self.x))
 
