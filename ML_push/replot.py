@@ -187,6 +187,7 @@ class MPI_Run(upstream_base_script):
       for line in F:
         if line.find("Macrocycle")==0:
           tokens = line.strip().split()
+          if tokens[1] == "None": tokens[1]="1" # allow for macrocycle to be undefined
           key = int(tokens[1]),int(tokens[3]) # macrocycle, iteration
           values_str = [t.replace(",","").replace("[","").replace("]","") for t in tokens[4:]]
           values_float = flex.double([float(t) for t in values_str])
