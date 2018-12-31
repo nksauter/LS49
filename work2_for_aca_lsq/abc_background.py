@@ -90,12 +90,14 @@ def parse_postrefine():
   # a lot of files have dropped out because of thread-to-thread contention in the log
   # file (thousands).   Should re-run this sometime with nproc=1
 
-def get_items(myrank):
+def get_items(myrank=None,mykey=None):
   postreffed = parse_postrefine()
   print ("# postrefined images",len(postreffed))
   maxy = None
   ycount = 0
   for key in postreffed:
+    if mykey is not None:
+      if key != mykey:continue
     #each rank should only allow keys in the range from myrank*N_stride to (myrank+1)*N_stride
     if key<myrank*N_stride: continue
     if key >= (myrank+1) * N_stride: continue
