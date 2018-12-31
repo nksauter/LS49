@@ -603,9 +603,12 @@ if __name__=="__main__":
         miller=PRD["miller"]
         intensity=PRD["intensity"]
         channels = PRD["channels"]
-
-        FR = fit_roi(fb_ml, pr_value)
-
+        try:
+          FR = fit_roi(fb_ml, pr_value)
+        except Exception as e:
+          print ("""No result model stored.
+FAILing fit_roi for key %d on"""%(key),e)
+          continue
         # commented out code proves that pr_value is the sum of the channels
         if False:
           F = sb.data.focus()
