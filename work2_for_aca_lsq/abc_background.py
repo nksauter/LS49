@@ -531,7 +531,7 @@ if __name__=="__main__":
   nVF = 0
   millerd = {}
   intensity_dict = transmitted_info["intensity_dict"]
-  #for item,key in get_items(key=3271):
+  #for item,key in get_items(rank, mykey=86738):
   for item,key in get_items(rank):
     result = dict(image=key,asu_idx_C2_setting=[],orig_idx_C2_setting=[],pick=pickle_glob%key,spectrumx=[],obs=[],model=[],cc=[],
                   simtbx_millers=[],simtbx_intensity=[])
