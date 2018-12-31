@@ -380,6 +380,7 @@ class fit_roi(object):
           model = background + self.a[3] * self.roi[x,y]
           diffdata = self.sb.data[0,x,y]-model
           diff.append(diffdata)
+          if model < 0.: model=0. # complete kludge avoid a math domain error
           approx_poisson_sigma.append(math.sqrt(model))
     MV = flex.mean_and_variance(diff)
     fmin,fmax = flex.min(diff), flex.max(diff)
