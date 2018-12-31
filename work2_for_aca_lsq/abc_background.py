@@ -406,10 +406,11 @@ class fit_roi(object):
     for x in range(F[1]):
       for y in range(F[2]):
           model_lambda = self.a[0]*x+self.a[1]*y+self.a[2]+self.a[3]*self.roi[x,y]
+          datapt = self.sb.data[0,x,y]
           if model_lambda<=0:
             f+= model_lambda # complete kludge, guard against math domain error
+                             # no reason to believe gradients are valid in this case
           else:
-            datapt = self.sb.data[0,x,y]
             f += model_lambda - datapt * math.log(model_lambda)
           ga += x * (1. - datapt/model_lambda) # from handwritten notes
           gb += y * (1. - datapt/model_lambda)
