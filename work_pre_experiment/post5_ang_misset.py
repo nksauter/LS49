@@ -34,7 +34,10 @@ def get_items():
       continue
 
 def parse_postrefine():
-  lines = open("/net/dials/raid1/sauter/LS49_merge/merge5_redo2.log")
+  import sys
+  filein = sys.argv[1]
+  #lines = open("/net/dials/raid1/sauter/LS49_merge/merge5_redo2.log")
+  lines = open(filein)
   result = {}
   for line in lines:
     if "ASTAR" not in line: continue
