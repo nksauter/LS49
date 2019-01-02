@@ -33,17 +33,18 @@ if True:
   plt.xlabel("Orientational offset from truth (degrees)")
   plt.title("Histogram of cctbx.xfel misorientation %s"%trial)
   maxangle = 0.2
-  plt.axis([-0.001,maxangle,0,4000])
+  PLOT_Height = 4000
+  plt.axis([-0.001,maxangle,0,PLOT_Height])
 
   plt.annotate(
         "median %6.4f"%median,
-        xy=(median, 800), xytext=(-20, 20),
+        xy=(median, 0.2*PLOT_Height), xytext=(-20, 20),
         textcoords='offset points', ha='right', va='bottom',
         bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
         arrowprops=dict(arrowstyle = '->', connectionstyle='arc3,rad=0'))
   plt.annotate(
         "rmsd %6.4f"%rmsd,
-        xy=(rmsd, 1300), xytext=(-20, 20),
+        xy=(rmsd, 0.325*PLOT_Height), xytext=(-20, 20),
         textcoords='offset points', ha='right', va='bottom',
         bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
         arrowprops=dict(arrowstyle = '->', connectionstyle='arc3,rad=0'))
@@ -51,10 +52,10 @@ if True:
   mean = flex.mean(angular_offset)
   plt.annotate(
         "mean %6.4f"%mean,
-        xy=(mean, 1800), xytext=(-20, 20),
+        xy=(mean, 0.45*PLOT_Height), xytext=(-20, 20),
         textcoords='offset points', ha='right', va='bottom',
         bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
         arrowprops=dict(arrowstyle = '->', connectionstyle='arc3,rad=0'))
 
-  plt.plot([median,rmsd,mean],[800,1300,1800],"b|")
+  plt.plot([median,rmsd,mean],[0.2*PLOT_Height,0.325*PLOT_Height,0.45*PLOT_Height],"b|")
   plt.show()
