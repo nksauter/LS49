@@ -67,7 +67,7 @@ pixel_sz_mm = 0.11
 mos_rotation_deg = 0.05
 
 def get_items(myrank,N_total,N_stride,cohort=0):
-  for key in range(N_total):
+  for key in range(cohort*N_total, (cohort+1)*N_total):
     #each rank should only allow keys in the range from
     # cohort*N_total + myrank*N_stride to cohort*N_total + (myrank+1)*N_stride
     if key < cohort*N_total + myrank*N_stride: continue
