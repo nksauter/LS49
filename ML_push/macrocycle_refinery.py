@@ -156,7 +156,7 @@ class MPI_Run(upstream_base_script):
     per_rank_G = []
     min_spots = 3
     N_input=0
-    for item,key in get_items(logical_rank,N_total,N_stride):
+    for item,key in get_items(logical_rank,N_total,N_stride,self.params.cohort):
       N_input+=1
       if len(item) >= min_spots:
         per_rank_items.append(item)
@@ -226,7 +226,7 @@ class MPI_Run(upstream_base_script):
     per_rank_G = []
     min_spots = 3
     N_input=0
-    for item,key in get_items(logical_rank,N_total,N_stride):
+    for item,key in get_items(logical_rank,N_total,N_stride,self.params.cohort):
       N_input+=1
       if len(item) >= min_spots:
         per_rank_items.append(item)
