@@ -71,6 +71,9 @@ LLG_evaluator{
         .type = float
     }
   }
+  restraints_II_enable = False
+    .type = bool
+    .help = stricter restraints, makes fp fdp behave like a known system
 }
 """
 

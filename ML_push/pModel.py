@@ -31,6 +31,67 @@ def XXX(plt):
   plt.axes().set_ylim((-8.3,4.2))
   plt.show()
 
+def restrain_II(plt):
+  OX = GS_ROI(full_path("data_sherrell/pf-rd-ox_fftkk.out"))
+  RD = GS_ROI(full_path("data_sherrell/pf-rd-red_fftkk.out"))
+  MT = GS_ROI(full_path("data_sherrell/Fe_fake.dat")) # with interpolated points
+  r_mean = flex.double(200)
+  r_sigma = flex.double(200)
+  for ichannel in range(100):
+    fp_pop = flex.mean_and_variance(flex.double([OX.fp[ichannel],RD.fp[ichannel],MT.fp[ichannel]]))
+    fdp_pop = flex.mean_and_variance(flex.double([OX.fdp[ichannel],RD.fdp[ichannel],MT.fdp[ichannel]]))
+    r_mean[ichannel] = fp_pop.mean(); r_mean[100+ichannel] = fdp_pop.mean()
+    r_sigma[ichannel] = fp_pop.unweighted_sample_standard_deviation()
+    r_sigma[100+ichannel] = fdp_pop.unweighted_sample_standard_deviation()
+
+  plt.stackplot(OX.energy,r_mean[0:100]-r_sigma[0:100],color=('lightgreen'))
+  plt.stackplot(OX.energy,r_mean[0:100]+r_sigma[0:100],color=('white'))
+  plt.stackplot(OX.energy,r_mean[100:200]+r_sigma[100:200],color=('lightgreen'))
+  plt.stackplot(OX.energy,r_mean[100:200]-r_sigma[100:200],color=('white'))
+  plt.plot(OX.energy,r_mean[0:100]+r_sigma[0:100],'g-')
+  plt.plot(OX.energy,r_mean[100:200]+r_sigma[100:200],'g-')
+  plt.plot(OX.energy,r_mean[0:100]-r_sigma[0:100],'g-')
+  plt.plot(OX.energy,r_mean[100:200]-r_sigma[100:200],'g-')
+  plt.plot(OX.energy,r_mean[0:100],'g-')
+  plt.plot(OX.energy,r_mean[100:200],'g-')
+  OX.plot_them(plt,f1="b.",f2="b.")
+  OX.plot_them(plt,f1="b-",f2="b-")
+  RD = GS_ROI(full_path("data_sherrell/pf-rd-red_fftkk.out"))
+  RD.plot_them(plt,f1="r.",f2="r.")
+  RD.plot_them(plt,f1="r-",f2="r-")
+  MT = GS_ROI(full_path("data_sherrell/Fe_fake.dat")) # with interpolated points
+  MT.plot_them(plt,f1="m-",f2="m-")
+  plt.axes().set_ylim((-8.3,4.2))
+  plt.show()
+
+def restrain_II_values():
+  OX = GS_ROI(full_path("data_sherrell/pf-rd-ox_fftkk.out"))
+  RD = GS_ROI(full_path("data_sherrell/pf-rd-red_fftkk.out"))
+  MT = GS_ROI(full_path("data_sherrell/Fe_fake.dat")) # with interpolated points
+  r_mean = flex.double(200)
+  r_sigma = flex.double(200)
+  for ichannel in range(100):
+    fp_pop = flex.mean_and_variance(flex.double([OX.fp[ichannel],RD.fp[ichannel],MT.fp[ichannel]]))
+    fdp_pop = flex.mean_and_variance(flex.double([OX.fdp[ichannel],RD.fdp[ichannel],MT.fdp[ichannel]]))
+    r_mean[ichannel] = fp_pop.mean(); r_mean[100+ichannel] = fdp_pop.mean()
+    r_sigma[ichannel] = fp_pop.unweighted_sample_standard_deviation()
+    r_sigma[100+ichannel] = fdp_pop.unweighted_sample_standard_deviation()
+  return r_mean, r_sigma
+
+restrain_II_r_mean, restrain_II_r_sigma = restrain_II_values()
+
+def restrain_II_compute_functional_and_gradients(values, mean, sigma):
+  # for example: values[400] for fp,fdp of FE1,FE2; mean[200] for fp,fdp; sigma[200] for fp,fdp
+  f = 0.
+  g1 = flex.double(len(mean))
+  g2 = flex.double(len(mean))
+  for idx in range(200):
+    f += (0.5/(sigma[idx]*sigma[idx]) * (values[idx] - mean[idx])**2)
+    f += (0.5/(sigma[idx]*sigma[idx]) * (values[200+idx] - mean[idx])**2)
+  g1 = (values[0:200]-mean)/(sigma*sigma)
+  g2 = (values[200:400]-mean)/(sigma*sigma)
+  return f,g1,g2
+
 def fp_distro(plt):
   OX = GS_ROI(full_path("data_sherrell/pf-rd-ox_fftkk.out"))
   RD = GS_ROI(full_path("data_sherrell/pf-rd-red_fftkk.out"))
@@ -125,12 +186,11 @@ def fdp_distro(plt):
   plt.axis([-1,1,0,40])
   plt.show()
 
-
-
 if __name__=="__main__":
 
   from matplotlib import pyplot as plt
   #XXX(plt)
+  restrain_II(plt)
   #fp_distro(plt)
   tst_analytical_fp()
   #fdp_distro(plt)

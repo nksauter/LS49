@@ -362,6 +362,17 @@ class rank_0_fit_all_f:
         f += ffp
         for gidx in range(100):
           g[100+gidx] += g1fp[gidx]; g[300+gidx] += g2fp[gidx]
+      if self.params.LLG_evaluator.restraints_II_enable is True:
+        print ("Applying restraints II model")
+        # much stiffer restraints, system should behave like a known Fe oxidation type
+        from LS49.ML_push.pModel import restrain_II_r_mean, restrain_II_r_sigma
+        from LS49.ML_push.pModel import restrain_II_compute_functional_and_gradients
+        ffp,g1,g2 = restrain_II_compute_functional_and_gradients(a,
+          mean = restrain_II_r_mean,
+          sigma = restrain_II_r_sigma)
+        f += ffp
+        for gidx in range(200):
+          g[gidx] += g1[gidx]; g[200+gidx] += g2[gidx]
 
     self.model_intensities_reinitialized_for_debug_iteration_1 = False
     if self.logical_rank == 0: self.print_step("LBFGS Iteration %d"%self.iteration,f,g)
