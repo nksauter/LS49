@@ -68,7 +68,7 @@ if __name__=="__main__":
   from scitbx.array_family import flex
   angles=flex.double()
   for stuff in get_items():
-    #print stuff
+    #print(stuff)
     icount+=1
     print("Iteration",icount)
     # work up the crystal model from integration
@@ -127,5 +127,5 @@ if __name__=="__main__":
     hyp = flex.mean(flex.double((aoff,boff,coff)))
 
     angles.append(hyp)
-    print("Item %5d angular offset is %12.9f deg."%(icount,hyp))
+    print("Item %5d image_no %d angular offset is %12.9f deg."%(icount,stuff["serial_no"], hyp))
   print("RMSD", math.sqrt(flex.mean(angles*angles)))
