@@ -154,10 +154,10 @@ class fit_one_image_multispot:
         for y in range(F[2]):
           model_lambda = self.a[3*ispot+0]*x+self.a[3*ispot+1]*y+self.a[3*ispot+2]+ \
                          self.a[-1]*self.roi_model_pixels[ispot][x,y]
+          datapt = self.sb_data[ispot][0,x,y] # not sure the right datapt when model_lambda<0
           if model_lambda<=0:
             f+= model_lambda # complete kludge, guard against math domain error
           else:
-            datapt = self.sb_data[ispot][0,x,y]
             f += model_lambda - datapt * math.log(model_lambda)
           g[3*ispot+0] += x * (1. - datapt/model_lambda) # from handwritten notes
           g[3*ispot+1] += y * (1. - datapt/model_lambda)
@@ -480,8 +480,6 @@ class MPI_Run(object):
     for item,key in get_items(logical_rank,N_total,N_stride,self.params.cohort):
       N_input+=1
       if len(item) >= min_spots:
-        per_rank_items.append(item)
-        per_rank_keys.append(key)
         FOI = fit_one_image_multispot(list_of_images=item,
             HKL_lookup = transmitted_info["HKL_lookup"],
             model_intensities = transmitted_info["model_intensities"])
@@ -489,6 +487,8 @@ class MPI_Run(object):
         print ("""LLG Image %06d on %d Bragg spots NLL    channels F = %9.1f"""%(
         key, len(item), FOI.compute_functional_and_gradients()[0]))
         # put the newly refined background model back into the item
+        per_rank_items.append(item)
+        per_rank_keys.append(key)
         for ihkl in range(FOI.n_spots):
           per_rank_items[-1][ihkl].bkgrd_a = flex.double(
                     [FOI.a[3*ihkl+0],FOI.a[3*ihkl+1],FOI.a[3*ihkl+2]])

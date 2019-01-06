@@ -87,15 +87,18 @@ class MPI_Run(upstream_base_script):
     for item,key in get_items(logical_rank,N_total,N_stride,self.params.cohort):
       N_input+=1
       if len(item) >= min_spots:
-        per_rank_items.append(item)
-        per_rank_keys.append(key)
-        FOI = fit_one_image_multispot(list_of_images=item,
+        try:
+          FOI = fit_one_image_multispot(list_of_images=item,
             HKL_lookup = transmitted_info["HKL_lookup"],
             model_intensities = current_model_intensities)
-
+        except Exception as e:
+          print ("FAILing fit_roi_multichannel on",e)
+          continue
         print ("""LLG Image %06d on %d Bragg spots NLL    channels F = %9.1f"""%(
         key, len(item), FOI.compute_functional_and_gradients()[0]))
         # put the newly refined background model back into the item
+        per_rank_items.append(item)
+        per_rank_keys.append(key)
         for ihkl in range(FOI.n_spots):
           per_rank_items[-1][ihkl].bkgrd_a = flex.double(
                     [FOI.a[3*ihkl+0],FOI.a[3*ihkl+1],FOI.a[3*ihkl+2]])
@@ -159,15 +162,18 @@ class MPI_Run(upstream_base_script):
     for item,key in get_items(logical_rank,N_total,N_stride,self.params.cohort):
       N_input+=1
       if len(item) >= min_spots:
-        per_rank_items.append(item)
-        per_rank_keys.append(key)
-        FOI = fit_one_image_multispot(list_of_images=item,
+        try:
+          FOI = fit_one_image_multispot(list_of_images=item,
             HKL_lookup = transmitted_info["HKL_lookup"],
             model_intensities = current_model_intensities)
-
+        except Exception as e:
+          print ("FAILing fit_roi_multichannel on",e)
+          continue
         print ("""LLG Image %06d on %d Bragg spots NLL    channels F = %9.1f"""%(
         key, len(item), FOI.compute_functional_and_gradients()[0]))
         # put the newly refined background model back into the item
+        per_rank_items.append(item)
+        per_rank_keys.append(key)
         for ihkl in range(FOI.n_spots):
           per_rank_items[-1][ihkl].bkgrd_a = flex.double(
                     [FOI.a[3*ihkl+0],FOI.a[3*ihkl+1],FOI.a[3*ihkl+2]])
@@ -229,15 +235,18 @@ class MPI_Run(upstream_base_script):
     for item,key in get_items(logical_rank,N_total,N_stride,self.params.cohort):
       N_input+=1
       if len(item) >= min_spots:
-        per_rank_items.append(item)
-        per_rank_keys.append(key)
-        FOI = fit_one_image_multispot(list_of_images=item,
+        try:
+          FOI = fit_one_image_multispot(list_of_images=item,
             HKL_lookup = transmitted_info["HKL_lookup"],
             model_intensities = current_model_intensities)
-
+        except Exception as e:
+          print ("FAILing fit_roi_multichannel on",e)
+          continue
         print ("""LLG Image %06d on %d Bragg spots NLL    channels F = %9.1f"""%(
         key, len(item), FOI.compute_functional_and_gradients()[0]))
         # put the newly refined background model back into the item
+        per_rank_items.append(item)
+        per_rank_keys.append(key)
         for ihkl in range(FOI.n_spots):
           per_rank_items[-1][ihkl].bkgrd_a = flex.double(
                     [FOI.a[3*ihkl+0],FOI.a[3*ihkl+1],FOI.a[3*ihkl+2]])
