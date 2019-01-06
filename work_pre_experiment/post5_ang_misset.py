@@ -12,7 +12,7 @@ json_glob = "/net/dials/raid1/sauter/LS49_integ_step5cori/idx*.img_integrated_ex
 image_glob = "/net/dials/raid1/sauter/LS49/step5_MPIbatch_0%05d.img.gz"
 global format_class
 
-def get_items():
+def get_items(rotmat_dictionary):
   file_list = glob.glob(json_glob)
   format_class = None
   for item in file_list:
@@ -29,7 +29,8 @@ def get_items():
     from dxtbx.model.experiment_list import ExperimentListFactory
     EC = ExperimentListFactory.from_json_file(item,check_format=False)[0].crystal
     try:
-      yield(dict(serial_no=serial_no,ABC=abc,integrated_crystal_model=EC,postref=postrefined[serial_no]))
+      yield(dict(serial_no=serial_no,ABC=abc,integrated_crystal_model=EC,
+                 postref=rotmat_dictionary[serial_no]))
     except KeyError:
       continue
 
@@ -67,7 +68,7 @@ if __name__=="__main__":
   icount=0
   from scitbx.array_family import flex
   angles=flex.double()
-  for stuff in get_items():
+  for stuff in get_items(postrefined):
     #print(stuff)
     icount+=1
     print("Iteration",icount)
