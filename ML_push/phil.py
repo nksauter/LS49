@@ -54,6 +54,9 @@ LLG_evaluator{
     .type = bool
   plot_interpolation = True
     .type = bool
+  plot_scope = *P1 P2
+    .type = choice
+    .help = P1, zoomed in plot for detail. P2, zoomed out to examine full energy range
   title = None
     .type = str
     .help = save plot sequence to files with this root title

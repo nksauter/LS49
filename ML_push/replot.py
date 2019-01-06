@@ -96,6 +96,10 @@ class CC_to_ground_truth(object):
     return LC.coefficient()
 
 def plot_em_broken(self,key,values):
+    if self.params.LLG_evaluator.plot_scope=="P1":
+      scope=dict(xlimits=(7102,7138),fdp_ylimits=(0.1,4.5),fp_ylimits=(-8.6,-5.1))
+    elif self.params.LLG_evaluator.plot_scope=="P2":
+      scope=dict(xlimits=(7068,7172),fdp_ylimits=(-2.1,6.5),fp_ylimits=(-10.6,-3.1))
     self.x = values # XXX
     cc = CC_to_ground_truth()
     if not self.plot_plt_imported:
@@ -142,12 +146,12 @@ def plot_em_broken(self,key,values):
     cc.get_data(GS,imodel=1)
 
     #self.plt.axes().set_xlim((7102,7137)) # XXX 7088,7152
-    ax1.set_xlim(7102,7138)
+    ax1.set_xlim(scope["xlimits"])
     ax2.set_xlabel("Energy (eV)")
     ax1.set_ylabel("∆ f ′′")
     ax2.set_ylabel("∆ f ′")
-    ax2.set_ylim(-8.6,-5.1)
-    ax1.set_ylim(0.1, 4.5)
+    ax2.set_ylim(scope["fp_ylimits"])
+    ax1.set_ylim(scope["fdp_ylimits"])
     ax1.set_title("Macrocycle %d Iteration %d"%(self.macrocycle,self.iteration)) # XXX
     ax1.spines['bottom'].set_visible(False)
     ax2.spines['top'].set_visible(False)
