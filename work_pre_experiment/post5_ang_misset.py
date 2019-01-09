@@ -8,7 +8,7 @@ import glob,math
 import dials
 
 # some parameters
-json_glob = "/net/dials/raid1/sauter/LS49_integ_step5cori/idx*.img_integrated_experiments.json"
+json_glob = "/net/dials/raid1/sauter/LS49_XXXGENERALIZEXXXinteg_betarestr/idx*.img_integrated_experiments.json"
 image_glob = "/net/dials/raid1/sauter/LS49/step5_MPIbatch_0%05d.img.gz"
 global format_class
 
@@ -34,9 +34,29 @@ def get_items(rotmat_dictionary):
     except KeyError:
       continue
 
-def parse_postrefine():
-  import sys
-  filein = sys.argv[1]
+def get_item(key):
+    format_class = None
+    image_file = image_glob%key
+    json_glob = "/net/dials/raid1/sauter/LS49_integ_betarestr/idx-step5_MPIbatch_0%05d.img_integrated_experiments.json"
+    json_file = json_glob%key
+    print (image_file)
+    if format_class is None:
+      format_class = Registry.find(image_file)
+    i = format_class(image_file)
+    Z = i.get_smv_header(image_file)
+    ABC = Z[1]["DIRECT_SPACE_ABC"]
+    abc = tuple([float(a) for a in ABC.split(",")])
+
+    from dxtbx.model.experiment_list import ExperimentListFactory
+    EC = ExperimentListFactory.from_json_file(json_file,check_format=False)[0].crystal
+    return dict(serial_no=key,ABC=abc,integrated_crystal_model=EC)
+
+def parse_postrefine(optional_path=None):
+  if optional_path is not None:
+    filein = optional_path
+  else:
+    import sys
+    filein = sys.argv[1]
   #lines = open("/net/dials/raid1/sauter/LS49_merge/merge5_redo2.log")
   lines = open(filein)
   result = {}
