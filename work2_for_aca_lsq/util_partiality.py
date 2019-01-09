@@ -9,6 +9,7 @@ from LS49.sim.util_fmodel import gen_fmodel
 from simtbx.nanoBragg import shapetype
 from simtbx.nanoBragg import nanoBragg
 from six.moves import StringIO
+from cctbx import crystal_orientation
 import scitbx
 import math
 
@@ -74,6 +75,81 @@ def channel_pixels(ROI,wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,
   print(("SIM count > 0",(SIM.raw_pixels>0).count(True)))
   return SIM
 
+def ersatz_postrefined(idx,CB_OP_C_P,old_Amat):
+  Amat = old_Amat
+  from LS49.work_pre_experiment.post5_ang_misset import parse_postrefine # from teh postrefinement log "ASTAR"
+  R = parse_postrefine()
+  print ("get ersatz_postrefined with index",idx)
+  C = crystal_orientation.crystal_orientation(Amat,crystal_orientation.basis_type.direct)
+  assert R.get(idx,None) is not None
+    # work up the crystal model from postrefinement
+  direct_A = R[idx].inverse()
+  permute = sqr((0,0,1,0,1,0,-1,0,0))
+  sim_compatible = direct_A*permute # permute columns when post multiplying
+  P = crystal_orientation.crystal_orientation(sim_compatible,crystal_orientation.basis_type.direct)
+  C.show(legend="ground truth, P1")
+  P.show(legend="postrefined, C2")
+  PR = P.change_basis(CB_OP_C_P)
+  PR.show(legend="Postrefined, primitive setting")
+
+  cb_op_align = PR.best_similarity_transformation(C,200,1)
+  align_PR = PR.change_basis(sqr(cb_op_align))
+  align_PR.show(legend="postrefined, aligned")
+  print("alignment matrix", cb_op_align)
+  return align_PR.direct_matrix()
+
+def superpower_postrefine(idx,CB_OP_C_P,old_Amat):
+  Amat = old_Amat
+  from LS49.work_pre_experiment.post5_ang_misset import get_item
+  from LS49.ML_push.exploratory_missetting import metric
+  # use the demangled output file from cxi.merge; will parse output for "ASTAR" information
+  logfilepath = "./merge5_rs2_constant_rs_betarestr.out"
+  R = get_item(idx)
+  print ("get ersatz_postrefined with index",idx)
+  C = crystal_orientation.crystal_orientation(
+      Amat,crystal_orientation.basis_type.direct)
+  C.show(legend="ground truth, P1")
+  C2 = C.change_basis(CB_OP_C_P.inverse())
+  C2.show(legend="ground truth, C2")
+  direct_A = R["integrated_crystal_model"].get_A_inverse_as_sqr() # from dials model, integration step
+  permute = sqr((0,0,1,0,1,0,-1,0,0))
+  sim_compatible = direct_A*permute # permute columns when post multiplying
+  P = crystal_orientation.crystal_orientation(
+      sim_compatible,crystal_orientation.basis_type.direct)
+  P.show(legend="dials_integrated, C2")
+  PR = P.change_basis(CB_OP_C_P)
+  PR.show(legend="dials_integrated, primitive setting")
+  PRC2 = PR.change_basis(CB_OP_C_P.inverse())
+  cb_op_align = PR.best_similarity_transformation(C,200,1)
+  align_PR = PR.change_basis(sqr(cb_op_align))
+  align_PR.show(legend="dials_integrated, aligned")
+  print("alignment matrix", cb_op_align)
+  metric_val = metric(align_PR,C)
+  print("Key %d aligned angular offset is %12.9f deg."%(idx, metric_val))
+  print("Key %d alignC2 angular offset is %12.9f deg."%(idx, metric(align_PR.change_basis(CB_OP_C_P.inverse()),C2)))
+  minimum = metric_val
+  ixm = 0
+  iym = 0
+  best_Ori_C2 = None
+  for ix in range(-10,11,2):
+    xrotated_Ori = PRC2.rotate_thru((0,0,1),ix*0.01*math.pi/180.)
+    for iy in range(-10,11,2):
+      yrotated_Ori = xrotated_Ori.rotate_thru((0,1,0),iy*0.01*math.pi/180.)
+      new_aligned_Ori = yrotated_Ori.change_basis(CB_OP_C_P).change_basis(sqr(cb_op_align)).change_basis(CB_OP_C_P.inverse())
+      grid_metric_val = metric(new_aligned_Ori,C2)
+      if grid_metric_val<minimum:
+        ixm = ix
+        iym = iy
+        best_Ori_C2 = new_aligned_Ori
+      #print("ix %4d"%ix,"iy %4d"%iy,"grid search angular offset is %12.9f deg."%(grid_metric_val))
+      minimum = min(minimum, grid_metric_val)
+
+  print("Key %d minimC2 angular offset is %12.9f deg."%(idx,minimum),"with ix=%d iy=%d"%(ixm,iym))
+  best_Ori = best_Ori_C2.change_basis(CB_OP_C_P)
+  print("Key %d minimum angular offset is %12.9f deg."%(idx,metric(best_Ori,C)),"with ix=%d iy=%d"%(ixm,iym))
+  best_Ori.show(legend="superpower, aligned")
+  return best_Ori.direct_matrix()
+
 def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,tophat_spectrum=True,quick=False):
   smv_fileout = prefix + ".img"
 
@@ -102,6 +178,7 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,tophat_spectrum=True,qu
   #plt.show()
 
   GF = gen_fmodel(resolution=direct_algo_res_limit,pdb_text=data().get("pdb_lines"),algorithm="fft",wavelength=wavelength_A)
+  CB_OP_C_P = GF.xray_structure.change_of_basis_op_to_primitive_setting() # from C to P, used for ersatz model
   GF.set_k_sol(0.435)
   GF.make_P1_primitive()
   sfall_main = GF.get_amplitudes()
@@ -163,12 +240,16 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,tophat_spectrum=True,qu
   for i in Amatrix_rot: print(i, end=' ')
   print()
 
+  #####  ersatz inserted code (3 lines) for modeling profiles from refined geometry ###
+  key = int(prefix.split("_")[-1])
+  new_Amat = sqr(superpower_postrefine(key,CB_OP_C_P,old_Amat=Amatrix_rot))
+  Amatrix_rot = new_Amat # insert the postrefined value instead of ground truth
+
   SIM.Amatrix_RUB = Amatrix_rot
   #workaround for failing init_cell, use custom written Amatrix setter
   print("unit_cell_Adeg=",SIM.unit_cell_Adeg)
   print("unit_cell_tuple=",SIM.unit_cell_tuple)
   Amat = sqr(SIM.Amatrix).transpose() # recovered Amatrix from SIM
-  from cctbx import crystal_orientation
   Ori = crystal_orientation.crystal_orientation(Amat, crystal_orientation.basis_type.reciprocal)
   print("Python unit cell from SIM state",Ori.unit_cell())
 
