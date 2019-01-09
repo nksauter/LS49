@@ -64,6 +64,7 @@ def restrain_II(plt):
   plt.axes().set_ylim((-8.3,4.2))
   plt.show()
 
+SEVERITY_FACTOR = 1.
 def restrain_II_values():
   OX = GS_ROI(full_path("data_sherrell/pf-rd-ox_fftkk.out"))
   RD = GS_ROI(full_path("data_sherrell/pf-rd-red_fftkk.out"))
@@ -74,8 +75,8 @@ def restrain_II_values():
     fp_pop = flex.mean_and_variance(flex.double([OX.fp[ichannel],RD.fp[ichannel],MT.fp[ichannel]]))
     fdp_pop = flex.mean_and_variance(flex.double([OX.fdp[ichannel],RD.fdp[ichannel],MT.fdp[ichannel]]))
     r_mean[ichannel] = fp_pop.mean(); r_mean[100+ichannel] = fdp_pop.mean()
-    r_sigma[ichannel] = fp_pop.unweighted_sample_standard_deviation()
-    r_sigma[100+ichannel] = fdp_pop.unweighted_sample_standard_deviation()
+    r_sigma[ichannel] = (1./SEVERITY_FACTOR)*fp_pop.unweighted_sample_standard_deviation()
+    r_sigma[100+ichannel] = (1./SEVERITY_FACTOR)*fdp_pop.unweighted_sample_standard_deviation()
   return r_mean, r_sigma
 
 restrain_II_r_mean, restrain_II_r_sigma = restrain_II_values()
