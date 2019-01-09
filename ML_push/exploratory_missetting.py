@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 import math
 from scitbx.matrix import sqr
+from scitbx.array_family import flex
 from LS49.work_pre_experiment.post5_ang_misset import get_items
 from LS49.work_pre_experiment.post5_ang_misset import parse_postrefine # from postrefinement log "ASTAR"
 # need to give the postrefinement log (demangled) as sys.argv[1]
@@ -27,7 +28,6 @@ if __name__=="__main__":
   print(str(CB_OP_C_P))
 
   icount=0
-  from scitbx.array_family import flex
   angles=flex.double()
   for stuff in get_items(postrefined):
     #print(stuff)
