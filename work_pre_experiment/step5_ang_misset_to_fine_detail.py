@@ -3,7 +3,7 @@ from scitbx.array_family import flex
 from scitbx.matrix import sqr
 #from dxtbx.format.Registry import Registry
 from cctbx import crystal_orientation
-import sys
+import sys,os
 import glob,math
 import dials
 
@@ -17,6 +17,19 @@ integration_run = sys.argv[2] # LS49_integ_allrestr, LS49_integ_betarestr, LS49_
 
 json_glob = json_glob.replace("LS49_integ_allrestr",integration_run)
 
+have_ABC_dictionary_fine = dict()
+have_ABC_dictionary_coarse = dict()
+from six.moves import cPickle as pickle
+if os.path.isfile("dump_coarse_file.pickle"):
+  with open("dump_coarse_file.pickle","r") as inp:
+    while 1:
+      try:
+        record = pickle.load(inp)
+        serial = record["serial_no"]
+        have_ABC_dictionary_fine[serial] = record["fine"]
+        have_ABC_dictionary_coarse[serial] = record["coarse"]
+      except EOFError: break
+
 from LS49.work_pre_experiment.fine_detail_ground_truth import nanoBragg_mock
 Mock_nano = nanoBragg_mock()
 def get_items():
@@ -25,31 +38,37 @@ def get_items():
   format_class = None
   for item in file_list:
     serial_no = int(item[-37:-32])
-    image_file = image_glob%serial_no
-    #print (image_file)
-    if format_class is None:
-      #format_class = Registry.find(image_file)
-      from dxtbx.format.FormatSMVJHSim import FormatSMVJHSim
-      format_class = FormatSMVJHSim
-    i = format_class(image_file)
-    Z = i.get_smv_header(image_file)
-    ABC = Z[1]["DIRECT_SPACE_ABC"]
-    abc = tuple([float(a) for a in ABC.split(",")])
+    if have_ABC_dictionary_coarse.get(serial_no,None) is not None:
+      abc = have_ABC_dictionary_coarse.get(serial_no)
+    else:
+      image_file = image_glob%serial_no
+      #print (image_file)
+      if format_class is None:
+        #format_class = Registry.find(image_file)
+        from dxtbx.format.FormatSMVJHSim import FormatSMVJHSim
+        format_class = FormatSMVJHSim
+      i = format_class(image_file)
+      Z = i.get_smv_header(image_file)
+      ABC = Z[1]["DIRECT_SPACE_ABC"]
+      abc = tuple([float(a) for a in ABC.split(",")])
 
     from dxtbx.model.experiment_list import ExperimentListFactory
     EC = ExperimentListFactory.from_json_file(item,check_format=False)[0].crystal
 
-    print(abc[0],abc[1],abc[2])
-    print(abc[3],abc[4],abc[5])
-    print(abc[6],abc[7],abc[8])
-    from LS49.work_pre_experiment.fine_detail_ground_truth import tst_all
-    rotation = tst_all(serial_no)
+    #print(abc[0],abc[1],abc[2])
+    #print(abc[3],abc[4],abc[5])
+    #print(abc[6],abc[7],abc[8])
 
-    Mock_nano.set_rotation(rotation)
-    FGabc = Mock_nano.get_average_abc()
-    print(FGabc[0],FGabc[1],FGabc[2])
-    print(FGabc[3],FGabc[4],FGabc[5])
-    print(FGabc[6],FGabc[7],FGabc[8])
+    if have_ABC_dictionary_fine.get(serial_no,None) is not None:
+      FGabc = have_ABC_dictionary_fine.get(serial_no)
+    else:
+      from LS49.work_pre_experiment.fine_detail_ground_truth import tst_all
+      rotation = tst_all(serial_no)
+      Mock_nano.set_rotation(rotation)
+      FGabc = Mock_nano.get_average_abc()
+    #print(FGabc[0],FGabc[1],FGabc[2])
+    #print(FGabc[3],FGabc[4],FGabc[5])
+    #print(FGabc[6],FGabc[7],FGabc[8])
     if detail_type == "fine":
       yield(dict(serial_no=serial_no,ABC=FGabc,integrated_crystal_model=EC))
     elif detail_type == "coarse":
