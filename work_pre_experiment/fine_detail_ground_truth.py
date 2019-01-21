@@ -28,7 +28,7 @@ def tst_all(serial_no): #emulates the action of step5_pad.py in assigning a coar
 
 from LS49.work_pre_experiment.step5_ang_misset import get_items
 class nanoBragg_mock:
- def __init__(self):
+ def __init__(self,mosaic_domains=25,mosaic_spread_deg=0.05):
 
   local_data = data()
   direct_algo_res_limit = 1.7
@@ -43,11 +43,8 @@ class nanoBragg_mock:
     # workaround for problem with wavelength array, specify it separately in constructor.
     wavelength_A=wavelength_A,verbose=0)
 
-  SIM.mosaic_domains = 25  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
-                           # 3000000 images would be 100000 hours on a 60-core machine (dials), or 11.4 years
-                           # using 2 nodes, 5.7 years.  Do this at SLAC? NERSC? combination of all?
-                           # SLAC downtimes: Tues Dec 5 (24 hrs), Mon Dec 11 (72 hrs), Mon Dec 18 light use, 24 days
-  SIM.mosaic_spread_deg = 0.05 # interpreted by UMAT_nm as a half-width stddev
+  SIM.mosaic_domains = mosaic_domains
+  SIM.mosaic_spread_deg = mosaic_spread_deg # interpreted by UMAT_nm as a half-width stddev
 
   UMAT_nm = flex.mat3_double()
   mersenne_twister = flex.mersenne_twister(seed=0)
@@ -111,4 +108,3 @@ if __name__ == "__main__":
     print (M.get_average_abc())
     #from IPython import embed; embed()
     exit()
-
