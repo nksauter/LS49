@@ -102,7 +102,7 @@ class CC_to_ground_truth(object):
   def get_cc_fdp(self):
     GT = self.ground_truth[31:62].concatenate(self.ground_truth[93:124])
     DA = self.data[31:62].concatenate(self.data[93:124])
-    LC = flex.linear_correlation(self.ground_truth,self.data)
+    LC = flex.linear_correlation(GT, DA)
     return LC.coefficient()
 
 
