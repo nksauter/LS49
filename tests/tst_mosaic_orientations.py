@@ -29,6 +29,9 @@ def channel_wavelength_fmodel(create):
   else: # read the reference and assert sameness to production run
       UMAT_ref = cPickle.load(open(os.path.join(ls49_big_data,"reference",filename),"rb"))
       for x in range(len(UMAT_nm)):
+        print(x," ".join(
+          ["%18.15f"%UMAT_ref[x][z] for z in range(9)]
+        ))
         assert UMAT_nm[x] == UMAT_ref[x]
 
 if __name__=="__main__":
