@@ -16,11 +16,11 @@ if True:
 
   median = angular_offset[order[len(order)//2]]
   rmsd = math.sqrt(flex.mean(angular_offset*angular_offset))
-  print(trial,"%6d measurements; rmsd %7.3f"%(len(angular_offset),
+  print(trial,"%6d measurements; rmsd %9.5f"%(len(angular_offset),
     rmsd
   ),
-    "Median is %7.3f"%(median))
-  print("Max is %7.3f"%(flex.max(angular_offset)))
+    "Median is %9.5f"%(median))
+  print("Max is %9.5f"%(flex.max(angular_offset)))
 
   from matplotlib import pyplot as plt
   zoom="hi"

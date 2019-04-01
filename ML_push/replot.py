@@ -66,8 +66,8 @@ def plot_em(self,key,values):
     self.plt.title("Macrocycle %d Iteration %d"%(self.macrocycle,self.iteration)) # XXX
     if self.params.LLG_evaluator.title is not None:
       macrocycle_tell = "" if self.macrocycle is None else "macrocycle_%02d_"%self.macrocycle
-      fig.savefig("replot_%s_%siteration_%02d.png"%(self.params.LLG_evaluator.title,
-                  macrocycle_tell,self.iteration))
+      fig.savefig(os.path.join(self.params.LLG_evaluator.plot_outdir,"replot_%s_%siteration_%02d.png"%(self.params.LLG_evaluator.title,
+                  macrocycle_tell,self.iteration)))
     else:
       self.plt.draw()
       self.plt.pause(0.2)
@@ -94,6 +94,17 @@ class CC_to_ground_truth(object):
   def get_cc(self):
     LC = flex.linear_correlation(self.ground_truth,self.data)
     return LC.coefficient()
+  def get_cc_fp(self):
+    GT = self.ground_truth[0:31].concatenate(self.ground_truth[62:93])
+    DA = self.data[0:31].concatenate(self.data[62:93])
+    LC = flex.linear_correlation(GT, DA)
+    return LC.coefficient()
+  def get_cc_fdp(self):
+    GT = self.ground_truth[31:62].concatenate(self.ground_truth[93:124])
+    DA = self.data[31:62].concatenate(self.data[93:124])
+    LC = flex.linear_correlation(GT, DA)
+    return LC.coefficient()
+
 
 def plot_em_broken(self,key,values):
     if self.params.LLG_evaluator.plot_scope=="P1":
@@ -170,13 +181,14 @@ def plot_em_broken(self,key,values):
 
     if self.params.LLG_evaluator.title is not None:
       macrocycle_tell = "" if self.macrocycle is None else "macrocycle_%02d_"%self.macrocycle
-      fig.savefig("replot_%s_%siteration_%02d.png"%(self.params.LLG_evaluator.title,
-                  macrocycle_tell,self.iteration))
-      if self.macrocycle==3 and self.iteration==12:
-        fig.savefig("replot_%s_%siteration_%02d.pdf"%(self.params.LLG_evaluator.title,
-                  macrocycle_tell,self.iteration))
+      fig.savefig(os.path.join(self.params.LLG_evaluator.plot_outdir,"replot_%s_%siteration_%02d.png"%(self.params.LLG_evaluator.title,
+                  macrocycle_tell,self.iteration)))
+      if self.macrocycle==3 and self.iteration==self.params.LLG_evaluator.max_calls:
+        fig.savefig(os.path.join(self.params.LLG_evaluator.plot_outdir,"replot_%s_%siteration_%02d.pdf"%(self.params.LLG_evaluator.title,
+                  macrocycle_tell,self.iteration)))
       print ("%s_%siteration_%02d CC=%6.3f%%"%(self.params.LLG_evaluator.title,
-                  macrocycle_tell,self.iteration,100*cc.get_cc()))
+                  macrocycle_tell,self.iteration,100*cc.get_cc()),
+             "CC_fp = %6.3f%% CC_fdp = %6.3f%%"%(100*cc.get_cc_fp(), 100*cc.get_cc_fdp()))
     else:
       self.plt.draw()
       self.plt.pause(0.2)
