@@ -1,9 +1,22 @@
-from __future__ import division
+from __future__ import division, print_function
 from six.moves import range
 from scitbx.array_family import flex
 from scitbx.matrix import sqr
 import libtbx.load_env # possibly implicit
 from cctbx import crystal
+from time import time
+from omptbx import omp_get_num_procs
+
+# %%% boilerplate specialize to packaged big data %%%
+import os
+from LS49.sim import step5_pad
+from LS49.sim import step4_pad
+from LS49.spectra import generate_spectra
+ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+step5_pad.big_data = ls49_big_data
+step4_pad.big_data = ls49_big_data
+generate_spectra.big_data = ls49_big_data
+# %%%%%%
 
 # Develop procedure for MPI control
 
@@ -26,11 +39,11 @@ if __name__=="__main__":
   size = comm.Get_size()
   N_total = 100000 # number of items to simulate
   N_stride = size # total number of worker tasks
-  print(("hello from rank %d of %d"%(rank,size)))
+  print("hello from rank %d of %d"%(rank,size),"with omp_threads=",omp_get_num_procs())
   if rank == 0:
     from LS49.spectra.generate_spectra import spectra_simulation
     from LS49.sim.step5_pad import microcrystal
-    print(("hello2 from rank %d of %d"%(rank,size)))
+    print("hello2 from rank %d of %d"%(rank,size))
     SS = spectra_simulation()
     C = microcrystal(Deff_A = 4000, length_um = 4., beam_diameter_um = 1.0) # assume smaller than 10 um crystals
     mt = flex.mersenne_twister(seed=0)
@@ -48,8 +61,9 @@ if __name__=="__main__":
   while len(parcels)>0:
     import random
     idx = random.choice(parcels)
-    print(("idx------------------->",idx,"rank",rank))
+    print("idx------start-------->",idx,"rank",rank,time())
     tst_one(image=idx,spectra=transmitted_info["spectra"],
             crystal=transmitted_info["crystal"],random_orientation=transmitted_info["random_orientations"][idx])
     parcels.remove(idx)
-  print(("OK exiting rank",rank))
+    print("idx------finis-------->",idx,"rank",rank,time())
+  print("OK exiting rank",rank)
