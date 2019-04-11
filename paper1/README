@@ -1,0 +1,28 @@
+Table 1:  Production of 100,000 simulated images on cori.lbl.gov/haswell
+sbatch the following file:
+
+#!/bin/bash -l
+
+#SBATCH -q premium    # premium queue 
+#SBATCH -N 120        # Use 5% of nodes 
+#SBATCH -t 15:00:00   # wall clock time limit
+#SBATCH -J haswell     
+#SBATCH -L SCRATCH    # job requires SCRATCH files
+#SBATCH -C haswell        
+#SBATCH -A            # allocation
+#SBATCH -o slurm%N_%j.out
+#SBATCH -e slurm%N_%j.err
+#SBATCH --mail-user=
+#SBATCH --mail-type=ALL
+
+# starts off in ${WORK}/HASWELL1
+# -n, tasks to run; -N number of nodes; -c cpus per task;
+# n = N x tasks_per_node (should be 8 tasks per node for Haswell)
+
+export OMP_NUM_THREADS=8
+export OMP_PLACES=threads
+export OMP_PROC_BIND=true
+
+srun -n 960 -c 8 --cpu_bind=cores libtbx.python ../modules/LS49/sim/step6_batch.py
+
+
