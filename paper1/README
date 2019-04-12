@@ -25,4 +25,63 @@ export OMP_PROC_BIND=true
 
 srun -n 960 -c 8 --cpu_bind=cores libtbx.python ../modules/LS49/sim/step6_batch.py
 
+Figures 5,6.
+
+Basic data integration with restraints, Method 2:
+
+   Parameters using the old dials (with new dials, need to add this: profile.gaussian_rs.centroid_definition=com )
+
+mpirun -n 64 dials.stills_process_mpi mp.glob=../HASWELL1/step6_MPIbatch_*.img.gz threshold.dispersion.gain=1.00 filter.min_spot_size=2 indexing.stills.refine_candidates_with_known_symmetry=True indexing.known_symmetry.unit_cell=67.200,59.800,47.200,90.00,110.30,90.00 indexing.known_symmetry.space_group=C2 integration.debug.output=True integration.debug.separate_files=False mp.method=mpi ../all.eff
+
+with ../all.eff:
+refinement {
+  parameterisation {
+    crystal {
+      unit_cell {
+        restraints {
+          tie_to_target {
+            values=67.200,59.800,47.200,90.00,110.30,90.00
+            sigmas=0.002,0.002,0.002,0.0,0.0034,0.0
+          }
+        }
+      }
+    }
+  }
+}
+Total time 19714 sec (5.5 hrs). 99982 integrated.
+
+double-check the indexing/integration solution:
+dials.image_viewer idx-step6_MPIbatch_001234.img_integrated_experiments.json idx-step6_MPIbatch_001234.img_integrated.pickle
+
+dials.lbl.gov,step6_MPIbatch_011872.img,2019-04-11T21:06Z46.402,stop,indexing_failed_71
+dials.lbl.gov,step6_MPIbatch_067876.img,2019-04-11T21:23Z17.389,stop,indexing_failed_101
+dials.lbl.gov,step6_MPIbatch_016011.img,2019-04-11T21:46Z40.204,stop,indexing_failed_97
+dials.lbl.gov,step6_MPIbatch_080645.img,2019-04-11T21:47Z59.641,stop,indexing_failed_86
+dials.lbl.gov,step6_MPIbatch_063612.img,2019-04-11T21:57Z46.491,stop,indexing_failed_110
+dials.lbl.gov,step6_MPIbatch_003090.img,2019-04-11T22:20Z09.828,stop,indexing_failed_87
+dials.lbl.gov,step6_MPIbatch_065325.img,2019-04-11T22:21Z59.957,stop,indexing_failed_94
+dials.lbl.gov,step6_MPIbatch_046911.img,2019-04-11T22:26Z08.195,stop,indexing_failed_85
+dials.lbl.gov,step6_MPIbatch_088899.img,2019-04-11T22:54Z36.974,stop,indexing_failed_85
+dials.lbl.gov,step6_MPIbatch_028326.img,2019-04-11T23:51Z44.261,stop,indexing_failed_83
+dials.lbl.gov,step6_MPIbatch_071184.img,2019-04-12T00:00Z28.904,stop,indexing_failed_63
+dials.lbl.gov,step6_MPIbatch_065124.img,2019-04-12T00:30Z48.031,stop,indexing_failed_94
+dials.lbl.gov,step6_MPIbatch_058294.img,2019-04-12T00:35Z10.438,stop,indexing_failed_96
+dials.lbl.gov,step6_MPIbatch_000940.img,2019-04-12T00:46Z02.166,stop,indexing_failed_109
+dials.lbl.gov,step6_MPIbatch_067207.img,2019-04-12T01:13Z07.950,stop,indexing_failed_73
+dials.lbl.gov,step6_MPIbatch_077472.img,2019-04-12T01:30Z06.122,stop,indexing_failed_90
+dials.lbl.gov,step6_MPIbatch_018143.img,2019-04-12T01:31Z47.983,stop,indexing_failed_85
+dials.lbl.gov,step6_MPIbatch_005546.img,2019-04-12T01:31Z52.826,stop,indexing_failed_107
+dials.stills_process ../HASWELL1/step6_MPIbatch_XXXXXX.img.gz threshold.dispersion.gain=1.00 filter.min_spot_size=2 indexing.stills.refine_candidates_with_known_symmetry=True indexing.known_symmetry.unit_cell=67.200,59.800,47.200,90.00,110.30,90.00 indexing.known_symmetry.space_group=C2 integration.debug.output=True integration.debug.separate_files=False ../all.eff
+
+Best LSQ fit Scheerer domain size is    821.83 ang
+The LSQ full mosaicity is  0.00002 deg; half-mosaicity   0.00001
+Couldn't index step6_MPIbatch_067207.img Model has diverged, cannot continue
+BEST CANDIDATE:
+  rmsd                           : 2.30821521735
+Couldn't index step6_MPIbatch_011872.img RMSD too high, 2.308215
+
+[so the failure has something to do with Sauter 2014 mosaicity refinement, LSQ algorithm]
+
+For data integration without restraints, Method 1, the same command is used but without ../all.eff
+
 
