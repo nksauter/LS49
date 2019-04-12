@@ -83,5 +83,22 @@ Couldn't index step6_MPIbatch_011872.img RMSD too high, 2.308215
 [so the failure has something to do with Sauter 2014 mosaicity refinement, LSQ algorithm]
 
 For data integration without restraints, Method 1, the same command is used but without ../all.eff
+Total time 18844 sec (5.2 hrs). 99987 integrated.
+dials.lbl.gov,step6_MPIbatch_037415.img,2019-04-12T03:19Z27.800,stop,indexing_failed_83
+dials.lbl.gov,step6_MPIbatch_011268.img,2019-04-12T03:31Z33.353,stop,indexing_failed_88
+dials.lbl.gov,step6_MPIbatch_013591.img,2019-04-12T04:03Z54.719,stop,indexing_failed_88
+dials.lbl.gov,step6_MPIbatch_028245.img,2019-04-12T04:14Z33.075,stop,indexing_failed_52
+dials.lbl.gov,step6_MPIbatch_024191.img,2019-04-12T04:17Z16.810,stop,indexing_failed_82
+dials.lbl.gov,step6_MPIbatch_099612.img,2019-04-12T04:17Z22.647,stop,indexing_failed_109
+dials.lbl.gov,step6_MPIbatch_009735.img,2019-04-12T05:14Z04.732,stop,indexing_failed_81
+dials.lbl.gov,step6_MPIbatch_048960.img,2019-04-12T05:17Z37.465,stop,indexing_failed_70
+dials.lbl.gov,step6_MPIbatch_069223.img,2019-04-12T05:41Z06.236,stop,indexing_failed_85
+dials.lbl.gov,step6_MPIbatch_044779.img,2019-04-12T05:42Z26.280,stop,indexing_failed_86
+dials.lbl.gov,step6_MPIbatch_090763.img,2019-04-12T07:32Z41.120,stop,indexing_failed_90
+dials.lbl.gov,step6_MPIbatch_005546.img,2019-04-12T07:37Z09.471,stop,indexing_failed_107
+dials.lbl.gov,step6_MPIbatch_069083.img,2019-04-12T07:43Z52.383,stop,indexing_failed_89
+These 13 failures look to be a completely different set.  Therefore, the failures are not intrinsic to the data,
+rather they represent bugs in the dials.stills_process
+
 
 
