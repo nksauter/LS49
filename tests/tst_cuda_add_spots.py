@@ -1,6 +1,6 @@
 from __future__ import division, print_function
 import os
-from LS49.tests.tst_monochromatic_image import compare_two_images
+from LS49.tests.tst_monochromatic_image import compare_two_images, compare_two_raw_images
 from LS49.sim import step5_pad
 
 step5_pad.add_spots_algorithm = "cuda"
@@ -37,6 +37,9 @@ if __name__=="__main__":
     run_polychromatic(create=False)
     ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
     compare_two_images(reference=os.path.join(ls49_big_data,"reference","step5_MPIbatch_000000.img.gz"), test="./cuda_step5poly_000000.img.gz")
+    # compare raw photon values (Bragg scatter only):
+    compare_two_raw_images(reference=os.path.join(ls49_big_data,"reference","step5poly_cuda_ref_dblprec_000000.pickle"), test="./cuda_step5poly_000000_dblprec_001.pickle")
+
   else:
     run_monochromatic()
     ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
