@@ -25,6 +25,11 @@ def data():
     Fe_metallic_model = george_sherrell(full_path("data_sherrell/Fe_fake.dat"))
   )
 
+def numpy_array_to_pickle(numpy_array, fileout):
+  from six.moves import cPickle as pickle
+  with open(fileout, "wb") as F:
+    pickle.dump(numpy_array, F)
+
 from LS49.sim.step4_pad import microcrystal
 
 """Changes in Step4K relative to Step4
@@ -308,8 +313,12 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
     SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal;
     CHDBG_singleton.extract(channel_no=x, data=CH.raw_pixels)
     CH.free_all()
+
     del P
-  if quick:  SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
+
+  # image 1: crystal Bragg scatter
+  if quick or save_bragg:  SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
+  if save_bragg: numpy_array_to_pickle(SIM.raw_pixels.as_numpy_array(), fileout=prefix + "_dblprec_001.pickle")
 
   # rough approximation to water: interpolation points for sin(theta/lambda) vs structure factor
   bg = flex.vec2_double([(0,2.57),(0.0365,2.58),(0.07,2.8),(0.12,5),(0.162,8),(0.2,6.75),(0.18,7.32),(0.216,6.75),(0.236,6.5),(0.28,4.5),(0.3,4.3),(0.345,4.36),(0.436,3.77),(0.5,3.17)])
