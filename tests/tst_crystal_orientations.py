@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 from six.moves import cPickle, range
 from scitbx.array_family import flex
+from libtbx.test_utils import approx_equal
 import os
 
 ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
@@ -19,7 +20,7 @@ def model(create):
   else: # read the reference and assert sameness to production run
       ori_ref = cPickle.load(open(os.path.join(ls49_big_data,"reference",filename),"rb"))
       for x in range(len(random_orientations)):
-        assert random_orientations[x] == ori_ref[x]
+        assert approx_equal(random_orientations[x], ori_ref[x])
 
 if __name__=="__main__":
   model(create=False)
