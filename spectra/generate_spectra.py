@@ -27,6 +27,25 @@ class linear_fit:
     omptbx.omp_set_num_threads(workaround_nt)
     # y = mx + c
     # x = (1./m) y - (c/m)
+
+    # Solve the equations without numpy
+    # Taken from Bevington, third edition, eqns (6.12,6.13)
+    NN = len(self.x)
+    from scitbx.array_family import flex
+    x_array = flex.double(self.x)
+    sumx = flex.sum(x_array)
+    sumsq_x = sumx * sumx
+    sumx_sq = flex.sum(x_array*x_array)
+    sumxy = flex.sum(x_array * flex.double(self.y))
+    sumy = flex.sum(flex.double(self.y))
+    delta_prime = NN*sumx_sq - sumsq_x
+    assert delta_prime != 0.
+    mm = (1./delta_prime) * (NN*sumxy - sumx * sumy)
+    cc = (1./delta_prime) * (sumx_sq*sumy - sumx * sumxy)
+    from libtbx.test_utils import approx_equal
+    assert approx_equal(mm,self.m)
+    assert approx_equal(cc,self.c)
+
   def get_residuals(self):
     print(len(self.y))
     calc_idx = (1./self.m)*np.array(self.y) - (self.c/self.m)
@@ -119,7 +138,7 @@ class spectra_simulation:
       expected_energy = self.LF.m * self.R["expidx"][image] + self.LF.c + offset
       print(image,"ebeam = %7.2f eV"%(expected_energy),"%5.1f%% of average pulse intensity"%(100.*
         self.bk_subtracted_sum[image]/self.average_integrated))
-
+      assert expected_energy > 0.
       channel_flux = flex.double(100) # 100 energy channels altogether
       channel_mean_eV = flex.double(range(100)) + energy - 49.5
       eV_to_angstrom = 12398.425
@@ -159,7 +178,12 @@ class spectra_simulation:
   def get_average_expected_energy(self):
     idx = np.array(self.LF.x)
     fitted_energy = self.LF.m * idx + self.LF.c
-    return np.mean(fitted_energy)
+    #return np.mean(fitted_energy)
+    from scitbx.array_family import flex
+    idx_c = flex.double(self.LF.x)
+    fitted_energy_c = float(self.LF.m) * idx_c + float(self.LF.c)
+    print ("numpy",np.mean(fitted_energy), "flex",flex.mean(fitted_energy_c))
+    return flex.mean(fitted_energy_c)
 
 if __name__=="__main__":
   SS = spectra_simulation()
