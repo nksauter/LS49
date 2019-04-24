@@ -293,12 +293,6 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
   print("interpolate=",SIM.interpolate)
   print("integral_form=",SIM.integral_form)
 
-  from libtbx.development.timers import Profiler
-  P = Profiler("nanoBragg")
-  # now actually burn up some CPU
-  #SIM.add_nanoBragg_spots()
-  del P
-
   # simulated crystal is only 125 unit cells (25 nm wide)
   # amplify spot signal to simulate physical crystal of 4000x larger: 100 um (64e9 x the volume)
   print(crystal.domains_per_crystal)
