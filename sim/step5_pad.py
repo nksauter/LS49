@@ -135,7 +135,7 @@ CHDBG_singleton = channel_extractor()
 def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=False):
   local_data = data()
   smv_fileout = prefix + ".img"
-  if quick is not True:
+  if not quick and not save_bragg:
     if not write_safe(smv_fileout):
       print("File %s already exists, skipping in rank %d"%(smv_fileout,rank))
       return

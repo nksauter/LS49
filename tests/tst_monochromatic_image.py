@@ -56,7 +56,7 @@ def compare_two_images(reference, test, tolerance_count=10):
   #assert no_differences
   assert ndiff < tolerance_count, "There are %d differences"%ndiff
 
-def compare_two_raw_images(reference, test):
+def compare_two_raw_images(reference, test, tol=1.E-10): # TODO: run more tests to decide on the default tolerance
   from six.moves import cPickle as pickle
   import numpy as np
   with open(reference,'rb') as F:
@@ -68,7 +68,10 @@ def compare_two_raw_images(reference, test):
     print ("There are 0 differences\n")
   else:
     diff_array = test_array - reference_array
-    print("Differences: range (%.2E - %.2E); mean %.2E; std %.2E"%(np.amin(diff_array), np.amax(diff_array), np.mean(diff_array), np.std(diff_array)))
+    mean_diff = np.mean(diff_array)
+    print("Differences: range (%.2E - %.2E); mean %.2E; std %.2E"%(np.amin(diff_array), np.amax(diff_array), mean_diff, np.std(diff_array)))
+    # assert acceptable differences
+    assert mean_diff < tol, "The raw image is different from the reference."
 
 if __name__=="__main__":
   run_monochromatic()

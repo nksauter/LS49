@@ -13,6 +13,8 @@ tst_list = (
   "$D/tests/tst_monochromatic_image.py",
   "$D/tests/tst_polychromatic_image.py",
   "$D/tests/tst_jh_add_spots.py",
+  ["$D/tests/tst_cpu_add_spots_double_precision.py","mono"],
+  ["$D/tests/tst_cpu_add_spots_double_precision.py","poly"],
   )
 
 OPT = libtbx.env.build_options
