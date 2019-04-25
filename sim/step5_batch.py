@@ -37,10 +37,16 @@ if __name__=="__main__":
   comm = MPI.COMM_WORLD
   rank = comm.Get_rank()
   size = comm.Get_size()
+  import os,omptbx
+  workaround_nt = int(os.environ.get("OMP_NUM_THREADS",1))
+  omptbx.omp_set_num_threads(workaround_nt)
   N_total = 100000 # number of items to simulate
   N_stride = size # total number of worker tasks
   print("hello from rank %d of %d"%(rank,size),"with omp_threads=",omp_get_num_procs())
+  import datetime
+  start_elapse = time()
   if rank == 0:
+    print("Rank 0 time", datetime.datetime.now())
     from LS49.spectra.generate_spectra import spectra_simulation
     from LS49.sim.step5_pad import microcrystal
     print("hello2 from rank %d of %d"%(rank,size))
@@ -61,9 +67,10 @@ if __name__=="__main__":
   while len(parcels)>0:
     import random
     idx = random.choice(parcels)
+    cache_time = time()
     print("idx------start-------->",idx,"rank",rank,time())
     tst_one(image=idx,spectra=transmitted_info["spectra"],
             crystal=transmitted_info["crystal"],random_orientation=transmitted_info["random_orientations"][idx])
     parcels.remove(idx)
-    print("idx------finis-------->",idx,"rank",rank,time())
-  print("OK exiting rank",rank)
+    print("idx------finis-------->",idx,"rank",rank,time(),"elapsed",time()-cache_time)
+  print("OK exiting rank",rank,"at",datetime.datetime.now(),"seconds elapsed",time()-start_elapse)

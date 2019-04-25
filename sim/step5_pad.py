@@ -72,7 +72,7 @@ def write_safe(fname):
   return (not os.path.isfile(fname)) and (not os.path.isfile(fname+".gz"))
 
 add_spots_algorithm = "NKS"
-def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,local_data):
+def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,local_data,rank):
   fmodel_generator.reset_wavelength(wavelength_A)
   fmodel_generator.reset_specific_at_wavelength(
                    label_has="FE1",tables=local_data.get("Fe_oxidized_model"),newvalue=wavelength_A)
@@ -112,7 +112,7 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,loca
   SIM.Ncells_abc=temp
 
   from libtbx.development.timers import Profiler
-  P = Profiler("nanoBragg")
+  P = Profiler("nanoBragg C++ rank %d"%(rank))
   if add_spots_algorithm is "NKS":
     from boost.python import streambuf # will deposit printout into dummy StringIO as side effect
     SIM.add_nanoBragg_spots_nks(streambuf(StringIO()))
@@ -138,6 +138,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
   direct_algo_res_limit = 1.7
 
   wavlen, flux, wavelength_A = next(spectra) # list of lambdas, list of fluxes, average wavelength
+  assert wavelength_A > 0
   if quick:
     wavlen = flex.double([wavelength_A]);
     flux = flex.double([flex.sum(flux)])
@@ -299,11 +300,15 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
   SIM.raw_pixels *= crystal.domains_per_crystal; # must calculate the correct scale!
 
   for x in range(len(flux)):
+    from libtbx.development.timers import Profiler
+    P = Profiler("nanoBragg Python and C++ rank %d"%(rank))
+
     print("+++++++++++++++++++++++++++++++++++++++ Wavelength",x)
-    CH = channel_pixels(wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,GF,local_data)
+    CH = channel_pixels(wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,GF,local_data,rank)
     SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal;
     CHDBG_singleton.extract(channel_no=x, data=CH.raw_pixels)
     CH.free_all()
+    del P
   if quick:  SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
 
   # rough approximation to water: interpolation points for sin(theta/lambda) vs structure factor
