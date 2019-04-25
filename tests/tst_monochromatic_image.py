@@ -65,11 +65,10 @@ def compare_two_raw_images(reference, test):
     test_array = pickle.load(F)
   print("\nComparing raw image: '%s' with the reference: '%s'"%(test, reference))
   if (test_array == reference_array).all():
-        print ("There are 0 differences\n")
+    print ("There are 0 differences\n")
   else:
     diff_array = test_array - reference_array
-    print("\nThere are differences ranging from %.2E to %.2E"%(np.amin(diff_array), np.amax(diff_array)))
-    print("Mean difference: %.2E; standard deviation: %.2E\n"%(np.mean(diff_array), np.std(diff_array)))
+    print("Differences: range (%.2E - %.2E); mean %.2E; std %.2E"%(np.amin(diff_array), np.amax(diff_array), np.mean(diff_array), np.std(diff_array)))
 
 if __name__=="__main__":
   run_monochromatic()
