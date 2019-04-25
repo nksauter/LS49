@@ -56,29 +56,20 @@ def compare_two_images(reference, test, tolerance_count=10):
   #assert no_differences
   assert ndiff < tolerance_count, "There are %d differences"%ndiff
 
-def compare_two_raw_images(reference, test, tolerance_count=10):
+def compare_two_raw_images(reference, test):
   from six.moves import cPickle as pickle
   import numpy as np
   with open(reference,'rb') as F:
     reference_array = pickle.load(F)
   with open(test,'rb') as F:
     test_array = pickle.load(F)
-  if(test_array == reference_array).all():
-    print ("\nRaw image '%s' matches the reference '%s'"%(test, reference))
-    print ("There are 0 differences\n")
+  print("\nComparing raw image: '%s' with the reference: '%s'"%(test, reference))
+  if (test_array == reference_array).all():
+        print ("There are 0 differences\n")
   else:
-    print ("\nRaw image: '%s' dooes not match the reference: '%s'"%(test, reference))
     diff_array = test_array - reference_array
-    max_diff_to_print = 200 # only print the first 200 differences
-    ndiff = 0
-    for ix,iy in np.ndindex(diff_array.shape):
-      if abs(diff_array[ix,iy]) > 0.0:
-        ndiff += 1
-        if ndiff  < 200:
-          print ("ix: %d, iy: %d; diff_array[ix,iy]: %f"%(ix, iy, diff_array[ix,iy]))
-    print("There are %d differences\n"%ndiff)
-    #assert no_differences
-    assert ndiff < tolerance_count, "There are %d differences"%ndiff
+    print("\nThere are differences ranging from %.2E to %.2E"%(np.amin(diff_array), np.amax(diff_array)))
+    print("Mean difference: %.2E; standard deviation: %.2E\n"%(np.mean(diff_array), np.std(diff_array)))
 
 if __name__=="__main__":
   run_monochromatic()

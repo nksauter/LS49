@@ -132,7 +132,7 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,loca
 from LS49.sim.debug_utils import channel_extractor
 CHDBG_singleton = channel_extractor()
 
-def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
+def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=False):
   local_data = data()
   smv_fileout = prefix + ".img"
   if quick is not True:
@@ -389,7 +389,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
     data=img.get_raw_data(),path=prefix + ".cbf")
   SIM.free_all()
 
-def tst_all(quick=False,prefix="step5"):
+def tst_all(quick=False,prefix="step5",save_bragg=False):
   from LS49.spectra.generate_spectra import spectra_simulation
   SS = spectra_simulation()
   iterator = SS.generate_recast_renormalized_images(20,energy=7120.,total_flux=1e12)
@@ -405,7 +405,7 @@ def tst_all(quick=False,prefix="step5"):
   for iteration in range(Nimages):
     file_prefix = prefix_root%iteration
     rand_ori = sqr(mt.random_double_r3_rotation_matrix())
-    run_sim2smv(prefix = file_prefix,crystal = C,spectra=iterator,rotation=rand_ori,quick=quick,rank=0)
+    run_sim2smv(prefix = file_prefix,crystal = C,spectra=iterator,rotation=rand_ori,quick=quick,rank=0,save_bragg=save_bragg)
 
 if __name__=="__main__":
   tst_all()
