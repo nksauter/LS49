@@ -58,20 +58,24 @@ def compare_two_images(reference, test, tolerance_count=10):
 
 def compare_two_raw_images(reference, test, tol=1.E-10): # TODO: run more tests to decide on the default tolerance
   from six.moves import cPickle as pickle
-  import numpy as np
+  from scitbx.array_family import flex
   with open(reference,'rb') as F:
-    reference_array = pickle.load(F)
+    ref_array = pickle.load(F)
   with open(test,'rb') as F:
     test_array = pickle.load(F)
   print("\nComparing raw image: '%s' with the reference: '%s'"%(test, reference))
-  if (test_array == reference_array).all():
+  diff_array = test_array - ref_array
+  if diff_array.all_eq(0.0):
     print ("There are 0 differences\n")
   else:
-    diff_array = test_array - reference_array
-    mean_diff = np.mean(diff_array)
-    print("Differences: range (%.2E - %.2E); mean %.2E; std %.2E"%(np.amin(diff_array), np.amax(diff_array), mean_diff, np.std(diff_array)))
+    stats = flex.mean_and_variance(diff_array)
+    diff_mean = stats.mean()
+    diff_std = stats.unweighted_sample_standard_deviation()
+    diff_min = flex.min(diff_array)
+    diff_max = flex.max(diff_array)
+    print("Differences: range (%.2E to %.2E); mean %.2E; std %.2E"%(diff_min, diff_max, diff_mean, diff_std))
     # assert acceptable differences
-    assert mean_diff < tol, "The raw image is different from the reference."
+    assert diff_mean < tol, "The raw image is different from the reference."
 
 if __name__=="__main__":
   run_monochromatic()
