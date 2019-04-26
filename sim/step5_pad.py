@@ -25,10 +25,10 @@ def data():
     Fe_metallic_model = george_sherrell(full_path("data_sherrell/Fe_fake.dat"))
   )
 
-def numpy_array_to_pickle(numpy_array, fileout):
+def raw_to_pickle(raw_pixels, fileout):
   from six.moves import cPickle as pickle
   with open(fileout, "wb") as F:
-    pickle.dump(numpy_array, F)
+    pickle.dump(raw_pixels, F)
 
 from LS49.sim.step4_pad import microcrystal
 
@@ -135,7 +135,7 @@ CHDBG_singleton = channel_extractor()
 def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=False):
   local_data = data()
   smv_fileout = prefix + ".img"
-  if not quick and not save_bragg:
+  if not quick:
     if not write_safe(smv_fileout):
       print("File %s already exists, skipping in rank %d"%(smv_fileout,rank))
       return
@@ -310,7 +310,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
 
     print("+++++++++++++++++++++++++++++++++++++++ Wavelength",x)
     CH = channel_pixels(wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,GF,local_data,rank)
-    SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal;
+    SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal
     CHDBG_singleton.extract(channel_no=x, data=CH.raw_pixels)
     CH.free_all()
 
@@ -318,7 +318,8 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
 
   # image 1: crystal Bragg scatter
   if quick or save_bragg:  SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
-  if save_bragg: numpy_array_to_pickle(SIM.raw_pixels.as_numpy_array(), fileout=prefix + "_dblprec_001.pickle")
+
+  if save_bragg: raw_to_pickle(SIM.raw_pixels.as_1d(), fileout=prefix + "_dblprec_001.pickle") # using as_1d() here as a workaround: flex.mean_and_variance doesn't work on SIM.raw_pixels - TODO: investigate if it's a bug; note: array SIM.raw_pixels is created in an extension; also note that methods like flex.mean do work fine on this array.
 
   # rough approximation to water: interpolation points for sin(theta/lambda) vs structure factor
   bg = flex.vec2_double([(0,2.57),(0.0365,2.58),(0.07,2.8),(0.12,5),(0.162,8),(0.2,6.75),(0.18,7.32),(0.216,6.75),(0.236,6.5),(0.28,4.5),(0.3,4.3),(0.345,4.36),(0.436,3.77),(0.5,3.17)])
