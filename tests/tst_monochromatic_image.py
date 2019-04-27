@@ -68,7 +68,7 @@ def compare_two_raw_images(reference, test, tol=1.E-10): # TODO: run more tests 
   if diff_array.all_eq(0.0):
     print ("There are 0 differences\n")
   else:
-    stats = flex.mean_and_variance(diff_array)
+    stats = flex.mean_and_variance(diff_array.as_1d()) # flex.mean_and_variance works only on 1d arrays
     diff_mean = stats.mean()
     diff_std = stats.unweighted_sample_standard_deviation()
     diff_min = flex.min(diff_array)
