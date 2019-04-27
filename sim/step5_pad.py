@@ -319,7 +319,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
   # image 1: crystal Bragg scatter
   if quick or save_bragg:  SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
 
-  if save_bragg: raw_to_pickle(SIM.raw_pixels.as_1d(), fileout=prefix + "_dblprec_001.pickle") # using as_1d() here as a workaround: flex.mean_and_variance doesn't work on SIM.raw_pixels - TODO: investigate if it's a bug; note: array SIM.raw_pixels is created in an extension; also note that methods like flex.mean do work fine on this array.
+  if save_bragg: raw_to_pickle(SIM.raw_pixels, fileout=prefix + "_dblprec_001.pickle")
 
   # rough approximation to water: interpolation points for sin(theta/lambda) vs structure factor
   bg = flex.vec2_double([(0,2.57),(0.0365,2.58),(0.07,2.8),(0.12,5),(0.162,8),(0.2,6.75),(0.18,7.32),(0.216,6.75),(0.236,6.5),(0.28,4.5),(0.3,4.3),(0.345,4.36),(0.436,3.77),(0.5,3.17)])
