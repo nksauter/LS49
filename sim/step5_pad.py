@@ -303,18 +303,52 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
   # amplify spot signal to simulate physical crystal of 4000x larger: 100 um (64e9 x the volume)
   print(crystal.domains_per_crystal)
   SIM.raw_pixels *= crystal.domains_per_crystal; # must calculate the correct scale!
+  use_old = False
+  if use_old:
+    for x in range(len(flux)):
+      from libtbx.development.timers import Profiler
+      P = Profiler("nanoBragg Python and C++ rank %d"%(rank))
 
-  for x in range(len(flux)):
-    from libtbx.development.timers import Profiler
-    P = Profiler("nanoBragg Python and C++ rank %d"%(rank))
+      print("+++++++++++++++++++++++++++++++++++++++ Wavelength",x)
+      CH = channel_pixels(wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,GF,local_data,rank)
+      SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal
+      CHDBG_singleton.extract(channel_no=x, data=CH.raw_pixels)
+      CH.free_all()
 
-    print("+++++++++++++++++++++++++++++++++++++++ Wavelength",x)
-    CH = channel_pixels(wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,GF,local_data,rank)
-    SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal
-    CHDBG_singleton.extract(channel_no=x, data=CH.raw_pixels)
-    CH.free_all()
+      del P
+  else:
+    # new approach
 
-    del P
+    # allocate GPU arrays
+    SIM.allocate_cuda()
+
+    # loop over energies
+    for x in range(len(flux)):
+      from libtbx.development.timers import Profiler
+      P = Profiler("nanoBragg Python and C++ rank %d"%(rank))
+
+      print("+++++++++++++++++++++++++++++++++++++++ Wavelength",x)
+
+      # from channel_pixels function
+      wavelength_A = wavlen[x]
+      fmodel_generator = GF
+      fmodel_generator.reset_wavelength(wavelength_A)
+      fmodel_generator.reset_specific_at_wavelength(
+                       label_has="FE1",tables=local_data.get("Fe_oxidized_model"),newvalue=wavelength_A)
+      fmodel_generator.reset_specific_at_wavelength(
+                       label_has="FE2",tables=local_data.get("Fe_reduced_model"),newvalue=wavelength_A)
+      print("USING scatterer-specific energy-dependent scattering factors")
+      sfall_channel = fmodel_generator.get_amplitudes()
+
+      SIM.wavelength_A = wavelength_A
+      SIM.flux = flux[x]
+      SIM.Fhkl = sfall_channel
+      SIM.add_energy_channel_cuda()
+
+    # deallocate GPU arrays
+    SIM.get_raw_pixels_cuda()  # updates the raw_pixels member in SIM from GPU
+    SIM.raw_pixels = SIM.raw_pixels * crystal.domains_per_crystal
+    SIM.deallocate_cuda()
 
   # image 1: crystal Bragg scatter
   if quick or save_bragg:  SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
