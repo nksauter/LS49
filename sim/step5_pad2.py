@@ -5,6 +5,7 @@ from scitbx.array_family import flex
 from scitbx.matrix import sqr,col
 from simtbx.nanoBragg import shapetype
 from simtbx.nanoBragg import nanoBragg
+from cctbx import crystal_orientation
 import libtbx.load_env # possibly implicit
 from cctbx import crystal
 import math
@@ -76,7 +77,12 @@ add_spots_algorithm = "NKS"
 
 
 class ChannelSimulator:
-  def __init__(self, UMAT_nm, N, Amatrix_rot):
+  def __init__(self, UMAT_nm, N,
+               Amatrix_rot,
+               mosaic_domains=25,
+               mosaic_spread_deg=0.05,
+               SEED=1,
+               randomize=False):
     """
 
     :param UMAT_nm:  mosaic blocks argument
@@ -90,13 +96,14 @@ class ChannelSimulator:
                 wavelength_A=1,  # default we will update later@
                 verbose=0)
 
-    self.SIM.adc_offset_adu = 10 # Do not offset by 40
-    self.SIM.mosaic_domains = 25  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
+    self.SIM.seed = SEED
 
-    self.SIM.mosaic_spread_deg = 0.05 # interpreted by UMAT_nm as a half-width stddev
+    self.SIM.adc_offset_adu = 10 # Do not offset by 40
+    self.SIM.mosaic_domains = mosaic_domains  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
+    self.SIM.mosaic_spread_deg = mosaic_spread_deg # interpreted by UMAT_nm as a half-width stddev
+    self.SIM.distance_mm=141.7
     self.SIM.distance_mm=141.7
     self.SIM.set_mosaic_blocks(UMAT_nm)
-    self.SIM.seed = 1
     self.SIM.oversample=1
     self.SIM.polarization=1
     self.SIM.default_F=1e5  # TODO: in the future we will init the energy dependent F_HKL here
@@ -106,13 +113,14 @@ class ChannelSimulator:
     self.SIM.progress_meter=False
     self.SIM.exposure_s=1.0 # so total fluence is e12
     self.SIM.beamsize_mm=0.003 #cannot make this 3 microns; spots are too intense
+    if randomize:
+      self.SIM.random_orientation()
     temp=self.SIM.Ncells_abc
     print("Ncells_abc=",self.SIM.Ncells_abc)
     self.SIM.Ncells_abc=temp
 
     # FIXME: add the CUDA init script here
     #initialize_GPU_variables()
-
     self.raw_pixels = self.SIM.raw_pixels  # FIXME: this will be on GPU
 
   def add_channel_pixels(self, wavelength_A, flux, rank):
@@ -171,151 +179,28 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
   sfall_main.show_summary(prefix = "Amplitudes used ")
   N = crystal.number_of_cells(sfall_main.unit_cell())
 
-  #SIM = nanoBragg(detpixels_slowfast=(2000,2000),pixel_size_mm=0.11,Ncells_abc=(5,5,5),verbose=0)
-  SIM = nanoBragg(detpixels_slowfast=(3000,3000),pixel_size_mm=0.11,Ncells_abc=(N,N,N),
-    # workaround for problem with wavelength array, specify it separately in constructor.
-    wavelength_A=wavelength_A,verbose=0)
-  SIM.adc_offset_adu = 0 # Do not offset by 40
-  SIM.adc_offset_adu = 10 # Do not offset by 40
   import sys
-  if len(sys.argv)>2:
-    SIM.seed = -int(sys.argv[2])
-    print("GOTHERE seed=",SIM.seed)
-  if len(sys.argv)>1:
-    if sys.argv[1]=="random" : SIM.randomize_orientation()
-  SIM.mosaic_domains = 25  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
-                           # 3000000 images would be 100000 hours on a 60-core machine (dials), or 11.4 years
-                           # using 2 nodes, 5.7 years.  Do this at SLAC? NERSC? combination of all?
-                           # SLAC downtimes: Tues Dec 5 (24 hrs), Mon Dec 11 (72 hrs), Mon Dec 18 light use, 24 days
-  SIM.mosaic_spread_deg = 0.05 # interpreted by UMAT_nm as a half-width stddev
-  SIM.distance_mm=141.7
 
+  mosaic_spread_deg = 0.05
+  mosaic_domains = 25
   UMAT_nm = flex.mat3_double()
   mersenne_twister = flex.mersenne_twister(seed=0)
   scitbx.random.set_random_seed(1234)
-  rand_norm = scitbx.random.normal_distribution(mean=0, sigma=SIM.mosaic_spread_deg * math.pi/180.)
+  rand_norm = scitbx.random.normal_distribution(mean=0, sigma=mosaic_spread_deg * math.pi/180.)
   g = scitbx.random.variate(rand_norm)
-  mosaic_rotation = g(SIM.mosaic_domains)
+  mosaic_rotation = g(mosaic_domains)
   for m in mosaic_rotation:
     site = col(mersenne_twister.random_double_point_on_sphere())
     UMAT_nm.append( site.axis_and_angle_as_r3_rotation_matrix(m,deg=False) )
-  SIM.set_mosaic_blocks(UMAT_nm)
 
   #SIM.detector_thick_mm = 0.5 # = 0 for Rayonix
   #SIM.detector_thicksteps = 1 # should default to 1 for Rayonix, but set to 5 for CSPAD
   #SIM.detector_attenuation_length_mm = default is silicon
+  Amatrix_rot = (rotation * sqr(sfall_main.unit_cell().orthogonalization_matrix())).transpose()
 
   # get same noise each time this test is run
-  SIM.seed = 1
-  SIM.oversample=1
-  SIM.wavelength_A = wavelength_A
-  SIM.polarization=1
   # this will become F000, marking the beam center
-  SIM.default_F=0
   #SIM.missets_deg= (10,20,30)
-  print("mosaic_seed=",SIM.mosaic_seed)
-  print("seed=",SIM.seed)
-  print("calib_seed=",SIM.calib_seed)
-  print("missets_deg =", SIM.missets_deg)
-  SIM.Fhkl=sfall_main
-  print("Determinant",rotation.determinant())
-  Amatrix_rot = (rotation * sqr(sfall_main.unit_cell().orthogonalization_matrix())).transpose()
-  print("RAND_ORI", prefix, end=' ')
-  for i in Amatrix_rot: print(i, end=' ')
-  print()
-
-  SIM.Amatrix_RUB = Amatrix_rot
-  #workaround for failing init_cell, use custom written Amatrix setter
-  print("unit_cell_Adeg=",SIM.unit_cell_Adeg)
-  print("unit_cell_tuple=",SIM.unit_cell_tuple)
-  Amat = sqr(SIM.Amatrix).transpose() # recovered Amatrix from SIM
-  from cctbx import crystal_orientation
-  Ori = crystal_orientation.crystal_orientation(Amat, crystal_orientation.basis_type.reciprocal)
-  print("Python unit cell from SIM state",Ori.unit_cell())
-
-  # fastest option, least realistic
-  #SIM.xtal_shape=shapetype.Tophat # RLP = hard sphere
-  #SIM.xtal_shape=shapetype.Square # gives fringes
-  SIM.xtal_shape=shapetype.Gauss # both crystal & RLP are Gaussian
-  #SIM.xtal_shape=shapetype.Round # Crystal is a hard sphere
-  # only really useful for long runs
-  SIM.progress_meter=False
-  # prints out value of one pixel only.  will not render full image!
-  #SIM.printout_pixel_fastslow=(500,500)
-  #SIM.printout=True
-  SIM.show_params()
-  # flux is always in photons/s
-  SIM.flux=1e12
-  SIM.exposure_s=1.0 # so total fluence is e12
-  # assumes round beam
-  SIM.beamsize_mm=0.003 #cannot make this 3 microns; spots are too intense
-  temp=SIM.Ncells_abc
-  print("Ncells_abc=",SIM.Ncells_abc)
-  SIM.Ncells_abc=temp
-  print("Ncells_abc=",SIM.Ncells_abc)
-  print("xtal_size_mm=",SIM.xtal_size_mm)
-  print("unit_cell_Adeg=",SIM.unit_cell_Adeg)
-  print("unit_cell_tuple=",SIM.unit_cell_tuple)
-  print("missets_deg=",SIM.missets_deg)
-  print("Amatrix=",SIM.Amatrix)
-  print("beam_center_mm=",SIM.beam_center_mm)
-  print("XDS_ORGXY=",SIM.XDS_ORGXY)
-  print("detector_pivot=",SIM.detector_pivot)
-  print("xtal_shape=",SIM.xtal_shape)
-  print("beamcenter_convention=",SIM.beamcenter_convention)
-  print("fdet_vector=",SIM.fdet_vector)
-  print("sdet_vector=",SIM.sdet_vector)
-  print("odet_vector=",SIM.odet_vector)
-  print("beam_vector=",SIM.beam_vector)
-  print("polar_vector=",SIM.polar_vector)
-  print("spindle_axis=",SIM.spindle_axis)
-  print("twotheta_axis=",SIM.twotheta_axis)
-  print("distance_meters=",SIM.distance_meters)
-  print("distance_mm=",SIM.distance_mm)
-  print("close_distance_mm=",SIM.close_distance_mm)
-  print("detector_twotheta_deg=",SIM.detector_twotheta_deg)
-  print("detsize_fastslow_mm=",SIM.detsize_fastslow_mm)
-  print("detpixels_fastslow=",SIM.detpixels_fastslow)
-  print("detector_rot_deg=",SIM.detector_rot_deg)
-  print("curved_detector=",SIM.curved_detector)
-  print("pixel_size_mm=",SIM.pixel_size_mm)
-  print("point_pixel=",SIM.point_pixel)
-  print("polarization=",SIM.polarization)
-  print("nopolar=",SIM.nopolar)
-  print("oversample=",SIM.oversample)
-  print("region_of_interest=",SIM.region_of_interest)
-  print("wavelength_A=",SIM.wavelength_A)
-  print("energy_eV=",SIM.energy_eV)
-  print("fluence=",SIM.fluence)
-  print("flux=",SIM.flux)
-  print("exposure_s=",SIM.exposure_s)
-  print("beamsize_mm=",SIM.beamsize_mm)
-  print("dispersion_pct=",SIM.dispersion_pct)
-  print("dispsteps=",SIM.dispsteps)
-  print("divergence_hv_mrad=",SIM.divergence_hv_mrad)
-  print("divsteps_hv=",SIM.divsteps_hv)
-  print("divstep_hv_mrad=",SIM.divstep_hv_mrad)
-  print("round_div=",SIM.round_div)
-  print("phi_deg=",SIM.phi_deg)
-  print("osc_deg=",SIM.osc_deg)
-  print("phisteps=",SIM.phisteps)
-  print("phistep_deg=",SIM.phistep_deg)
-  print("detector_thick_mm=",SIM.detector_thick_mm)
-  print("detector_thicksteps=",SIM.detector_thicksteps)
-  print("detector_thickstep_mm=",SIM.detector_thickstep_mm)
-  print("***mosaic_spread_deg=",SIM.mosaic_spread_deg)
-  print("***mosaic_domains=",SIM.mosaic_domains)
-  print("indices=",SIM.indices)
-  print("amplitudes=",SIM.amplitudes)
-  print("Fhkl_tuple=",SIM.Fhkl_tuple)
-  print("default_F=",SIM.default_F)
-  print("interpolate=",SIM.interpolate)
-  print("integral_form=",SIM.integral_form)
-
-  # simulated crystal is only 125 unit cells (25 nm wide)
-  # amplify spot signal to simulate physical crystal of 4000x larger: 100 um (64e9 x the volume)
-  print(crystal.domains_per_crystal)
-  SIM.raw_pixels *= crystal.domains_per_crystal; # must calculate the correct scale!
 
   channel_sim = ChannelSimulator(
     N=N,
@@ -332,11 +217,13 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
     CHDBG_singleton.extract(channel_no=x, data=channel_sim.raw_pixels)
     del P
 
+  SIM = channel_sim.SIM
+
+  # FIXME: this hsould already be done by kernel...
   SIM.raw_pixels = channel_sim.raw_pixels * crystal.domains_per_crystal;
 
   if quick:  SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
 
-  # rough approximation to water: interpolation points for sin(theta/lambda) vs structure factor
   bg = flex.vec2_double([(0,2.57),(0.0365,2.58),(0.07,2.8),(0.12,5),(0.162,8),(0.2,6.75),(0.18,7.32),(0.216,6.75),(0.236,6.5),(0.28,4.5),(0.3,4.3),(0.345,4.36),(0.436,3.77),(0.5,3.17)])
   SIM.Fbg_vs_stol = bg
   SIM.amorphous_sample_thick_mm = 0.1
@@ -375,7 +262,8 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False):
 
   # at this point we scale the raw pixels so that the output array is on an scale from 0 to 50000.
   # that is the default behavior (intfile_scale<=0), otherwise it applies intfile_scale as a multiplier on an abs scale.
-  if quick:  SIM.to_smv_format(fileout=prefix + "_intimage_003.img")
+  if quick:
+    SIM.to_smv_format(fileout=prefix + "_intimage_003.img")
 
   print("quantum_gain=",SIM.quantum_gain) #defaults to 1. converts photons to ADU
   print("adc_offset_adu=",SIM.adc_offset_adu)
