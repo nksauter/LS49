@@ -1,7 +1,6 @@
 from __future__ import division, print_function
 import os
 import sys
-from libtbx.utils import Sorry
 from LS49.tests.tst_monochromatic_image import compare_two_images, compare_two_raw_images
 
 # This test uses production (James Holton) add_nanoBragg_spots() implementation refactored by Nick Sauter for OpenMP.
@@ -24,11 +23,10 @@ def run_polychromatic(create_ref):
   tst_all(quick=False,prefix=prefix,save_bragg=True) # quick=False means: perform multiple wavelength simulation
 
 if __name__=="__main__":
-  # make sure the user doesn't overwrite existing images
-  cwd = os.getcwd()
-  cwd_files = os.listdir(cwd)
-  if len(cwd_files) > 0:
-    raise Sorry("Please run this program in an empty directory.")
+  # make sure this test doesn't overwrite some existing images
+  import LS49.utils.safe_to_write as s2w
+  s2w.cwd_safe_to_write(["*cpu_step5*_000000_intimage*.img","*cpu_step5*_000000.img.gz", "*cpu_step5*_000000_dblprec*.pickle"])
+
   mode = sys.argv[1]
   assert mode in ["mono","poly"]
   ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
