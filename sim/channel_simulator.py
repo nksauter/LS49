@@ -1,4 +1,4 @@
-import libtbx
+from __future__ import division
 import scitbx
 import math
 from simtbx.nanoBragg import nanoBragg

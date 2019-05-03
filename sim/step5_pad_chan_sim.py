@@ -1,12 +1,9 @@
 from __future__ import division,print_function
 from six.moves import range
-from six.moves import StringIO
 from scitbx.array_family import flex
-from scitbx.matrix import sqr,col
+from scitbx.matrix import sqr
 from simtbx.nanoBragg import shapetype
 from simtbx.nanoBragg import nanoBragg
-import math
-import scitbx
 from LS49.sim.util_fmodel import gen_fmodel
 from LS49.sim.step4_pad import microcrystal
 from libtbx.development.timers import Profiler
