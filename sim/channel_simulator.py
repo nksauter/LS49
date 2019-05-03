@@ -48,9 +48,9 @@ class ChannelSimulator:
 
     self.SIM.seed = SEED
     self.SIM.adc_offset_adu = 10 # Do not offset by 40
-    self.SIM.mosaic_domains = mosaic_domains  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
     self.SIM.mosaic_spread_deg = mosaic_spread_deg # interpreted by UMAT_nm as a half-width stddev
-    self.SIM.distance_mm=141.7
+    self.SIM.mosaic_domains = mosaic_domains  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
+                           # mosaic_domains setter must come after mosaic_spread_deg setter
     self.SIM.distance_mm=141.7
     self.SIM.set_mosaic_blocks(UMAT_nm)
     self.SIM.oversample=1

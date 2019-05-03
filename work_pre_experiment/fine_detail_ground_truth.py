@@ -43,8 +43,8 @@ class nanoBragg_mock:
     # workaround for problem with wavelength array, specify it separately in constructor.
     wavelength_A=wavelength_A,verbose=0)
 
-  SIM.mosaic_domains = mosaic_domains
   SIM.mosaic_spread_deg = mosaic_spread_deg # interpreted by UMAT_nm as a half-width stddev
+  SIM.mosaic_domains = mosaic_domains       # mosaic_domains setter must come after mosaic_spread_deg setter
 
   UMAT_nm = flex.mat3_double()
   mersenne_twister = flex.mersenne_twister(seed=0)

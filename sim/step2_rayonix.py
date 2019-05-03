@@ -47,8 +47,8 @@ class plotter:
 
 def run_sim2smv(fileout):
   SIM = nanoBragg(detpixels_slowfast=(1000,1000),pixel_size_mm=0.1,Ncells_abc=(5,5,5),verbose=0)
-  SIM.mosaic_domains = 10000
   SIM.mosaic_spread_deg = 2.0
+  SIM.mosaic_domains = 10000
   SIM.distance_mm=100 # this triggers the generation of mosaic distribution
   UMAT_th = SIM.get_mosaic_blocks()
 
