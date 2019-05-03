@@ -56,7 +56,7 @@ def compare_two_images(reference, test, tolerance_count=10):
   #assert no_differences
   assert ndiff < tolerance_count, "There are %d differences"%ndiff
 
-def compare_two_raw_images(reference, test, tol=1.E-10): # TODO: run more tests to decide on the default tolerance
+def compare_two_raw_images(reference, test, tol=1.E-7): # TODO: run more tests to decide on the default tolerance
   from six.moves import cPickle as pickle
   from scitbx.array_family import flex
   with open(reference,'rb') as F:
@@ -75,7 +75,7 @@ def compare_two_raw_images(reference, test, tol=1.E-10): # TODO: run more tests 
     diff_max = flex.max(diff_array)
     print("Differences: range (%.2E to %.2E); mean %.2E; std %.2E"%(diff_min, diff_max, diff_mean, diff_std))
     # assert acceptable differences
-    assert diff_mean < tol, "The raw image is different from the reference."
+    assert abs(diff_mean) < tol, "The raw image is different from the reference."
 
 if __name__=="__main__":
   run_monochromatic()

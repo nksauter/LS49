@@ -304,6 +304,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
   print(crystal.domains_per_crystal)
   SIM.raw_pixels *= crystal.domains_per_crystal; # must calculate the correct scale!
   use_old = False
+  use_old = True
   if use_old:
     for x in range(len(flux)):
       from libtbx.development.timers import Profiler
