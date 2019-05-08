@@ -6,7 +6,8 @@ from scitbx.matrix import sqr
 
 import numpy as np
 
-def main(shape=shapetype.Tophat, cuda=False):
+
+def main(shape=shapetype.Tophat, cuda=False, seed=None):
 
     SIM = nanoBragg(verbose=10, oversample=0)
    
@@ -19,7 +20,7 @@ def main(shape=shapetype.Tophat, cuda=False):
     cryst = CrystalFactory.from_dict(cr)
     SIM.Amatrix = sqr(cryst.get_A()).transpose().elems
         
-    SIM.detpixels_fastslow = (64,64) 
+    SIM.detpixels_fastslow = (64,64)
     SIM.pixel_size_mm=0.1
     SIM.wavelength_A=1.2
     SIM.verbose=10
@@ -39,15 +40,19 @@ def main(shape=shapetype.Tophat, cuda=False):
     # variable 
     SIM.xtal_shape=shape
     SIM.show_params() 
-   
-    if cuda: 
+
+    if seed is not None:
+        SIM.seed = seed
+        SIM.randomize_orientation()
+    if cuda:
         SIM.add_nanoBragg_spots_cuda()
     else:
         SIM.add_nanoBragg_spots()
     img = SIM.raw_pixels.as_numpy_array()
     return img
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     failures = 0
     shapes = shapetype.Tophat, shapetype.Gauss, shapetype.Square, shapetype.Round
     for shape in shapes:
@@ -56,6 +61,6 @@ if __name__=="__main__":
         if not np.allclose(img, img_cuda, atol=0.25):
             failures += 1 
     print ("There are %d fails" % failures)
-    assert(failures==0)
+    assert(failures == 0)
     print("OK")
 
