@@ -28,17 +28,16 @@ def main(shape=shapetype.Tophat, cuda=False):
     SIM.mosaic_domains=10
     SIM.polarization=1
     SIM.distance_mm=100
-    #SIM.F000=0  # FIXME: setting F000 in CPU land is not propagated to GPU land
+    SIM.F000=3e3  # FIXME this has to be equivalent to default_F, or else set in Fhkl, otherwise the test fails
     SIM.default_F=3e3
     SIM.progress_meter=True
     SIM.beamsize_mm=0.005
     SIM.exposure_s=1
     SIM.Ncells_abc=(15,15,15)
     SIM.show_params()
-    
+
     # variable 
     SIM.xtal_shape=shape
-  
     SIM.show_params() 
    
     if cuda: 
@@ -52,12 +51,11 @@ if __name__=="__main__":
     failures = 0
     shapes = shapetype.Tophat, shapetype.Gauss, shapetype.Square, shapetype.Round
     for shape in shapes:
-        img = main(cuda=False)
         img_cuda = main(cuda=True)
-        if not np.allclose(img, img_cuda, atol=0.5):
+        img = main(cuda=False)
+        if not np.allclose(img, img_cuda, atol=0.25):
             failures += 1 
-    print failures
+    print ("There are %d fails" % failures)
     assert(failures==0)
     print("OK")
-
 
