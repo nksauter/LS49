@@ -1,21 +1,11 @@
 from __future__ import division, print_function
 from six.moves import cPickle
 import os
-from LS49.spectra import generate_spectra
 
 ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
-def get_results():
-  return cPickle.load(open(os.path.join(ls49_big_data,"data/spectra209.pickle"),"rb"))
-generate_spectra.get_results = get_results
 
 def get_pdb_lines():
   return open(os.path.join(ls49_big_data,"1m2a.pdb"),"r").read()
-
-ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
-
-def get_results():
-  R = cPickle.load(open(os.path.join(ls49_big_data,"data/spectra209.pickle"),"rb"))
-  return R
 
 def single_wavelength_fmodel(create):
   from LS49.spectra.generate_spectra import spectra_simulation

@@ -4,12 +4,6 @@ from six.moves import range
 import numpy as np
 import matplotlib.pyplot as plt
 
-def get_results():
-  import pickle
-  #R = pickle.load(open("/reg/d/psdm/cxi/cxig3614/scratch/spectra209.pickle","rb"))
-  R = pickle.load(open("data/spectra209.pickle","rb"))
-  return R
-
 class linear_fit:
   def __init__(self,data):
     self.x = data["expidx"]

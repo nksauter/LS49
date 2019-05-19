@@ -1,14 +1,16 @@
 from __future__ import division, print_function
-from six.moves import range
+from six.moves import range, cPickle as pickle
 import numpy as np
+import os
 
-big_data = "." # directory location for reference files
-def full_path(filename):
-  import os
-  return os.path.join(big_data,filename)
+# directory location for reference files
+ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+
 def get_results():
-  import pickle
-  R = pickle.load(open(full_path("data/spectra209.pickle"),"rb"))
+  import six
+  if six.PY3: kwargs_p = dict(encoding="latin1")
+  else: kwargs_p = dict()
+  R = pickle.load(open(os.path.join(ls49_big_data,"data/spectra209.pickle"),"rb"),**kwargs_p)
   return R
 
 class linear_fit:
@@ -23,7 +25,9 @@ class linear_fit:
     import os,omptbx
     workaround_nt = int(os.environ.get("OMP_NUM_THREADS",1))
     omptbx.omp_set_num_threads(1)
-    self.m,self.c = np.linalg.lstsq(A,self.y)[0]
+    self.m,self.c = np.linalg.lstsq(A,self.y, rcond=-1)[0]
+    # says numpy: FutureWarning: `rcond` parameter will change to the default of machine precision times ``max(M, N)`` where M and N are the input matrix dimensions.
+    #To use the future default and silence this warning we advise to pass `rcond=None`, to keep using the old, explicitly pass `rcond=-1`.
     omptbx.omp_set_num_threads(workaround_nt)
     # y = mx + c
     # x = (1./m) y - (c/m)

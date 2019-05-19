@@ -1,16 +1,9 @@
 from __future__ import division, print_function
 from six.moves import cPickle, range
 import os
-from LS49.spectra import generate_spectra
 from libtbx.test_utils import approx_equal
 
 ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
-
-def get_results():
-  R = cPickle.load(open(os.path.join(ls49_big_data,"data/spectra209.pickle"),"rb"))
-  return R
-
-generate_spectra.get_results = get_results
 
 def create_reference_results():
   from LS49.spectra.generate_spectra import spectra_simulation
@@ -26,8 +19,12 @@ def create_reference_results():
 def tst_iterators():
   from LS49.spectra.generate_spectra import spectra_simulation
   SS = spectra_simulation()
-
-  reference = cPickle.load(open(os.path.join(ls49_big_data,"reference","tst_spectrum_iterator_data"),"rb"))
+  import six
+  if six.PY3:
+    reference = cPickle.load(
+      open(os.path.join(ls49_big_data,"reference","tst_spectrum_iterator_data"),"rb"),encoding="bytes")
+  else:
+    reference = cPickle.load(open(os.path.join(ls49_big_data,"reference","tst_spectrum_iterator_data"),"rb"))
 
   # use of single iterator with next()
   iterator = SS.generate_recast_renormalized_images(20,energy=7120.,total_flux=1e12)

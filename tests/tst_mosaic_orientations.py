@@ -27,7 +27,11 @@ def channel_wavelength_fmodel(create):
       cPickle.dump(UMAT_nm,
       open(os.path.join(ls49_big_data,"reference",filename),"wb"),cPickle.HIGHEST_PROTOCOL)
   else: # read the reference and assert sameness to production run
-      UMAT_ref = cPickle.load(open(os.path.join(ls49_big_data,"reference",filename),"rb"))
+      import six
+      if six.PY3:
+        UMAT_ref = cPickle.load(open(os.path.join(ls49_big_data,"reference",filename),"rb"),encoding="bytes")
+      else:
+        UMAT_ref = cPickle.load(open(os.path.join(ls49_big_data,"reference",filename),"rb"))
       for x in range(len(UMAT_nm)):
         print(x," ".join(
           ["%18.15f"%UMAT_ref[x][z] for z in range(9)]
