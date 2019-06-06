@@ -100,5 +100,8 @@ dials.lbl.gov,step6_MPIbatch_069083.img,2019-04-12T07:43Z52.383,stop,indexing_fa
 These 13 failures look to be a completely different set.  Therefore, the failures are not intrinsic to the data,
 rather they represent bugs in the dials.stills_process
 
-
+Production of Figure 3:
+Panel (a): libtbx.python spectra/energy_results.py # random spectra from LG36, run 209
+Panel (b): libtbx.python ML_push/plot_spectra.py # distribution of mean pulse energies histogram
+Panel (c): libtbx.python ML_push/plot_spectra.py # cumulative energy profile
 
