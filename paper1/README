@@ -105,3 +105,9 @@ Panel (a): libtbx.python spectra/energy_results.py # random spectra from LG36, r
 Panel (b): libtbx.python ML_push/plot_spectra.py # distribution of mean pulse energies histogram
 Panel (c): libtbx.python ML_push/plot_spectra.py # cumulative energy profile
 
+Production of Figure 4:
+View the reference image and write out fig4_.png with the Actions menu:
+dials.image_viewer ls49_big_data/reference/step5_MPIbatch_000000.img.gz
+Run the png file through Python Image Library to produce lower-resolution version for publication:
+libtbx.python enhance_bragg_spots.py # Use modulus=3 for clearest-looking Bragg spots
+
