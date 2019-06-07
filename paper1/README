@@ -111,3 +111,38 @@ dials.image_viewer ls49_big_data/reference/step5_MPIbatch_000000.img.gz
 Run the png file through Python Image Library to produce lower-resolution version for publication:
 libtbx.python enhance_bragg_spots.py # Use modulus=3 for clearest-looking Bragg spots
 
+Production of Figure 6, continued:
+export METHOD2=${SCRATCH}/LS49_step6/integration
+export METHOD1=${SCRATCH}/LS49_step6/no_restraints_integration
+${SCRATCH}/LS49_step6/HASWELL1/*.gz # 100000 step6 simulated images
+For each Method, Figure 6 contains a misorientation histogram, and a cell parameters histogram
+
+Create the digest file
+edit the file LS49/work_pre_experiment/step5_ang_misset_to_fine_detail.py
+# line 12, image_glob = "${SCRATCH}/LS49_step6/HASWELL1/step6_MPIbatch_0%05d.img.gz"
+
+libtbx.python LS49/work_pre_experiment/step5_ang_misset_to_fine_detail.py fine LS49_step6/no_restraints_integration > method1_to_fine_detail.digest
+libtbx.python LS49/work_pre_experiment/step5_ang_misset_to_fine_detail.py fine LS49_step6/integration > method2_to_fine_detail.digest
+
+libtbx.python LS49/work_pre_experiment/plot_angular.py method1_to_fine_detail.digest # produces panel (b)
+libtbx.python LS49/work_pre_experiment/plot_angular.py method2_to_fine_detail.digest # produces panel (b)
+
+dials.show ${METHOD2}/idx-step6_MPIbatch_00*.img_integrated_experiments.json|grep "Unit cell" > cellrestrain.10000 # unix glob rejects 100000 files
+dials.show ${METHOD1}/idx-step6_MPIbatch_00*.img_integrated_experiments.json|grep "Unit cell" > cellnorestrain.10000
+ # edit these *.10000 files to remove one outlier each
+libtbx.python LS49/ML_push/plot_cell.py # produces panel (a)
+a restrained mean 67.1991794118 sigma 0.00507461290565 on 9996
+b restrained mean 59.7991706683 sigma 0.00539737434486 on 9996
+c restrained mean 47.1991282373 sigma 0.00601022671342 on 9996
+beta restrained mean 110.300378842 sigma 0.0102236715141 on 9996
+a unrestrained mean 67.1959848855 sigma 0.0451533389931 on 9997
+b unrestrained mean 59.7982948685 sigma 0.0361793402447 on 9997
+c unrestrained mean 47.1976181554 sigma 0.0310845998594 on 9997
+beta unrestrained mean 110.300558508 sigma 0.0506479468952 on 9997
+
+
+
+
+
+
+
