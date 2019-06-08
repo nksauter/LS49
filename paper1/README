@@ -124,8 +124,8 @@ edit the file LS49/work_pre_experiment/step5_ang_misset_to_fine_detail.py
 libtbx.python LS49/work_pre_experiment/step5_ang_misset_to_fine_detail.py fine LS49_step6/no_restraints_integration > method1_to_fine_detail.digest
 libtbx.python LS49/work_pre_experiment/step5_ang_misset_to_fine_detail.py fine LS49_step6/integration > method2_to_fine_detail.digest
 
-libtbx.python ../modules/LS49/papaer1/Fig6b_plot_angular.py method1_to_fine_detail.digest blue # produces panel (b)
-libtbx.python ../modules/LS49/papaer1/Fig6b_plot_angular.py method2_to_fine_detail.digest orange # produces panel (c)
+libtbx.python ../modules/LS49/paper1/Fig6b_plot_angular.py method1_to_fine_detail.digest blue # produces panel (b)
+libtbx.python ../modules/LS49/paper1/Fig6b_plot_angular.py method2_to_fine_detail.digest orange # produces panel (c)
 
 dials.show ${METHOD2}/idx-step6_MPIbatch_00*.img_integrated_experiments.json|grep "Unit cell" > cellrestrain.10000 # unix glob rejects 100000 files
 dials.show ${METHOD1}/idx-step6_MPIbatch_00*.img_integrated_experiments.json|grep "Unit cell" > cellnorestrain.10000
