@@ -111,7 +111,12 @@ def get_items(myrank=None,mykey=None):
     if key >= N_total : continue
 
     from dxtbx.model.experiment_list import ExperimentListFactory
-    E = ExperimentListFactory.from_json_file(json_glob%key,check_format=False)[0]
+    try:
+      E = ExperimentListFactory.from_json_file(json_glob%key,check_format=False)[0]
+    except IOError as e:
+      import sys
+      print ("trapped Error, continuing,",e,file=sys.stderr)
+      continue
     C = E.crystal
     C.show()
     from six.moves import cPickle as pickle

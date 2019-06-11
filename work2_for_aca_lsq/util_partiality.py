@@ -13,6 +13,11 @@ from cctbx import crystal_orientation
 import scitbx
 import math
 
+import os
+model_mode = os.environ["MODEL_MODE"]
+# "superpower_postrefine" | "dials_refine" | "coarse_ground_truth"
+
+
 # use local file with (open(something,"wb")) as F:
 with (open("confirm_sfall_P1_7122_amplitudes.pickle","rb")) as F:
   sfall_P1_7122_amplitudes = pickle.load(F)
@@ -146,7 +151,9 @@ def superpower_postrefine(idx,CB_OP_C_P,old_Amat):
   best_Ori = best_Ori_C2.change_basis(CB_OP_C_P)
   print("Key %d minimum angular offset is %12.9f deg."%(idx,metric(best_Ori,C)),"with ix=%d iy=%d"%(ixm,iym))
   best_Ori.show(legend="superpower, aligned")
-  return best_Ori.direct_matrix()
+  return dict(superpower_postrefine=best_Ori.direct_matrix(),
+              dials_refine=align_PR.direct_matrix(),
+              coarse_ground_truth=C.direct_matrix())
 
 def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,tophat_spectrum=True,quick=False):
   smv_fileout = prefix + ".img"
@@ -241,8 +248,13 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,tophat_spectrum=True,qu
 
   #####  ersatz inserted code (3 lines) for modeling profiles from refined geometry ###
   key = int(prefix.split("_")[-1])
-  new_Amat = sqr(superpower_postrefine(key,CB_OP_C_P,old_Amat=Amatrix_rot))
-  Amatrix_rot = new_Amat # insert the postrefined value instead of ground truth
+  different_models = superpower_postrefine(key,CB_OP_C_P,old_Amat=Amatrix_rot)
+  for key in different_models:
+    print (key, sqr(different_models[key]).elems)
+  new_Amat = sqr(different_models[model_mode])
+  Amatrix_rot = new_Amat # insert the chosen-model Amatrix
+  print ("&&& chosen",new_Amat.elems)
+
   SIM.Amatrix_RUB = Amatrix_rot
   #workaround for failing init_cell, use custom written Amatrix setter
   print("unit_cell_Adeg=",SIM.unit_cell_Adeg)
