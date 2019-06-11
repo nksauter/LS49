@@ -8,8 +8,11 @@ import glob,math
 import dials
 
 # some parameters
-json_glob = "/net/dials/raid1/sauter/LS49_XXXGENERALIZEXXXinteg_betarestr/idx*.img_integrated_experiments.json"
-image_glob = "/net/dials/raid1/sauter/LS49/step5_MPIbatch_0%05d.img.gz"
+import os
+#json_glob = "/net/dials/raid1/sauter/LS49_XXXGENERALIZEXXXinteg_betarestr/idx*.img_integrated_experiments.json"
+json_glob = os.environ["JSON_GLOB"]
+#image_glob = "/global/cscratch1/sd/nksauter/proj-h0918/HASWELL1/step6_MPIbatch_0%05d.img.gz"
+image_glob = os.environ["IMAGE_GLOB"]
 global format_class
 
 def get_items(rotmat_dictionary):
@@ -37,7 +40,6 @@ def get_items(rotmat_dictionary):
 def get_item(key):
     format_class = None
     image_file = image_glob%key
-    json_glob = "/net/dials/raid1/sauter/LS49_integ_betarestr/idx-step5_MPIbatch_0%05d.img_integrated_experiments.json"
     json_file = json_glob%key
     print (image_file)
     if format_class is None:

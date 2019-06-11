@@ -102,8 +102,6 @@ def superpower_postrefine(idx,CB_OP_C_P,old_Amat):
   Amat = old_Amat
   from LS49.work_pre_experiment.post5_ang_misset import get_item
   from LS49.ML_push.exploratory_missetting import metric
-  # use the demangled output file from cxi.merge; will parse output for "ASTAR" information
-  logfilepath = "./merge5_rs2_constant_rs_betarestr.out"
   R = get_item(idx)
   print ("get ersatz_postrefined with index",idx)
   C = crystal_orientation.crystal_orientation(
@@ -119,10 +117,10 @@ def superpower_postrefine(idx,CB_OP_C_P,old_Amat):
   P.show(legend="dials_integrated, C2")
   PR = P.change_basis(CB_OP_C_P)
   PR.show(legend="dials_integrated, primitive setting")
-  PRC2 = PR.change_basis(CB_OP_C_P.inverse())
+  PRC2 = PR.change_basis(CB_OP_C_P.inverse()) # dials integrated, C2
   cb_op_align = PR.best_similarity_transformation(C,200,1)
   align_PR = PR.change_basis(sqr(cb_op_align))
-  align_PR.show(legend="dials_integrated, aligned")
+  align_PR.show(legend="dials_integrated, P1, aligned")
   print("alignment matrix", cb_op_align)
   metric_val = metric(align_PR,C)
   print("Key %d aligned angular offset is %12.9f deg."%(idx, metric_val))
@@ -193,12 +191,12 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,tophat_spectrum=True,qu
     wavelength_A=wavelength_A,verbose=0)
   SIM.adc_offset_adu = 0 # Do not offset by 40
   SIM.adc_offset_adu = 10 # Do not offset by 40
-  import sys
-  if len(sys.argv)>2:
-    SIM.seed = -int(sys.argv[2])
-    print("GOTHERE seed=",SIM.seed)
-  if len(sys.argv)>1:
-    if sys.argv[1]=="random" : SIM.randomize_orientation()
+  #import sys
+  #if len(sys.argv)>2:
+  #  SIM.seed = -int(sys.argv[2])
+  #  print("GOTHERE seed=",SIM.seed)
+  #if len(sys.argv)>1:
+  #  if sys.argv[1]=="random" : SIM.randomize_orientation()
   SIM.mosaic_spread_deg = 0.05 # interpreted by UMAT_nm as a half-width stddev
   SIM.mosaic_domains = 50  # 77 seconds.  With 100 energy points, 7700 seconds (2 hours) per image
                            # 3000000 images would be 100000 hours on a 60-core machine (dials), or 11.4 years
@@ -245,7 +243,6 @@ def run_sim2smv(ROI,prefix,crystal,spectra,rotation,rank,tophat_spectrum=True,qu
   key = int(prefix.split("_")[-1])
   new_Amat = sqr(superpower_postrefine(key,CB_OP_C_P,old_Amat=Amatrix_rot))
   Amatrix_rot = new_Amat # insert the postrefined value instead of ground truth
-
   SIM.Amatrix_RUB = Amatrix_rot
   #workaround for failing init_cell, use custom written Amatrix setter
   print("unit_cell_Adeg=",SIM.unit_cell_Adeg)

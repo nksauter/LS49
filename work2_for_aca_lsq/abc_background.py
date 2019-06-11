@@ -8,8 +8,12 @@ import numpy as np
 import math
 from matplotlib import pyplot as plt
 
-json_glob = "LS49_integ_step5/idx-step5_MPIbatch_0%05d.img_integrated_experiments.json"
-pickle_glob = "LS49_integ_step5/idx-step5_MPIbatch_0%05d.img_integrated.pickle"
+import os
+#json_glob = "LS49_integ_step5/idx-step5_MPIbatch_0%05d.img_integrated_experiments.json"
+json_glob = os.environ["JSON_GLOB"]
+#pickle_glob = "LS49_integ_step5/idx-step5_MPIbatch_0%05d.img_integrated.pickle"
+pickle_glob = os.environ["PICKLE_GLOB"]
+use_postrefine = os.environ["USE_POSTREFINE"]=="True"
 
 # %%% boilerplate specialize to packaged big data %%%
 import os
@@ -91,8 +95,11 @@ def parse_postrefine():
   # file (thousands).   Should re-run this sometime with nproc=1
 
 def get_items(myrank=None,mykey=None):
-  postreffed = parse_postrefine()
-  print ("# postrefined images",len(postreffed))
+  if use_postrefine:
+    postreffed = parse_postrefine()
+    print ("# postrefined images",len(postreffed))
+  else:
+    postreffed = range(100000) # alt for skipping postrefine step
   maxy = None
   ycount = 0
   for key in postreffed:
@@ -467,7 +474,9 @@ if __name__=="__main__":
 
   Usage = """mpirun -n 50 libtbx.python gen_data_mpi.py
              rather: for x in `seq 0 64`; do libtbx.python jun24_gen_data_mpi.py $x & done
-             for x in `seq 0 3`; do time libtbx.python may27_gen_data_mpi.py $x > /dev/null & done"""
+             for x in `seq 0 3`; do time libtbx.python may27_gen_data_mpi.py $x > /dev/null & done
+  Additional usage, added June 2019, see paper1/abc_background_slurm.sh
+"""
   from libtbx.mpi4py import MPI
   comm = MPI.COMM_WORLD
   rank = comm.Get_rank()
