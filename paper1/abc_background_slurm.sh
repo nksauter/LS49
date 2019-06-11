@@ -2,7 +2,7 @@
 
 #SBATCH -q premium
 #SBATCH -N 200
-#SBATCH -t 05:00:00
+#SBATCH -t 06:00:00
 #SBATCH -J my_job
 #SBATCH -L SCRATCH
 #SBATCH -C knl

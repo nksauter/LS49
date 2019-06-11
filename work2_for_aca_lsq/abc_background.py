@@ -14,6 +14,8 @@ json_glob = os.environ["JSON_GLOB"]
 #pickle_glob = "LS49_integ_step5/idx-step5_MPIbatch_0%05d.img_integrated.pickle"
 pickle_glob = os.environ["PICKLE_GLOB"]
 use_postrefine = os.environ["USE_POSTREFINE"]=="True"
+model_mode = os.environ["MODEL_MODE"]
+# "superpower_postrefine" | "dials_refine" | "coarse_ground_truth"
 
 # %%% boilerplate specialize to packaged big data %%%
 import os
@@ -747,5 +749,5 @@ FAILing fit_roi for key %d on"""%(key),e)
     #print ("pickling key %d in rank %d"%(key,rank),result)
     #pickle.dump(result,open("dataX%04d.pickle"%rank,"ab"))
     print ("pickling key %d in rank %d"%(key,rank),roi_results)
-    with open("abc_coverage/abcX%06d.pickle"%key,"ab") as F:
+    with open("abc_coverage_%s/abcX%06d.pickle"%(key),"ab") as F:
       pickle.dump(roi_results,F, pickle.HIGHEST_PROTOCOL)
