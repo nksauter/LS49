@@ -62,6 +62,9 @@ LLG_evaluator{
   title = None
     .type = str
     .help = save plot sequence to files with this root title
+  spoilHKL = False
+    .type = bool
+    .help = evaluate H,K,L as H,K,L+1, spoiling the calculation
   restraints{
     fp{
       mean = 0.0

@@ -309,7 +309,8 @@ class rank_0_fit_all_f:
         miller_index = this_spot.simtbx_P1_miller
         this_ref_intensity = this_spot.simtbx_intensity_7122
         # negative control test point here:
-        # miller_index = (miller_index[0],miller_index[1],miller_index[2]-1)
+        if self.params.LLG_evaluator.spoilHKL:
+          miller_index = (miller_index[0],miller_index[1],miller_index[2]+1)
         lookup_idx = self.HKL_lookup[miller_index]
         energy_dependent_intensity = self.model_intensities.matrix_copy_block(
                       i_row=lookup_idx,i_column=0,n_rows=1,n_columns=100)
