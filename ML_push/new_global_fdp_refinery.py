@@ -67,6 +67,7 @@ pixel_sz_mm = 0.11
 mos_rotation_deg = 0.05
 
 def get_items(myrank,N_total,N_stride,cohort=0):
+  abc_glob = os.environ["ABC_GLOB"]
   for key in range(cohort*N_total, (cohort+1)*N_total):
     #each rank should only allow keys in the range from
     # cohort*N_total + myrank*N_stride to cohort*N_total + (myrank+1)*N_stride
@@ -74,10 +75,11 @@ def get_items(myrank,N_total,N_stride,cohort=0):
     if key >= cohort*N_total + (myrank+1) * N_stride: continue
     if key >= (cohort+1) * N_total : continue
     try:
-      with open("abc_coverage/abcX%06d.pickle"%key,"rb") as F:
+      abc_file = abc_glob%key
+      with open(abc_file,"rb") as F:
         T = pickle.load(F)
     except IOError:
-      #print("No file abc_coverage/abcX%06d.pickle"%key)
+      print("No file %s"%abc_file)
       continue
     yield T,key
 def pprint(M):
