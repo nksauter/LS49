@@ -1,9 +1,6 @@
 from __future__ import print_function, division
 from six.moves import range
 from six.moves import cPickle as pickle
-from scitbx.array_family import flex
-import scitbx
-import math
 from LS49.work2_for_aca_lsq.abc_background import fit_roi_multichannel # implicit import
 # multichannel needed for unpickling
 

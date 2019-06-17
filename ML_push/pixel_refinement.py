@@ -24,9 +24,10 @@ Fe_reduced_model = local_data.get("Fe_reduced_model")
 Fe_metallic_model = local_data.get("Fe_metallic_model")
 
 from LS49.ML_push.new_global_fdp_refinery import get_items
+from LS49.ML_push.differential_roi_manager import differential_roi_manager
 
 class fit_one_image_multispot:
-  def __init__(self,list_of_images,HKL_lookup,model_intensities):
+  def __init__(self,key,list_of_images,HKL_lookup,model_intensities):
     import scitbx
     #lay out the parameters.
     self.n_spots = len(list_of_images)
@@ -38,9 +39,11 @@ class fit_one_image_multispot:
       self.x.append(list_of_images[ispot].bkgrd_a[2])
     self.x.append(1.)
     self.roi_model_pixels = []
-    for ispot in range(self.n_spots):
-      # insert an ROI simulation here
+    # insert an ROI simulation here
+    self.DRM = differential_roi_manager(key)
+    exit("for now, until I get ROI simulation going")
 
+    for ispot in range(self.n_spots):
       intensity = list_of_images[ispot].simtbx_intensity_7122
       this_P1_Miller_index = list_of_images[ispot].simtbx_P1_miller
       lookup_idx = HKL_lookup[this_P1_Miller_index]
@@ -151,9 +154,9 @@ class MPI_Run(object):
     N_stride = int(math.ceil(N_total/logical_size)) # total number of tasks per rank
     print ("hello from rank %d of %d with stride %d"%(logical_rank,logical_size,N_stride))
 
-    from scitbx.lbfgs.tst_mpi_split_evaluator import mpi_split_evaluator_run
-    from scitbx.lbfgs.tst_mpi_split_evaluator import run_mpi as simple_tester
-    simple_tester()
+    #from scitbx.lbfgs.tst_mpi_split_evaluator import mpi_split_evaluator_run
+    #from scitbx.lbfgs.tst_mpi_split_evaluator import run_mpi as simple_tester
+    #simple_tester()
 
     if self.params.starting_model.algorithm=="to_file":
       if self.mpi_helper.rank == 0:
@@ -192,7 +195,7 @@ class MPI_Run(object):
     for item,key in get_items(logical_rank,N_total,N_stride,self.params.cohort):
       N_input+=1
       if len(item) >= min_spots:
-        FOI = fit_one_image_multispot(list_of_images=item,
+        FOI = fit_one_image_multispot(key=key,list_of_images=item,
             HKL_lookup = transmitted_info["HKL_lookup"],
             model_intensities = transmitted_info["model_intensities"])
 
