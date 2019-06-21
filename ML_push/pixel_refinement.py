@@ -27,7 +27,7 @@ from LS49.ML_push.new_global_fdp_refinery import get_items
 from LS49.ML_push.differential_roi_manager import differential_roi_manager
 
 class fit_one_image_multispot:
-  def __init__(self,key,list_of_images,HKL_lookup,model_intensities):
+  def __init__(self,key,list_of_images,HKL_lookup,model_intensities,spectra,crystal):
     import scitbx
     #lay out the parameters.
     self.n_spots = len(list_of_images)
@@ -40,7 +40,8 @@ class fit_one_image_multispot:
     self.x.append(1.)
     self.roi_model_pixels = []
     # insert an ROI simulation here
-    self.DRM = differential_roi_manager(key)
+    spectrum = spectra.generate_recast_renormalized_image(image=key,energy=7120.,total_flux=1e12)
+    self.DRM = differential_roi_manager(key,spotlist=list_of_images,spectrum=spectrum,crystal=crystal)
     exit("for now, until I get ROI simulation going")
 
     for ispot in range(self.n_spots):
@@ -176,13 +177,21 @@ class MPI_Run(object):
           HKL_lookup = pickle.load(inp)
           static_fcalcs = pickle.load(inp)
           model_intensities = pickle.load(inp)
+          from LS49.spectra.generate_spectra import spectra_simulation
+          from LS49.sim.step5_pad import microcrystal
 
         transmitted_info = dict(HKL_lookup = HKL_lookup,
-        static_fcalcs = static_fcalcs, model_intensities = model_intensities)
+                                static_fcalcs = static_fcalcs,
+                                model_intensities = model_intensities,
+                                spectra_simulation = spectra_simulation(),
+                                crystal = microcrystal(Deff_A = 4000, length_um = 4., beam_diameter_um = 1.0)
+                                )
       else:
         transmitted_info = None
+    print ("before braodcast with ",self.mpi_helper.rank,self.mpi_helper.size)
     transmitted_info = self.mpi_helper.comm.bcast(transmitted_info, root = 0)
     self.mpi_helper.comm.barrier()
+    print ("after barrier")
 
     # -----------------------------------------------------------------------
     if self.mpi_helper.rank==0:
@@ -195,9 +204,13 @@ class MPI_Run(object):
     for item,key in get_items(logical_rank,N_total,N_stride,self.params.cohort):
       N_input+=1
       if len(item) >= min_spots:
-        FOI = fit_one_image_multispot(key=key,list_of_images=item,
-            HKL_lookup = transmitted_info["HKL_lookup"],
-            model_intensities = transmitted_info["model_intensities"])
+        FOI = fit_one_image_multispot(key=key,
+                                      list_of_images=item,
+                                      HKL_lookup = transmitted_info["HKL_lookup"],
+                                      model_intensities = transmitted_info["model_intensities"],
+                                      spectra = transmitted_info["spectra_simulation"],
+                                      crystal = transmitted_info["crystal"]
+                                      )
 
         print ("""LLG Image %06d on %d Bragg spots NLL    channels F = %9.1f"""%(
         key, len(item), FOI.compute_functional_and_gradients()[0]))
