@@ -38,7 +38,7 @@ def pprint(M):
 def pprint3(M):
   print(M.focus())
   islow,ifast=M.focus()[1],M.focus()[2]
-  for x in range(islow):
+  for x in range(3,islow-3):
     print (" ".join([("%6.1f"%(M[(0,x,y)])) for y in range(min(25,ifast))]))
 
 def show_residual(self,plot=True):
