@@ -10,9 +10,10 @@ from simtbx.nanoBragg import nanoBragg
 from six.moves import StringIO
 import scitbx
 import math
-from scitbx.matrix import col
+from scitbx.matrix import col,sqr
 from LS49.work2_for_aca_lsq.util_partiality import channel_pixels
 import os
+from six.moves import cPickle as pickle
 json_glob = os.environ["JSON_GLOB"]
 pickle_glob = os.environ["PICKLE_GLOB"]
 
@@ -24,9 +25,15 @@ def ersatz_all_orientations(N_total=100000):
       random_orientations.append( mt.random_double_r3_rotation_matrix() )
     return random_orientations
 
-class differential_roi_manager(object):
-  def __init__(self,key,spotlist,spectrum,crystal):
+def get_item_from_key_and_glob(key,abc_glob):
+      abc_file = abc_glob%key
+      with open(abc_file,"rb") as F:
+        T = pickle.load(F)
+      return T
 
+class differential_roi_manager(object):
+  def __init__(self,key,spotlist,spectrum,crystal,allspectra):
+    self.allspectra = allspectra # remove later
     from dxtbx.model.experiment_list import ExperimentListFactory
     from six.moves import cPickle as pickle
     E = ExperimentListFactory.from_json_file(json_glob%key,check_format=False)[0] # the dials experiment
@@ -35,9 +42,8 @@ class differential_roi_manager(object):
     self.data = pickle.load(open(pickle_glob%key,"rb")) # the dials reflections file
     self.gen_fmodel_adapt() # generate Fmodel to obtain CB_OP_C_P
     self.models4 = self.get_idx_rotation_models(key) # alignment between dials refine and coarse ground truth
-    self.perform_simulations(spectrum,crystal)
+    self.perform_simulations(spectrum,crystal,tophat_spectrum=False)
     self.model_rotations_and_spots(key,spotlist) # get shoeboxes and differential rotations
-    #self.perform_one_simulation()
 
   def __del__(self):
     self.SIM.free_all()
@@ -71,7 +77,7 @@ class differential_roi_manager(object):
     self.SIM = SIM
     SIM.adc_offset_adu = 10 # Do not offset by 40
     SIM.mosaic_spread_deg = 0.05 # interpreted by UMAT_nm as a half-width stddev
-    SIM.mosaic_domains = 50  # mosaic_domains setter must come after mosaic_spread_deg setter
+    SIM.mosaic_domains = 200  # mosaic_domains setter must come after mosaic_spread_deg setter
     SIM.distance_mm=141.7
 
     UMAT_nm = flex.mat3_double()
@@ -93,7 +99,13 @@ class differential_roi_manager(object):
     SIM.polarization=1
     # this will become F000, marking the beam center
     SIM.default_F=0
-    SIM.Fhkl=self.sfall_main
+    #SIM.Fhkl=self.sfall_main # no it turns out we don't use these calculations for abc_coverage
+
+    # use local file with (open(something,"wb")) as F:
+    with (open("confirm_sfall_P1_7122_amplitudes.pickle","rb")) as F:
+      sfall_P1_7122_amplitudes = pickle.load(F)
+    SIM.Fhkl = sfall_P1_7122_amplitudes
+
 
     SIM.xtal_shape=shapetype.Gauss # both crystal & RLP are Gaussian
     SIM.progress_meter=False
@@ -114,7 +126,7 @@ class differential_roi_manager(object):
     #workaround for failing init_cell, use custom written Amatrix setter
     Amatrecover = sqr(self.SIM.Amatrix).transpose() # recovered Amatrix from SIM
     Ori = crystal_orientation.crystal_orientation(Amatrecover, crystal_orientation.basis_type.reciprocal)
-    print("Python unit cell from SIM state",Ori.unit_cell())
+    self.SIM.raw_pixels.fill(0.0) # effectively initializes the data pixels for a new simulation
 
     self.SIM.seed = 1
     # simulated crystal is only 125 unit cells (25 nm wide)
@@ -124,7 +136,7 @@ class differential_roi_manager(object):
 
     for x in range(0,100,2): #len(flux)):
       if self.flux[x]==0.0:continue
-      print("+++++++++++++++++++++++++++++++++++++++ Wavelength",x)
+      #print("+++++++++++++++++++++++++++++++++++++++ Wavelength",x)
       CH = channel_pixels(ROI,self.wavlen[x],self.flux[x],self.N,self.UMAT_nm,Amatrix_rot,self.GF,output)
       incremental_signal = CH.raw_pixels * self.crystal.domains_per_crystal
       #  make_response_plot.append_channel(x,ROI,incremental_signal)
@@ -141,18 +153,82 @@ class differential_roi_manager(object):
 
     pixels = self.SIM.raw_pixels
     roi_pixels = pixels[ROI[1][0]:ROI[1][1], ROI[0][0]:ROI[0][1]]
-    print("Reducing full shape of",pixels.focus(),"to ROI of",roi_pixels.focus())
     #  make_response_plot.plot(roi_pixels,miller)
     #  return dict(roi_pixels=roi_pixels,miller=miller,intensity=intensity,
              # channels=make_response_plot.channels)
+    return roi_pixels
+
+  def perform_one_simulation_optimized(self,model):
+    ROI = self.ROI
+    Amatrix_rot = self.models4[model]
+    self.SIM.Amatrix_RUB = Amatrix_rot
+    #workaround for failing init_cell, use custom written Amatrix setter
+    Amatrecover = sqr(self.SIM.Amatrix).transpose() # recovered Amatrix from SIM
+    Ori = crystal_orientation.crystal_orientation(Amatrecover, crystal_orientation.basis_type.reciprocal)
+    self.SIM.raw_pixels.fill(0.0) # effectively initializes the data pixels for a new simulation
+
+    self.SIM.seed = 1
+    # simulated crystal is only 125 unit cells (25 nm wide)
+    # amplify spot signal to simulate physical crystal of 4000x larger: 100 um (64e9 x the volume)
+    output = StringIO() # open("myfile","w")
+    #  make_response_plot = response_plot(False,title=prefix)
+
+    self.SIM.region_of_interest = ROI
+
+    for x in range(0,100,2): #len(flux)):
+      if self.flux[x]==0.0:continue
+      self.SIM.wavelength_A = self.wavlen[x]
+      self.SIM.flux = self.flux[x]
+      from boost.python import streambuf
+      self.SIM.add_nanoBragg_spots_nks(streambuf(output))
+
+    self.SIM.raw_pixels *= self.crystal.domains_per_crystal
+
+    #message = output.getvalue().split()
+    #miller = (int(message[4]),int(message[5]),int(message[6]))
+    #intensity = float(message[9]);
+
+    pixels = self.SIM.raw_pixels
+    roi_pixels = pixels[ROI[1][0]:ROI[1][1], ROI[0][0]:ROI[0][1]]
+    #  make_response_plot.plot(roi_pixels,miller)
+    #  return dict(roi_pixels=roi_pixels,miller=miller,intensity=intensity,
+             # channels=make_response_plot.channels)
+    return roi_pixels
+
+  def XXXperform_one_simulation(self,key):
+    # method uses the old code as used in abc_coverage
+    #def get_partiality_response(key,one_index,spectra_simulation,ROI,rand_ori,tophat_spectrum=True):
+
+    spectra = self.allspectra
+    from LS49.sim.step5_pad import microcrystal
+    crystal = microcrystal(Deff_A = 4000, length_um = 4., beam_diameter_um = 1.0) # assume smaller than 10 um crystals
+
+    iterator = spectra.generate_recast_renormalized_image(image=key,energy=7120.,total_flux=1e12)
+
+    file_prefix = "key_slow_nonoise_%06d"%key
+    Amatrix_rot = self.models4["Amat"]
+    from LS49.work2_for_aca_lsq.util_partiality import run_sim2smv
+    pixels = run_sim2smv(self.ROI,prefix = file_prefix,crystal = crystal,spectra=iterator,rotation=Amatrix_rot,tophat_spectrum=False,quick=False,rank=0)
+    return pixels["roi_pixels"]
+
+
 
   def model_rotations_and_spots(self,key,spotlist):
+    #ersatz import of other refinements
+    abc_dials_refine = get_item_from_key_and_glob(key,os.environ["ABC_GLOB_A"])
+    abc_coarse_truth = get_item_from_key_and_glob(key,os.environ["ABC_GLOB_C"])
+
     M = self.data["miller_index"]
     for model in self.models4:
-      for spot in spotlist:
+      print("\n",model)
+      for ispot, spot in enumerate(spotlist):
+        #if ispot!=1:continue # take away this filter later
         ('a', 'asu_idx_C2_setting', 'bkgrd_a', 'channels', 'compute_functional_and_gradients', 'image_no', 'n', 'orig_idx_C2_setting',
          'print_step', 'roi', 'sb_data', 'simtbx_P1_miller', 'simtbx_intensity_7122', 'x')
-        S = (spot.orig_idx_C2_setting)
+        S = (spot.orig_idx_C2_setting) # happens to be the coarse ground truth spot
+        abc_dials_refine_spot = [spotL for spotL in abc_dials_refine if spotL.orig_idx_C2_setting==S][0]
+        abc_coarse_truth_spot = [spotL for spotL in abc_coarse_truth if spotL.orig_idx_C2_setting==S][0]
+
         idx = M.first_index(S)
         shoe = self.data["shoebox"][idx]
         B = shoe.bbox
@@ -160,14 +236,15 @@ class differential_roi_manager(object):
         print ("C2",S,self.ROI)
 
         from LS49.ML_push.shoebox_troubleshoot import pprint3,pprint
-        pprint3 (shoe.data)
-        pprint (spot.sb_data)
-        pprint (spot.roi)
+        #pprint3 (shoe.data) # shoe.data is identical to spot.sb_data, in case you were wondering
+        pprint (abc_coarse_truth_spot.roi)
+        pprint (abc_dials_refine_spot.roi)
+        #new_calc = self.perform_one_simulation()
+        #pprint (new_calc)
+        new_calc2 = self.perform_one_simulation_optimized(model)
+        pprint (new_calc2)
 
-
-      #for roi in group of spots:
-      #  perform util_partiality run_sim2smv
-      #  display results
+      #break # only do the base value not differential for now
 
   def gen_fmodel_adapt(self):
     direct_algo_res_limit = 1.7

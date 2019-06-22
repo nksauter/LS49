@@ -31,18 +31,19 @@ class fit_one_image_multispot:
     import scitbx
     #lay out the parameters.
     self.n_spots = len(list_of_images)
-    self.n = 3*self.n_spots + 1
+    self.n = 3*self.n_spots + 1 + 3
     self.x = flex.double()
     for ispot in range(self.n_spots):
       self.x.append(list_of_images[ispot].bkgrd_a[0])
       self.x.append(list_of_images[ispot].bkgrd_a[1])
       self.x.append(list_of_images[ispot].bkgrd_a[2])
+    self.x.append(0.); self.x.append(0.); self.x.append(0.); # rotx, roty, rotz
     self.x.append(1.)
     self.roi_model_pixels = []
     # insert an ROI simulation here
     spectrum = spectra.generate_recast_renormalized_image(image=key,energy=7120.,total_flux=1e12)
-    self.DRM = differential_roi_manager(key,spotlist=list_of_images,spectrum=spectrum,crystal=crystal)
-    exit("for now, until I get ROI simulation going")
+    self.DRM = differential_roi_manager(key,spotlist=list_of_images,spectrum=spectrum,crystal=crystal,allspectra = spectra)
+    #exit("for now, until I get ROI simulation going")
 
     for ispot in range(self.n_spots):
       intensity = list_of_images[ispot].simtbx_intensity_7122
@@ -221,6 +222,7 @@ class MPI_Run(object):
           per_rank_items[-1][ihkl].bkgrd_a = flex.double(
                     [FOI.a[3*ihkl+0],FOI.a[3*ihkl+1],FOI.a[3*ihkl+2]])
         per_rank_G.append( FOI.a[-1] )
+      print("break for unit testing, only one image")
       break # for unit testing, only one image
     print ("rank %d has %d refined images"%(logical_rank,len(per_rank_items)))
 
