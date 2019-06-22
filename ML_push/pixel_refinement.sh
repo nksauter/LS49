@@ -8,6 +8,8 @@ export JSON_GLOB=/net/dials/raid1/sauter/LS49_step6/integration/idx-step6_MPIbat
 export PICKLE_GLOB=/net/dials/raid1/sauter/LS49_step6/integration/idx-step6_MPIbatch_0%05d.img_integrated.pickle
 export USE_POSTREFINE=False
 export MODEL_MODE=dials_refine
+export ABC_GLOB_A=/net/dials/raid1/sauter/paper1/abc_coverage_dials_refine/abcX%06d.pickle
+export ABC_GLOB_C=/net/dials/raid1/sauter/paper1/abc_coverage_coarse_ground_truth/abcX%06d.pickle
 export ABC_GLOB=/net/dials/raid1/sauter/paper1/abc_coverage_dials_refine/abcX%06d.pickle
 export IMAGE_GLOB=/net/dials/raid1/sauter/LS49_step6/HASWELL1/step6_MPIbatch_%06d.img.gz
 libtbx.python ../modules/LS49/ML_push/pixel_refinement.py
