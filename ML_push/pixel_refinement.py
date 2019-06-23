@@ -25,6 +25,7 @@ Fe_metallic_model = local_data.get("Fe_metallic_model")
 
 from LS49.ML_push.new_global_fdp_refinery import get_items
 from LS49.ML_push.differential_roi_manager import differential_roi_manager
+from LS49.ML_push.shoebox_troubleshoot import pprint3,pprint
 
 class fit_one_image_multispot:
   def __init__(self,key,list_of_images,HKL_lookup,model_intensities,spectra,crystal):
@@ -58,6 +59,14 @@ class fit_one_image_multispot:
       for ichannel in range(1,len(channels)):
         # rescale_factor[51] always == 1, equivalent to simtbx_intensity_7122
         self.roi_model_pixels[ispot] += rescale_factor[2*ichannel] * channels[2*ichannel]
+      print ("in fit one image with",this_P1_Miller_index)
+      pprint(self.roi_model_pixels[ispot])
+
+
+here:
+1) check that the printout here is the same as the differential_Roi_manager printout of dials_refine
+2) check that the rescale_factor applied to live nanoBragg (differential_roi_manager) gives same output as printout here
+
     self.sb_data = []
     for ispot in range(self.n_spots):
       self.sb_data.append(list_of_images[ispot].sb_data)

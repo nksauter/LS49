@@ -175,18 +175,29 @@ class differential_roi_manager(object):
 
     self.SIM.region_of_interest = ROI
 
+    from boost.python import streambuf
+    self.SIM.printout=True # only for the purpose of getting the P1 Miller index and structure factor
+    fast = ROI[1][0] + (ROI[1][1]-ROI[1][0])//2
+    slow = ROI[0][0] + (ROI[0][1]-ROI[0][0])//2
+    self.SIM.printout_pixel_fastslow=(slow,fast)
+
     for x in range(0,100,2): #len(flux)):
       if self.flux[x]==0.0:continue
       self.SIM.wavelength_A = self.wavlen[x]
       self.SIM.flux = self.flux[x]
-      from boost.python import streambuf
       self.SIM.add_nanoBragg_spots_nks(streambuf(output))
+      self.SIM.printout = False # only do the printout once through
 
     self.SIM.raw_pixels *= self.crystal.domains_per_crystal
 
-    #message = output.getvalue().split()
-    #miller = (int(message[4]),int(message[5]),int(message[6]))
-    #intensity = float(message[9]);
+    message = output.getvalue().split()
+    miller = (int(message[4]),int(message[5]),int(message[6])) # nanoBragg P1 index
+    intensity = float(message[9]);
+
+ya ya ya figure out here how to get real channels
+having channel multipliers might explain why abc_coverage results were different from today's nanobragg?
+
+
 
     pixels = self.SIM.raw_pixels
     roi_pixels = pixels[ROI[1][0]:ROI[1][1], ROI[0][0]:ROI[0][1]]
@@ -237,14 +248,14 @@ class differential_roi_manager(object):
 
         from LS49.ML_push.shoebox_troubleshoot import pprint3,pprint
         #pprint3 (shoe.data) # shoe.data is identical to spot.sb_data, in case you were wondering
-        pprint (abc_coarse_truth_spot.roi)
-        pprint (abc_dials_refine_spot.roi)
+#        pprint (abc_coarse_truth_spot.roi)
+#        pprint (abc_dials_refine_spot.roi)
         #new_calc = self.perform_one_simulation()
         #pprint (new_calc)
         new_calc2 = self.perform_one_simulation_optimized(model)
         pprint (new_calc2)
 
-      #break # only do the base value not differential for now
+      break # only do the base value not differential for now
 
   def gen_fmodel_adapt(self):
     direct_algo_res_limit = 1.7
