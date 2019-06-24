@@ -27,6 +27,8 @@ from LS49.ML_push.new_global_fdp_refinery import get_items
 from LS49.ML_push.differential_roi_manager import differential_roi_manager
 from LS49.ML_push.shoebox_troubleshoot import pprint
 
+abc_glob_pixel_ref = os.environ["ABC_GLOB_PIXEL_REF"] # output directory
+
 class fit_one_image_multispot:
   def __init__(self,key,list_of_images,HKL_lookup,model_intensities,spectra,crystal):
     from libtbx import adopt_init_args
@@ -64,6 +66,7 @@ class fit_one_image_multispot:
     assert len(rotxyz) == 3
     updated_models4 = self.DRM.get_incremented_rotation_models(rotxyz)
     self.roi_model_pixels = []
+    self.new_calc2_dict_last_round = []
     for ispot,spot in enumerate(self.list_of_images):
 
       M = self.DRM.data["miller_index"] # from dials integration pickle
@@ -83,6 +86,7 @@ class fit_one_image_multispot:
       rescale_factor = energy_dependent_intensity.as_1d() / intensity
       channels = new_calc2_dict["channels"]
       self.roi_model_pixels.append(rescale_factor[0] * channels[0])
+      self.new_calc2_dict_last_round.append(new_calc2_dict) # need this after lbfgs when results are written out
 
       for ichannel in range(1,len(channels)):
         # rescale_factor[51] always == 1, equivalent to simtbx_intensity_7122
@@ -281,7 +285,6 @@ class MPI_Run(object):
         key, len(item), FOI.compute_functional_and_gradients()[0],
         metric_P1, metric_C2)
         )
-        from IPython import embed; embed()
 
 # reporting out results to new abc_coverage pickles.  Use the old one "item" as a template:
 #    item := [<LS49.work2_for_aca_lsq.abc_background.fit_roi_multichannel>,... one for each spot]
@@ -298,14 +301,20 @@ class MPI_Run(object):
 # modify these:
 #        'bkgrd_a', the spot abc parameters output here, to be passed on to global data fit
         for ispot in range(len(item)):
-          item[ispot]["bkgrd_a"] = FOI.x[3*ispot:3*(ispot+1)]
-#        'channels',
-#        'roi',
-
+          item[ispot].bkgrd_a = FOI.x[3*ispot:3*(ispot+1)]
+#        'channels', need to save the new data that was set during update_roi_model_pixels_with_current_rotation()
+#                    but only for the Amat, not the derivatives.
+          item[ispot].channels = FOI.new_calc2_dict_last_round[ispot]["channels"]
+#        'roi', get new region of interest summation that was set during update_roi_model_pixels_with_current_rotation()
+          item[ispot].roi = FOI.roi_model_pixels[ispot]
 
         # put the newly refined background model back into the item
         per_rank_keys.append(key)
         per_rank_G.append( FOI.a[-1] )
+
+        print ("pickling modified abc_coverage file for key %d in rank %d"%(key,logical_rank),)
+        with open(abc_glob_pixel_ref%(key),"wb") as F:
+          pickle.dump(item,F, pickle.HIGHEST_PROTOCOL)
 
     print ("rank %d has %d refined images"%(logical_rank,len(per_rank_keys)))
 

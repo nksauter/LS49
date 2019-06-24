@@ -14,7 +14,6 @@ from scitbx.matrix import col,sqr
 from LS49.work2_for_aca_lsq.util_partiality import channel_pixels
 import os
 from six.moves import cPickle as pickle
-from libtbx.development.timers import Profiler
 
 json_glob = os.environ["JSON_GLOB"]
 pickle_glob = os.environ["PICKLE_GLOB"]
