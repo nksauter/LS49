@@ -14,6 +14,8 @@ from scitbx.matrix import col,sqr
 from LS49.work2_for_aca_lsq.util_partiality import channel_pixels
 import os
 from six.moves import cPickle as pickle
+from libtbx.development.timers import Profiler
+
 json_glob = os.environ["JSON_GLOB"]
 pickle_glob = os.environ["PICKLE_GLOB"]
 
@@ -42,8 +44,12 @@ class differential_roi_manager(object):
     self.data = pickle.load(open(pickle_glob%key,"rb")) # the dials reflections file
     self.gen_fmodel_adapt() # generate Fmodel to obtain CB_OP_C_P
     self.models4 = self.get_idx_rotation_models(key) # alignment between dials refine and coarse ground truth
+    metric_P1, metric_C2 = self.get_current_angular_offsets([0.,0.,0.])
+    print("""InitialVal Image %06d on %d Bragg spots angular offsets in P1 and C2 (degrees): %8.5f %8.5f"""%(
+        key, len(spotlist), metric_P1, metric_C2))
     self.perform_simulations(spectrum,crystal,tophat_spectrum=False)
-    self.model_rotations_and_spots(key,spotlist) # get shoeboxes and differential rotations
+    # the following is only for debugging:
+    #self.model_rotations_and_spots(key,spotlist) # get shoeboxes and differential rotations
 
   def __del__(self):
     self.SIM.free_all()
@@ -77,7 +83,8 @@ class differential_roi_manager(object):
     self.SIM = SIM
     SIM.adc_offset_adu = 10 # Do not offset by 40
     SIM.mosaic_spread_deg = 0.05 # interpreted by UMAT_nm as a half-width stddev
-    SIM.mosaic_domains = 200  # mosaic_domains setter must come after mosaic_spread_deg setter
+    SIM.mosaic_domains = 50  # mosaic_domains setter must come after mosaic_spread_deg setter
+#manuscript says 200, June 15 abc_cov was done with 50
     SIM.distance_mm=141.7
 
     UMAT_nm = flex.mat3_double()
@@ -158,20 +165,24 @@ class differential_roi_manager(object):
              # channels=make_response_plot.channels)
     return roi_pixels
 
-  def perform_one_simulation_optimized(self,model):
-    ROI = self.ROI
-    Amatrix_rot = self.models4[model]
+  def perform_one_simulation_optimized(self,model,ROI,models4):
+    # models4 is a dict of direct_matrices with keys "Amat","Amat_dx", "Amat_dy", "Amat_dz"
+    Amatrix_rot = models4[model]
     self.SIM.Amatrix_RUB = Amatrix_rot
     #workaround for failing init_cell, use custom written Amatrix setter
     Amatrecover = sqr(self.SIM.Amatrix).transpose() # recovered Amatrix from SIM
     Ori = crystal_orientation.crystal_orientation(Amatrecover, crystal_orientation.basis_type.reciprocal)
     self.SIM.raw_pixels.fill(0.0) # effectively initializes the data pixels for a new simulation
+    temp_fill_zeroes_for_roi = self.SIM.raw_pixels[ROI[1][0]:ROI[1][1], ROI[0][0]:ROI[0][1]]
+    channel_summation_roi_only = self.SIM.raw_pixels[ROI[1][0]:ROI[1][1], ROI[0][0]:ROI[0][1]]
 
     self.SIM.seed = 1
     # simulated crystal is only 125 unit cells (25 nm wide)
     # amplify spot signal to simulate physical crystal of 4000x larger: 100 um (64e9 x the volume)
     output = StringIO() # open("myfile","w")
-    #  make_response_plot = response_plot(False,title=prefix)
+    prefix = "key_slow_nonoise"
+    from LS49.work2_for_aca_lsq.util_partiality import response_plot
+    make_response_plot = response_plot(enable=False,title=prefix)
 
     self.SIM.region_of_interest = ROI
 
@@ -183,28 +194,27 @@ class differential_roi_manager(object):
 
     for x in range(0,100,2): #len(flux)):
       if self.flux[x]==0.0:continue
+      # initialize ROI-only to zero
+      self.SIM.raw_pixels.matrix_paste_block_in_place(temp_fill_zeroes_for_roi,ROI[1][0],ROI[0][0])
       self.SIM.wavelength_A = self.wavlen[x]
       self.SIM.flux = self.flux[x]
       self.SIM.add_nanoBragg_spots_nks(streambuf(output))
       self.SIM.printout = False # only do the printout once through
-
-    self.SIM.raw_pixels *= self.crystal.domains_per_crystal
+      incremental_signal = self.SIM.raw_pixels[ROI[1][0]:ROI[1][1], ROI[0][0]:ROI[0][1]] * self.crystal.domains_per_crystal
+      make_response_plot.append_channel_full_region(x,incremental_signal)
+      if x in [26,40,54,68]: # subsample 7096, 7110, 7124, 7138 eV
+        #print ("----------------------> subsample", x)
+        make_response_plot.incr_subsample_full_region(x,incremental_signal)
+      make_response_plot.increment_full_region(x,incremental_signal)
+      channel_summation_roi_only += incremental_signal;
 
     message = output.getvalue().split()
     miller = (int(message[4]),int(message[5]),int(message[6])) # nanoBragg P1 index
     intensity = float(message[9]);
 
-ya ya ya figure out here how to get real channels
-having channel multipliers might explain why abc_coverage results were different from today's nanobragg?
-
-
-
-    pixels = self.SIM.raw_pixels
-    roi_pixels = pixels[ROI[1][0]:ROI[1][1], ROI[0][0]:ROI[0][1]]
-    #  make_response_plot.plot(roi_pixels,miller)
-    #  return dict(roi_pixels=roi_pixels,miller=miller,intensity=intensity,
-             # channels=make_response_plot.channels)
-    return roi_pixels
+    make_response_plot.plot(channel_summation_roi_only,miller)
+    return dict(roi_pixels=channel_summation_roi_only,miller=miller,intensity=intensity,
+                channels=make_response_plot.channels)
 
   def XXXperform_one_simulation(self,key):
     # method uses the old code as used in abc_coverage
@@ -223,7 +233,6 @@ having channel multipliers might explain why abc_coverage results were different
     return pixels["roi_pixels"]
 
 
-
   def model_rotations_and_spots(self,key,spotlist):
     #ersatz import of other refinements
     abc_dials_refine = get_item_from_key_and_glob(key,os.environ["ABC_GLOB_A"])
@@ -231,9 +240,9 @@ having channel multipliers might explain why abc_coverage results were different
 
     M = self.data["miller_index"]
     for model in self.models4:
+      if model != "Amat": continue
       print("\n",model)
       for ispot, spot in enumerate(spotlist):
-        #if ispot!=1:continue # take away this filter later
         ('a', 'asu_idx_C2_setting', 'bkgrd_a', 'channels', 'compute_functional_and_gradients', 'image_no', 'n', 'orig_idx_C2_setting',
          'print_step', 'roi', 'sb_data', 'simtbx_P1_miller', 'simtbx_intensity_7122', 'x')
         S = (spot.orig_idx_C2_setting) # happens to be the coarse ground truth spot
@@ -243,8 +252,8 @@ having channel multipliers might explain why abc_coverage results were different
         idx = M.first_index(S)
         shoe = self.data["shoebox"][idx]
         B = shoe.bbox
-        self.ROI = ((B[0],B[1]),(B[2],B[3]))
-        print ("C2",S,self.ROI)
+        ROI = ((B[0],B[1]),(B[2],B[3]))
+        print ("C2",S,ROI)
 
         from LS49.ML_push.shoebox_troubleshoot import pprint3,pprint
         #pprint3 (shoe.data) # shoe.data is identical to spot.sb_data, in case you were wondering
@@ -252,10 +261,8 @@ having channel multipliers might explain why abc_coverage results were different
 #        pprint (abc_dials_refine_spot.roi)
         #new_calc = self.perform_one_simulation()
         #pprint (new_calc)
-        new_calc2 = self.perform_one_simulation_optimized(model)
-        pprint (new_calc2)
-
-      break # only do the base value not differential for now
+        new_calc2_dict = self.perform_one_simulation_optimized(model,ROI,self.models4)
+        pprint (new_calc2_dict["roi_pixels"])
 
   def gen_fmodel_adapt(self):
     direct_algo_res_limit = 1.7
@@ -296,12 +303,39 @@ having channel multipliers might explain why abc_coverage results were different
     print("Key %d alignC2 angular offset is %12.9f deg."%(idx, metric(align_PR.change_basis(self.CB_OP_C_P.inverse()),C2)))
     # coarse, dials crystal orientation models = C, align_PR
     # apply Rotx:
-    import math
     align_PR_dx = align_PR.rotate_thru((1.0,0.0,0.0), math.pi* 0.01/180.)
     align_PR_dy = align_PR.rotate_thru((0.0,1.0,0.0), math.pi* 0.01/180.)
     align_PR_dz = align_PR.rotate_thru((0.0,0.0,1.0), math.pi* 0.01/180.)
+    self.dials_integrated_P1_aligned = align_PR; self.ground_truth_P1 = C; self.ground_truth_C2 = C2
     return (dict(Amat=align_PR.direct_matrix(),Amat_dx=align_PR_dx.direct_matrix(),
             Amat_dy=align_PR_dy.direct_matrix(), Amat_dz=align_PR_dz.direct_matrix()))
+
+  def get_incremented_rotation_models(self,rotxyz): # pass in the x,y,z rotations in units of 0.01 degree
+    from LS49.ML_push.exploratory_missetting import metric
+
+    updated_mat = self.dials_integrated_P1_aligned.rotate_thru((1.0,0.0,0.0), rotxyz[0] * math.pi* 0.01/180.
+                                                 ).rotate_thru((0.0,1.0,0.0), rotxyz[1] * math.pi* 0.01/180.
+                                                 ).rotate_thru((0.0,0.0,1.0), rotxyz[2] * math.pi* 0.01/180.)
+
+    metric_val = metric(updated_mat,self.ground_truth_P1)
+    print("minimization step, aligned angular offset is %12.9f deg."%(metric_val))
+    new_dx = updated_mat.rotate_thru((1.0,0.0,0.0), math.pi* 0.01/180.)
+    new_dy = updated_mat.rotate_thru((0.0,1.0,0.0), math.pi* 0.01/180.)
+    new_dz = updated_mat.rotate_thru((0.0,0.0,1.0), math.pi* 0.01/180.)
+    return (dict(Amat=updated_mat.direct_matrix(),Amat_dx=new_dx.direct_matrix(),
+            Amat_dy=new_dy.direct_matrix(), Amat_dz=new_dz.direct_matrix()))
+
+  def get_current_angular_offsets(self,rotxyz): # pass in the x,y,z rotations in units of 0.01 degree
+    from LS49.ML_push.exploratory_missetting import metric
+
+    updated_mat = self.dials_integrated_P1_aligned.rotate_thru((1.0,0.0,0.0), rotxyz[0] * math.pi* 0.01/180.
+                                                 ).rotate_thru((0.0,1.0,0.0), rotxyz[1] * math.pi* 0.01/180.
+                                                 ).rotate_thru((0.0,0.0,1.0), rotxyz[2] * math.pi* 0.01/180.)
+
+    metric_P1 = metric(updated_mat,self.ground_truth_P1)
+    metric_C2 = metric(updated_mat.change_basis(self.CB_OP_C_P.inverse()) ,self.ground_truth_C2)
+
+    return metric_P1,metric_C2
 
 """
 work out the basic code for

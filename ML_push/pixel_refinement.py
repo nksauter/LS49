@@ -25,10 +25,12 @@ Fe_metallic_model = local_data.get("Fe_metallic_model")
 
 from LS49.ML_push.new_global_fdp_refinery import get_items
 from LS49.ML_push.differential_roi_manager import differential_roi_manager
-from LS49.ML_push.shoebox_troubleshoot import pprint3,pprint
+from LS49.ML_push.shoebox_troubleshoot import pprint
 
 class fit_one_image_multispot:
   def __init__(self,key,list_of_images,HKL_lookup,model_intensities,spectra,crystal):
+    from libtbx import adopt_init_args
+    adopt_init_args(self, locals())
     import scitbx
     #lay out the parameters.
     self.n_spots = len(list_of_images)
@@ -40,52 +42,99 @@ class fit_one_image_multispot:
       self.x.append(list_of_images[ispot].bkgrd_a[2])
     self.x.append(0.); self.x.append(0.); self.x.append(0.); # rotx, roty, rotz
     self.x.append(1.)
-    self.roi_model_pixels = []
     # insert an ROI simulation here
     spectrum = spectra.generate_recast_renormalized_image(image=key,energy=7120.,total_flux=1e12)
     self.DRM = differential_roi_manager(key,spotlist=list_of_images,spectrum=spectrum,crystal=crystal,allspectra = spectra)
-    #exit("for now, until I get ROI simulation going")
-
-    for ispot in range(self.n_spots):
-      intensity = list_of_images[ispot].simtbx_intensity_7122
-      this_P1_Miller_index = list_of_images[ispot].simtbx_P1_miller
-      lookup_idx = HKL_lookup[this_P1_Miller_index]
-      energy_dependent_intensity = model_intensities.matrix_copy_block(
-        i_row=lookup_idx,i_column=0,n_rows=1,n_columns=100)
-      rescale_factor = energy_dependent_intensity.as_1d() / intensity
-      channels = list_of_images[ispot].channels
-      self.roi_model_pixels.append(rescale_factor[0] * channels[0])
-
-      for ichannel in range(1,len(channels)):
-        # rescale_factor[51] always == 1, equivalent to simtbx_intensity_7122
-        self.roi_model_pixels[ispot] += rescale_factor[2*ichannel] * channels[2*ichannel]
-      print ("in fit one image with",this_P1_Miller_index)
-      pprint(self.roi_model_pixels[ispot])
-
-
-here:
-1) check that the printout here is the same as the differential_Roi_manager printout of dials_refine
-2) check that the rescale_factor applied to live nanoBragg (differential_roi_manager) gives same output as printout here
 
     self.sb_data = []
     for ispot in range(self.n_spots):
       self.sb_data.append(list_of_images[ispot].sb_data)
     self.minimizer = scitbx.lbfgs.run(target_evaluator=self,
         termination_params=scitbx.lbfgs.termination_parameters(
-        traditional_convergence_test=True,
+        traditional_convergence_test=False,
         traditional_convergence_test_eps=0.05, #1.e-3 significantly (4x) quicker than 1.e-4
-        #drop_convergence_test_max_drop_eps=max_drop_eps,
+        drop_convergence_test_max_drop_eps=5.e-5, # using drop convergence test (since traditional = False), drastic effect
         #min_iterations=min_iterations,
         #max_iterations = None,
-        max_calls=1000)
+        max_calls=100)
     )
     self.a = self.x
+
+  def update_roi_model_pixels_with_current_rotation(self,rotxyz):
+    assert len(rotxyz) == 3
+    updated_models4 = self.DRM.get_incremented_rotation_models(rotxyz)
+    self.roi_model_pixels = []
+    for ispot,spot in enumerate(self.list_of_images):
+
+      M = self.DRM.data["miller_index"] # from dials integration pickle
+      S = (spot.orig_idx_C2_setting) # happens to be the coarse ground truth spot
+      idx = M.first_index(S)
+      shoe = self.DRM.data["shoebox"][idx]
+      B = shoe.bbox
+      ROI = ((B[0],B[1]),(B[2],B[3]))
+      new_calc2_dict = self.DRM.perform_one_simulation_optimized(model="Amat",ROI=ROI,models4 = updated_models4)
+
+      intensity = new_calc2_dict["intensity"]
+      this_P1_Miller_index = new_calc2_dict["miller"]
+      #print("NEW",this_P1_Miller_index);pprint (new_calc2_dict["roi_pixels"])
+      lookup_idx = self.HKL_lookup[this_P1_Miller_index]
+      energy_dependent_intensity = self.model_intensities.matrix_copy_block(
+        i_row=lookup_idx,i_column=0,n_rows=1,n_columns=100)
+      rescale_factor = energy_dependent_intensity.as_1d() / intensity
+      channels = new_calc2_dict["channels"]
+      self.roi_model_pixels.append(rescale_factor[0] * channels[0])
+
+      for ichannel in range(1,len(channels)):
+        # rescale_factor[51] always == 1, equivalent to simtbx_intensity_7122
+        self.roi_model_pixels[ispot] += rescale_factor[2*ichannel] * channels[2*ichannel]
+
+      """
+      intensity = list_of_images[ispot].simtbx_intensity_7122
+      this_P1_Miller_index = list_of_images[ispot].simtbx_P1_miller
+      print("2",this_P1_Miller_index)
+      lookup_idx = HKL_lookup[this_P1_Miller_index]
+      energy_dependent_intensity = model_intensities.matrix_copy_block(
+        i_row=lookup_idx,i_column=0,n_rows=1,n_columns=100)
+      rescale_factor = energy_dependent_intensity.as_1d() / intensity
+      channels = list_of_images[ispot].channels
+      self.roi_model_pixels[ispot]=rescale_factor[0] * channels[0]
+
+      for ichannel in range(1,len(channels)):
+        # rescale_factor[51] always == 1, equivalent to simtbx_intensity_7122
+        self.roi_model_pixels[ispot] += rescale_factor[2*ichannel] * channels[2*ichannel]
+      """
+    # derivatives:
+    self.roi_dxyz = dict(Amat_dx = [],Amat_dy = [], Amat_dz = [])
+    for ispot,spot in enumerate(self.list_of_images):
+      M = self.DRM.data["miller_index"] # from dials integration pickle
+      S = (spot.orig_idx_C2_setting) # happens to be the coarse ground truth spot
+      idx = M.first_index(S)
+      shoe = self.DRM.data["shoebox"][idx]
+      B = shoe.bbox
+      ROI = ((B[0],B[1]),(B[2],B[3]))
+
+      for modelkey in self.roi_dxyz:
+        if modelkey == "Amat_dx": continue # don't consider rotX as it is parallel to the beam and well determined
+        self.roi_dxyz[modelkey].append( -1. * self.roi_model_pixels[ispot] ) # finite diff derivative, subtract off base value
+
+        new_dxyz_dict = self.DRM.perform_one_simulation_optimized(model=modelkey,ROI=ROI,models4 = updated_models4)
+
+        intensity = new_dxyz_dict["intensity"]
+        this_P1_Miller_index = new_dxyz_dict["miller"]
+        lookup_idx = self.HKL_lookup[this_P1_Miller_index]
+        energy_dependent_intensity = self.model_intensities.matrix_copy_block(
+        i_row=lookup_idx,i_column=0,n_rows=1,n_columns=100)
+        rescale_factor = energy_dependent_intensity.as_1d() / intensity
+        channels = new_dxyz_dict["channels"]
+        for ichannel in range(len(channels)):
+          self.roi_dxyz[modelkey][ispot] += rescale_factor[2*ichannel] * channels[2*ichannel]
 
   def print_step(self,message,target):
     print ("%s %10.4f"%(message,target),
            "["," ".join(["%9.3f"%a for a in self.x]),"]")
 
   def compute_functional_and_gradients(self):
+    self.update_roi_model_pixels_with_current_rotation(self.x[-4:-1]) # pass in rotational increments
     self.a = self.x
     f = 0.;
     g = flex.double(self.n)
@@ -100,10 +149,15 @@ here:
             f+= model_lambda # complete kludge, guard against math domain error
           else:
             f += model_lambda - datapt * math.log(model_lambda)
-          g[3*ispot+0] += x * (1. - datapt/model_lambda) # from handwritten notes
-          g[3*ispot+1] += y * (1. - datapt/model_lambda)
-          g[3*ispot+2] += (1. - datapt/model_lambda)
-          g[-1] += self.roi_model_pixels[ispot][x,y] * (1. - datapt/model_lambda)
+          one_minus_k_over_lambda = (1. - datapt/model_lambda)
+          g[3*ispot+0] += x * one_minus_k_over_lambda # from handwritten notes
+          g[3*ispot+1] += y * one_minus_k_over_lambda
+          g[3*ispot+2] += one_minus_k_over_lambda
+          # for this paper, never refine rotX as it is parallel to beam and well-determined
+          g[-4] += one_minus_k_over_lambda * self.a[-1] * 0. # always fix rotx.  self.roi_dxyz["Amat_dx"][ispot][x,y]
+          g[-3] += one_minus_k_over_lambda * self.a[-1] * self.roi_dxyz["Amat_dy"][ispot][x,y]
+          g[-2] += one_minus_k_over_lambda * self.a[-1] * self.roi_dxyz["Amat_dz"][ispot][x,y]
+          g[-1] += self.roi_model_pixels[ispot][x,y] * one_minus_k_over_lambda
     self.print_step("LBFGS stp",f)
     return f, g
 
@@ -184,6 +238,7 @@ class MPI_Run(object):
     else:
       if self.mpi_helper.rank == 0:
         with (open(self.params.starting_model.filename,"rb")) as inp:
+          print("the starting model (used for channel weighting) is",self.params.starting_model.filename)
           HKL_lookup = pickle.load(inp)
           static_fcalcs = pickle.load(inp)
           model_intensities = pickle.load(inp)
@@ -221,22 +276,41 @@ class MPI_Run(object):
                                       spectra = transmitted_info["spectra_simulation"],
                                       crystal = transmitted_info["crystal"]
                                       )
+        metric_P1, metric_C2 = FOI.DRM.get_current_angular_offsets(FOI.x[-4:-1])
+        print ("""LLG Image %06d on %d Bragg spots NLL    channels F = %9.1f angular offsets in P1 and C2 (degrees): %8.5f %8.5f"""%(
+        key, len(item), FOI.compute_functional_and_gradients()[0],
+        metric_P1, metric_C2)
+        )
+        from IPython import embed; embed()
 
-        print ("""LLG Image %06d on %d Bragg spots NLL    channels F = %9.1f"""%(
-        key, len(item), FOI.compute_functional_and_gradients()[0]))
+# reporting out results to new abc_coverage pickles.  Use the old one "item" as a template:
+#    item := [<LS49.work2_for_aca_lsq.abc_background.fit_roi_multichannel>,... one for each spot]
+# each fit_roi has the following attributes and we modify them as follows:
+#        'a', the abcG parameters of the original one-spot fit, unused
+#        'asu_idx_C2_setting', unmodified
+#        'image_no', same as key, unmodified
+#        'n', number of parameters for one-spot fit, unused
+#        'orig_idx_C2_setting', unmodified
+#        'sb_data', original shoebox data [integers as floats], passed along unmodified
+#        'simtbx_P1_miller', unmodified
+#        'simtbx_intensity_7122', unmodified
+#        'x', the abcG parameters of the original one-spot fit, unused
+# modify these:
+#        'bkgrd_a', the spot abc parameters output here, to be passed on to global data fit
+        for ispot in range(len(item)):
+          item[ispot]["bkgrd_a"] = FOI.x[3*ispot:3*(ispot+1)]
+#        'channels',
+#        'roi',
+
+
         # put the newly refined background model back into the item
-        per_rank_items.append(item)
         per_rank_keys.append(key)
-        for ihkl in range(FOI.n_spots):
-          per_rank_items[-1][ihkl].bkgrd_a = flex.double(
-                    [FOI.a[3*ihkl+0],FOI.a[3*ihkl+1],FOI.a[3*ihkl+2]])
         per_rank_G.append( FOI.a[-1] )
-      print("break for unit testing, only one image")
-      break # for unit testing, only one image
-    print ("rank %d has %d refined images"%(logical_rank,len(per_rank_items)))
+
+    print ("rank %d has %d refined images"%(logical_rank,len(per_rank_keys)))
 
     N_ranks = self.mpi_helper.comm.reduce(1, self.mpi_helper.MPI.SUM, 0)
-    N_refined_images = self.mpi_helper.comm.reduce(len(per_rank_items), self.mpi_helper.MPI.SUM, 0)
+    N_refined_images = self.mpi_helper.comm.reduce(len(per_rank_keys), self.mpi_helper.MPI.SUM, 0)
     N_input_images = self.mpi_helper.comm.reduce(N_input, self.mpi_helper.MPI.SUM, 0)
     self.mpi_helper.comm.barrier()
     if self.mpi_helper.rank==0:
