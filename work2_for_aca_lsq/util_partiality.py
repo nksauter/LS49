@@ -392,10 +392,19 @@ class response_plot:
   def append_channel(self, channel, ROI, incr):
     roi_incr = incr[ROI[1][0]:ROI[1][1], ROI[0][0]:ROI[0][1]]
     self.channels[channel] = roi_incr
+  def append_channel_full_region(self, channel, incr):
+    self.channels[channel] = incr
   def increment(self, channel, ROI, incr):
     if not self.enable: return
     roi_incr = incr[ROI[1][0]:ROI[1][1], ROI[0][0]:ROI[0][1]]
     signal = channel * roi_incr
+    if self.signal is None:
+      self.signal = signal;
+    else:
+      self.signal += signal;
+  def increment_full_region(self, channel, incr):
+    if not self.enable: return
+    signal = channel * incr
     if self.signal is None:
       self.signal = signal;
     else:
@@ -408,6 +417,13 @@ class response_plot:
       self.subsample = subsample; self.denominator = roi_incr
     else:
       self.subsample += subsample; self.denominator += roi_incr
+  def incr_subsample_full_region(self, channel, incr):
+    if not self.enable: return
+    subsample = channel * incr
+    if self.subsample is None:
+      self.subsample = subsample; self.denominator = incr
+    else:
+      self.subsample += subsample; self.denominator += incr
   def plot(self,pixels,miller):
         if not self.enable: return
         import numpy as np
