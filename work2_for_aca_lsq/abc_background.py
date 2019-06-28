@@ -749,5 +749,5 @@ FAILing fit_roi for key %d on"""%(key),e)
     #print ("pickling key %d in rank %d"%(key,rank),result)
     #pickle.dump(result,open("dataX%04d.pickle"%rank,"ab"))
     print ("pickling key %d in rank %d"%(key,rank),roi_results)
-    with open("abc_coverage_%s/abcX%06d.pickle"%(key),"ab") as F:
+    with open("abc_coverage_%s/abcX%06d.pickle"%(model_mode,key),"ab") as F:
       pickle.dump(roi_results,F, pickle.HIGHEST_PROTOCOL)

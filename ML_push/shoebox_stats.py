@@ -22,6 +22,7 @@ local_data = data()
 Fe_oxidized_model = local_data.get("Fe_oxidized_model")
 Fe_reduced_model = local_data.get("Fe_reduced_model")
 Fe_metallic_model = local_data.get("Fe_metallic_model")
+model_mode = os.environ["MODEL_MODE"]
 
 def get_items(myrank,N_total,N_stride,cohort=0):
   #selected_idx = dict()
@@ -41,7 +42,7 @@ def get_items(myrank,N_total,N_stride,cohort=0):
     #  print("skipped image",key)
     #  continue
     try:
-      with open("abc_coverage/abcX%06d.pickle"%key,"rb") as F:
+      with open("abc_coverage_%s/abcX%06d.pickle"%(model_mode,key),"rb") as F:
         T = pickle.load(F)
     except IOError:
       #print("No file abc_coverage/abcX%06d.pickle"%key)

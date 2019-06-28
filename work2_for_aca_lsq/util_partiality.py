@@ -130,7 +130,7 @@ def superpower_postrefine(idx,CB_OP_C_P,old_Amat):
   metric_val = metric(align_PR,C)
   print("Key %d aligned angular offset is %12.9f deg."%(idx, metric_val))
   print("Key %d alignC2 angular offset is %12.9f deg."%(idx, metric(align_PR.change_basis(CB_OP_C_P.inverse()),C2)))
-  minimum = metric_val
+  minimum = 1000. # metric_val
   ixm = 0
   iym = 0
   best_Ori_C2 = None
