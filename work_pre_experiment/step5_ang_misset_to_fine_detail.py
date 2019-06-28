@@ -8,14 +8,16 @@ import glob,math
 import dials
 
 # some parameters
-json_glob = "/net/dials/raid1/sauter/LS49_integ_allrestr/idx*.img_integrated_experiments.json"
-image_glob = "/net/dials/raid1/sauter/LS49/step5_MPIbatch_0%05d.img.gz"
+#json_glob = "/net/dials/raid1/sauter/LS49_integ_allrestr/idx*.img_integrated_experiments.json"
+#image_glob = "/net/dials/raid1/sauter/LS49/step6_MPIbatch_0%05d.img.gz"
+json_glob = os.environ["JSON_GLOB"]
+image_glob = os.environ["IMAGE_GLOB"]
 global format_class
 
 detail_type = sys.argv[1] # coarse or fine
-integration_run = sys.argv[2] # LS49_integ_allrestr, LS49_integ_betarestr, LS49_integ_step5cori
+#integration_run = sys.argv[2] # LS49_integ_allrestr, LS49_integ_betarestr, LS49_integ_step5cori
 
-json_glob = json_glob.replace("LS49_integ_allrestr",integration_run)
+#json_glob = json_glob.replace("LS49_integ_allrestr",integration_run)
 
 have_ABC_dictionary_fine = dict()
 have_ABC_dictionary_coarse = dict()

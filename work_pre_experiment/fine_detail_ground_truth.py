@@ -76,7 +76,7 @@ class nanoBragg_mock:
   from cctbx import crystal_orientation
   Ori = crystal_orientation.crystal_orientation(Amat, crystal_orientation.basis_type.reciprocal)
   print("Python unit cell from SIM state",Ori.unit_cell())
-  self.MM = self.SIM.get_mosaic_domains_abc()
+  self.MM = self.SIM.get_mosaic_domains_abc_phi_0()
  def get_average_abc(self):
    av_a = col((0.,0.,0.))
    av_b = col((0.,0.,0.))
