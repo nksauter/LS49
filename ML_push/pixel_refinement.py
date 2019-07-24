@@ -27,6 +27,33 @@ from LS49.ML_push.new_global_fdp_refinery import get_items
 from LS49.ML_push.differential_roi_manager import differential_roi_manager
 from LS49.ML_push.shoebox_troubleshoot import pprint
 
+#ersatz get_items for cori second run through to fill in gaps
+def get_items(myrank,N_total,N_stride,shuffA,cohort=0):
+  abc_glob = os.environ["ABC_GLOB"]
+  abc_glob_pixel_ref = os.environ["ABC_GLOB_PIXEL_REF"]
+  #shuffA = list(range(N_total))
+  #import random
+  #random.shuffle(shuffA)
+
+  for key in range(cohort*N_total, (cohort+1)*N_total):
+    #each rank should only allow keys in the range from
+    # cohort*N_total + myrank*N_stride to cohort*N_total + (myrank+1)*N_stride
+    if key < cohort*N_total + myrank*N_stride: continue
+    if key >= cohort*N_total + (myrank+1) * N_stride: continue
+    if key >= (cohort+1) * N_total : continue
+    derkey = shuffA[key]
+    abc_file_pixel_ref = abc_glob_pixel_ref%derkey
+    if os.path.isfile(abc_file_pixel_ref): continue
+    try:
+      abc_file = abc_glob%derkey
+      with open(abc_file,"rb") as F:
+        T = pickle.load(F)
+    except IOError:
+      print("No file %s"%abc_file)
+      continue
+    yield T,derkey
+
+
 abc_glob_pixel_ref = os.environ["ABC_GLOB_PIXEL_REF"] # output directory
 
 class fit_one_image_multispot:
@@ -55,7 +82,7 @@ class fit_one_image_multispot:
         termination_params=scitbx.lbfgs.termination_parameters(
         traditional_convergence_test=False,
         traditional_convergence_test_eps=0.05, #1.e-3 significantly (4x) quicker than 1.e-4
-        drop_convergence_test_max_drop_eps=5.e-5, # using drop convergence test (since traditional = False), drastic effect
+        drop_convergence_test_max_drop_eps=1.e-5, # using drop convergence test (since traditional = False), drastic effect
         #min_iterations=min_iterations,
         #max_iterations = None,
         max_calls=100)
@@ -249,11 +276,16 @@ class MPI_Run(object):
           from LS49.spectra.generate_spectra import spectra_simulation
           from LS49.sim.step5_pad import microcrystal
 
+        shuffA = list(range(N_total))
+        import random
+        random.shuffle(shuffA)
+
         transmitted_info = dict(HKL_lookup = HKL_lookup,
                                 static_fcalcs = static_fcalcs,
                                 model_intensities = model_intensities,
                                 spectra_simulation = spectra_simulation(),
-                                crystal = microcrystal(Deff_A = 4000, length_um = 4., beam_diameter_um = 1.0)
+                                crystal = microcrystal(Deff_A = 4000, length_um = 4., beam_diameter_um = 1.0),
+                                shuffA = shuffA
                                 )
       else:
         transmitted_info = None
@@ -270,20 +302,27 @@ class MPI_Run(object):
     per_rank_G = []
     min_spots = 3
     N_input=0
-    for item,key in get_items(logical_rank,N_total,N_stride,self.params.cohort):
+    import os,omptbx # cori workaround, which does not get OMP_NUM_THREADS from environment
+    workaround_nt = int(os.environ.get("OMP_NUM_THREADS",1))
+    omptbx.omp_set_num_threads(workaround_nt)
+    for item,key in get_items(logical_rank,N_total,N_stride,transmitted_info["shuffA"],self.params.cohort):
       N_input+=1
       if len(item) >= min_spots:
-        FOI = fit_one_image_multispot(key=key,
+        try:
+          FOI = fit_one_image_multispot(key=key,
                                       list_of_images=item,
                                       HKL_lookup = transmitted_info["HKL_lookup"],
                                       model_intensities = transmitted_info["model_intensities"],
                                       spectra = transmitted_info["spectra_simulation"],
                                       crystal = transmitted_info["crystal"]
                                       )
+        except RuntimeError as e:
+          # no recovery from LBFGS error, skip event
+          continue
         metric_P1, metric_C2 = FOI.DRM.get_current_angular_offsets(FOI.x[-4:-1])
         print ("""LLG Image %06d on %d Bragg spots NLL    channels F = %9.1f angular offsets in P1 and C2 (degrees): %8.5f %8.5f"""%(
         key, len(item), FOI.compute_functional_and_gradients()[0],
-        metric_P1, metric_C2)
+        metric_P1, metric_C2),FOI.x[-4:-1]
         )
 
 # reporting out results to new abc_coverage pickles.  Use the old one "item" as a template:
