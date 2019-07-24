@@ -3,7 +3,7 @@
 from __future__ import print_function, division, unicode_literals
 from six.moves import range
 from scitbx.array_family import flex
-
+import math
 from LS49.work2_for_aca_lsq.abc_background import fit_roi_multichannel # implicit import
 # multichannel needed for unpickling
 
@@ -104,6 +104,16 @@ class CC_to_ground_truth(object):
     DA = self.data[31:62].concatenate(self.data[93:124])
     LC = flex.linear_correlation(GT, DA)
     return LC.coefficient()
+  def get_rmsd_fp(self):
+    GT = self.ground_truth[0:31].concatenate(self.ground_truth[62:93])
+    DA = self.data[0:31].concatenate(self.data[62:93])
+    diff = GT - DA
+    return math.sqrt(flex.mean(diff*diff))
+  def get_rmsd_fdp(self):
+    GT = self.ground_truth[31:62].concatenate(self.ground_truth[93:124])
+    DA = self.data[31:62].concatenate(self.data[93:124])
+    diff = GT - DA
+    return math.sqrt(flex.mean(diff*diff))
 
 
 def plot_em_broken(self,key,values):
@@ -183,12 +193,14 @@ def plot_em_broken(self,key,values):
       macrocycle_tell = "" if self.macrocycle is None else "macrocycle_%02d_"%self.macrocycle
       fig.savefig(os.path.join(self.params.LLG_evaluator.plot_outdir,"replot_%s_%siteration_%02d.png"%(self.params.LLG_evaluator.title,
                   macrocycle_tell,self.iteration)))
-      if self.macrocycle==3 and self.iteration==self.params.LLG_evaluator.max_calls:
+      if self.macrocycle in [1,2,3] and self.iteration==self.params.LLG_evaluator.max_calls:
         fig.savefig(os.path.join(self.params.LLG_evaluator.plot_outdir,"replot_%s_%siteration_%02d.pdf"%(self.params.LLG_evaluator.title,
                   macrocycle_tell,self.iteration)))
       print ("%s_%siteration_%02d CC=%6.3f%%"%(self.params.LLG_evaluator.title,
                   macrocycle_tell,self.iteration,100*cc.get_cc()),
-             "CC_fp = %6.3f%% CC_fdp = %6.3f%%"%(100*cc.get_cc_fp(), 100*cc.get_cc_fdp()))
+             "CC_fp = %6.3f%% CC_fdp = %6.3f%%"%(100*cc.get_cc_fp(), 100*cc.get_cc_fdp()),
+             "rmsd fp: %6.4f, rmsd fdp %6.4f"%(cc.get_rmsd_fp(), cc.get_rmsd_fdp())
+            )
     else:
       self.plt.draw()
       self.plt.pause(0.2)
