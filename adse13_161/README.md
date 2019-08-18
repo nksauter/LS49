@@ -12,6 +12,7 @@ git clone git@github.com:nksauter/LS49.git
 cd ${WORK}
 ```
 
+```
 module purge; module load python esslurm
 salloc -C gpu -N 1 -A m1759 -t 04:00:00 --gres=gpu:1 -c 10
 module load python/2.7-anaconda-2019.07
@@ -54,7 +55,6 @@ srun libtbx.run_tests_parallel module=LS49 nproc=13 # test to make sure regressi
 # not completely checked in yet
 
 ### Each time login
-```
 module purge; module load python esslurm
 salloc -C gpu -N 1 -A m1759 -t 04:00:00 --gres=gpu:1 -c 10
 source /usr/common/software/python/2.7-anaconda-2019.07/etc/profile.d/conda.sh
