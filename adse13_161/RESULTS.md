@@ -11,7 +11,7 @@ worker ranks.  Within each diffraction image, the for loop over pixels is distri
 over OpenMP threads.
 
 Figure of Merit:  The total wall time for the simulation of 100,000 diffraction patterns, using 5% of the nodes on host computer.  This Table
-will also be included in an upcoming:
+will also be included in the upcoming paper:
 
 | Host         | Elapsed |Nodes|MPI ranks |OpenMP threads/rank |Mean time/task|Mean time/rank=0 task|Effective throughput|
 |--------------|---------|-----|----------|--------------------|--------------|---------------------|--------------------|
