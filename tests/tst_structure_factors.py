@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 from six.moves import cPickle
 import os
+import six
 
 ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
 
@@ -25,7 +26,16 @@ def single_wavelength_fmodel(create):
       cPickle.dump(sfall_main,
       open(os.path.join(ls49_big_data,"reference","sf_reference_cb_to_P1_%s"%(str(flag))),"wb"),cPickle.HIGHEST_PROTOCOL)
     else: # read the reference and assert sameness to sfall_main
-      sfall_ref = cPickle.load(open(os.path.join(ls49_big_data,"reference","sf_reference_cb_to_P1_%s"%(str(flag))),"rb"))
+
+      if six.PY3:
+        sfall_ref = cPickle.load(open(os.path.join(ls49_big_data,"reference","sf_reference_cb_to_P1_%s"%(str(flag))),"rb"), encoding="bytes")
+        from LS49.tests.tst_sf_energies import fix_unpickled_attributes
+        fix_unpickled_attributes(sfall_ref)
+      else:
+        sfall_ref = cPickle.load(open(os.path.join(ls49_big_data,"reference","sf_reference_cb_to_P1_%s"%(str(flag))),"rb"))
+
+
+
       T = sfall_main; S = sfall_ref
       assert S.space_group() == T.space_group()
       assert S.unit_cell().parameters() == T.unit_cell().parameters()

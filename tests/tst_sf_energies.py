@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 from six.moves import cPickle
 import os
+import six
 
 def get_pdb_lines():
   return open(os.path.join(ls49_big_data,"1m2a.pdb"),"r").read()
@@ -10,6 +11,10 @@ ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
 from LS49.sim.fdp_plot import george_sherrell
 Fe_oxidized_model = george_sherrell(os.path.join(ls49_big_data,"data_sherrell/pf-rd-ox_fftkk.out"))
 Fe_reduced_model = george_sherrell(os.path.join(ls49_big_data,"data_sherrell/pf-rd-red_fftkk.out"))
+
+def fix_unpickled_attributes(crystal_lattice):
+  for attr in ["_unit_cell", "_space_group_info", "_indices", "_data", "_sigmas"]:
+    crystal_lattice.__dict__[attr] = crystal_lattice.__dict__[attr.encode()]; del crystal_lattice.__dict__[attr.encode()]
 
 def channel_wavelength_fmodel(create):
   from LS49.spectra.generate_spectra import spectra_simulation
@@ -36,7 +41,14 @@ def channel_wavelength_fmodel(create):
       cPickle.dump(sfall_channel,
       open(os.path.join(ls49_big_data,"reference",filename),"wb"),cPickle.HIGHEST_PROTOCOL)
     else: # read the reference and assert sameness to sfall_channel
-      sfall_ref = cPickle.load(open(os.path.join(ls49_big_data,"reference",filename),"rb"))
+      print(os.path.join(ls49_big_data,"reference",filename))
+
+      if six.PY3:
+        sfall_ref = cPickle.load(open(os.path.join(ls49_big_data,"reference",filename),"rb"),encoding="bytes")
+        fix_unpickled_attributes(sfall_ref)
+      else:
+        sfall_ref = cPickle.load(open(os.path.join(ls49_big_data,"reference",filename),"rb"))
+
       T = sfall_channel; S = sfall_ref
       assert S.space_group() == T.space_group()
       assert S.unit_cell().parameters() == T.unit_cell().parameters()
