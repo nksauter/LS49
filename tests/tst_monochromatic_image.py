@@ -3,6 +3,7 @@ import os
 from LS49.sim import step5_pad
 from LS49.sim import step4_pad
 from LS49.spectra import generate_spectra
+import six
 
 ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
 step5_pad.big_data = ls49_big_data
@@ -60,7 +61,10 @@ def compare_two_raw_images(reference, test, tol=1.E-7): # TODO: run more tests t
   from six.moves import cPickle as pickle
   from scitbx.array_family import flex
   with open(reference,'rb') as F:
-    ref_array = pickle.load(F)
+    if six.PY3:
+      ref_array = pickle.load(F, encoding="bytes")
+    else:
+      ref_array = pickle.load(F)
   with open(test,'rb') as F:
     test_array = pickle.load(F)
   print("\nComparing raw image: '%s' with the reference: '%s'"%(test, reference))
