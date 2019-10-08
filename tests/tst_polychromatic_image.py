@@ -2,6 +2,7 @@ from __future__ import division, print_function
 import os
 from six.moves import cPickle
 from LS49.sim import debug_utils
+import six
 
 class channel_extractor:
   def __init__(self):
@@ -24,7 +25,11 @@ def run_polychromatic(create):
     cPickle.dump(CHDBG_singleton.data,
       open(os.path.join(ls49_big_data,"reference",filename),"wb"),cPickle.HIGHEST_PROTOCOL)
   else:
-    CH_ref = cPickle.load(open(os.path.join(ls49_big_data,"reference",filename),"rb"))
+    with open(os.path.join(ls49_big_data,"reference",filename),"rb") as ref_F:
+      if six.PY3:
+        CH_ref = cPickle.load(ref_F, encoding="bytes")
+      else:
+        CH_ref = cPickle.load(ref_F)
     assert len(CHDBG_singleton.data)==10,"Should have recorded 10 energy channels"
     for key in CHDBG_singleton.data:
         assert CHDBG_singleton.data[key] == CH_ref[key],"Energy-channel results should agree with reference"
