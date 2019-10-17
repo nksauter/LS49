@@ -5,6 +5,7 @@ import scitbx
 import os
 import math
 from scitbx.matrix import col
+from libtbx.test_utils import approx_equal
 
 ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
 filename = "mosaic_domains.pickle"
@@ -36,7 +37,7 @@ def channel_wavelength_fmodel(create):
         print(x," ".join(
           ["%18.15f"%UMAT_ref[x][z] for z in range(9)]
         ))
-        assert UMAT_nm[x] == UMAT_ref[x]
+        assert approx_equal(UMAT_nm[x], UMAT_ref[x])
   expected_output =  """
 0  0.999998267296033  0.000314549772964 -0.001834792460335 -0.000313914658246  0.999999890722460  0.000346428427106  0.001834901228816 -0.000345851858600  0.999998256760467
 1  0.999999401374518 -0.001093965354793 -0.000022145152202  0.001093965187403  0.999999401591257 -0.000007569488342  0.000022153419708  0.000007545257785  0.999999999726148

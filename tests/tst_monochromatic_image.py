@@ -68,7 +68,7 @@ def compare_two_raw_images(reference, test, tol=1.E-7): # TODO: run more tests t
   with open(test,'rb') as F:
     test_array = pickle.load(F)
   print("\nComparing raw image: '%s' with the reference: '%s'"%(test, reference))
-  diff_array = test_array - ref_array
+  diff_array = test_array - flex.double(ref_array.ravel())
   if diff_array.all_eq(0.0):
     print ("There are 0 differences\n")
   else:
