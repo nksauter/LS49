@@ -52,6 +52,9 @@ ress = RE.select(SS)
 meanox = flex.mean(oxss.data())
 diff = ress.data() - oxss.data()
 qty = diff/meanox
+print ("there are %d differences"%(len(qty)))
+print ("above 5%% %d"%((qty>0.05).count(True)))
+print ("below -5%% %d"%((qty<-0.05).count(True)))
 print ("The rms difference is %10.5f%%"%(100.*math.sqrt(flex.mean(qty*qty))))
 from matplotlib import pyplot as plt
 
