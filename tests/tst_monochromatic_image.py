@@ -50,7 +50,7 @@ def compare_two_images(reference, test, tolerance_count=10):
   ndiff = 0
   for idiff,diff in enumerate(diff_data):
     if diff!=0:
-      if ndiff < 200: print ("difference index %d:(%d,%d)"%(idiff,idiff//3000,idiff%3000),diff) # only print the first 200 differences
+      if ndiff < 200: print ("difference index %d:(%d,%d)"%(idiff,idiff//3000,idiff%3000),diff,data[0][idiff]) # only print the first 200 differences
       ndiff += 1
       no_differences=False
   print("There are %d differences"%ndiff)

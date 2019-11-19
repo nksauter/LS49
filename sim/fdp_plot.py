@@ -1,6 +1,8 @@
 from __future__ import division, print_function
 from scitbx.array_family import flex
 from six.moves import range
+from libtbx.math_utils import round2
+
 class csv:
   def __init__(self):
     self.energy = flex.double()
@@ -19,7 +21,7 @@ class csv:
         self.ox_fp.append(tokens[3])
         self.ox_fdp.append(tokens[4])
   def plot_them(self,plt,energies):
-    keys = [ round(e,0) for e in energies if e >= 7070. and e<7201.]
+    keys = [ round2(e,0) for e in energies if e >= 7070. and e<7201.]
     print(keys)
     elist = list(self.energy)
     print(elist)
@@ -42,7 +44,7 @@ class george_sherrell:
         self.fp.append(tokens[1])
         self.fdp.append(tokens[2])
   def fp_fdp_at_wavelength(self,angstroms):
-    lookup_energy = round(12398.425/angstroms,0)
+    lookup_energy = round2(12398.425/angstroms,0)
     lookup_idx = list(self.energy).index(lookup_energy)
     return self.fp[lookup_idx], self.fdp[lookup_idx]
   def plot_them(self,plt,f1,f2):
