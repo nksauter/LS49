@@ -1,3 +1,17 @@
+***** High level summary of manuscript TZ5101 Figure 5 to answer reviewer questions *****
+(a) spotfinder, (b) index & refine, (c) spot prediction, shoebox definition
+      dials.stills_process
+
+(d, Method 4) Bayesian refinement of orientation. 
+      LS49/ML_push/pixel_refinement.py
+(d, Method 3) Only background refinement. 
+      LS49/work2_for_aca_lsq/abc_background.py
+
+(e) background and scale, (f) anomalous correction. 
+      LS49/ML_push/new_global_fdp_refinery.py
+
+***** End of high level summary *****
+
 Table 1:  Production of 100,000 simulated images on cori.lbl.gov/haswell
 sbatch the following file:
 
