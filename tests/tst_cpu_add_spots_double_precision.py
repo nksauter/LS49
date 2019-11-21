@@ -23,22 +23,27 @@ def run_polychromatic(create_ref):
   tst_all(quick=False,prefix=prefix,save_bragg=True) # quick=False means: perform multiple wavelength simulation
 
 if __name__=="__main__":
-  # make sure this test doesn't overwrite some existing images
   import LS49.utils.safe_to_write as s2w
-  s2w.cwd_safe_to_write(["*cpu_step5*_000000_intimage*.img","*cpu_step5*_000000.img.gz", "*cpu_step5*_000000_dblprec*.pickle"])
-
+  ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
   mode = sys.argv[1]
   assert mode in ["mono","poly"]
-  ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
   if mode == "poly":
+    # make sure we don't overwrite existing images
+    s2w.cwd_safe_to_write(["*cpu_step5poly_000000_intimage*.img","*cpu_step5poly_000000.img.gz", "*cpu_step5poly_000000_dblprec*.pickle"])
+    # create images either as new reference or to compare with existing reference
     run_polychromatic(create_ref=create_ref)
+    # if testing, compare result with reference
     if not create_ref:
       # compare to reference integer image, smv-formatted
       compare_two_images(reference=os.path.join(ls49_big_data,"reference","ref_cpu_step5poly_000000_intimage_001.img"), test="cpu_step5poly_000000_intimage_001.img")
       # compare to reference double precision image, numpy array pickle
       compare_two_raw_images(reference=os.path.join(ls49_big_data,"reference","ref_cpu_step5poly_000000_dblprec_001.pickle"), test="./cpu_step5poly_000000_dblprec_001.pickle")
   else:
+    # make sure we don't overwrite existing images
+    s2w.cwd_safe_to_write(["*cpu_step5_000000_intimage*.img","*cpu_step5_000000.img.gz", "*cpu_step5_000000_dblprec*.pickle"])
+    # create image(s) either as new reference or to compare with existing reference
     run_monochromatic(create_ref=create_ref)
+    # if testing, compare result with reference
     if not create_ref:
       # compare to reference integer image, smv-formatted
       compare_two_images(reference=os.path.join(ls49_big_data,"reference","ref_cpu_step5_000000_intimage_001.img"), test="cpu_step5_000000_intimage_001.img")
