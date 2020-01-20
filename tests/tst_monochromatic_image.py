@@ -16,13 +16,13 @@ def run_monochromatic():
 
 def compare_two_images(reference, test, tolerance_count=10):
   print ("Comparing",reference,test)
-  from dxtbx.format.Registry import Registry
+  from dxtbx.format.Registry
   beam=[]
   data = []
   detector =[]
   headers = []
   for i,fk in enumerate([reference,test]):
-    format_instance = Registry.find(fk)
+    format_instance = dxtbx.format.Registry.get_format_class_got_file(fk)
     instance = format_instance(fk)
     beam.append( instance.get_beam() )
     detector.append( instance.get_detector() )
