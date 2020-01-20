@@ -16,7 +16,7 @@ def run_monochromatic():
 
 def compare_two_images(reference, test, tolerance_count=10):
   print ("Comparing",reference,test)
-  from dxtbx.format.Registry
+  import dxtbx.format.Registry
   beam=[]
   data = []
   detector =[]
