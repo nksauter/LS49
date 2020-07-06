@@ -15,7 +15,7 @@ debug_utils.channel_extractor = channel_extractor
 filename="energy_dependent_diffraction.pickle"
 
 from LS49.tests import tst_monochromatic_image
-ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+from LS49 import ls49_big_data
 
 def run_polychromatic(create):
   from LS49.sim.step5_pad import tst_all

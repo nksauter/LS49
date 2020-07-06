@@ -2,7 +2,7 @@ from __future__ import division, print_function
 import os
 
 from LS49.tests import tst_monochromatic_image
-ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+from LS49 import ls49_big_data
 
 def run_polychromatic(create):
   #from LS49.sim import step5_laue

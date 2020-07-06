@@ -14,7 +14,7 @@ if __name__=="__main__":
   print ("\n\n<><><><>\nUSING ALGO: %s\n><><><><>" % algo)
 
   step5_pad_chan_sim.tst_all(prefix="cuda_step5_pad_chan_sim_")
-  ls49_big_data = os.environ["LS49_BIG_DATA"]
+  from LS49 import ls49_big_data
 
   compare_two_images(
     reference=os.path.join(

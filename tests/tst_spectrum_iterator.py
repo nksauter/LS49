@@ -3,7 +3,7 @@ from six.moves import cPickle, range
 import os
 from libtbx.test_utils import approx_equal
 
-ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+from LS49 import ls49_big_data
 
 def create_reference_results():
   from LS49.spectra.generate_spectra import spectra_simulation

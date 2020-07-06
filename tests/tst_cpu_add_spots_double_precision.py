@@ -6,7 +6,7 @@ from LS49.tests.tst_monochromatic_image import compare_two_images, compare_two_r
 # This test uses production (James Holton) add_nanoBragg_spots() implementation refactored by Nick Sauter for OpenMP.
 # The test compares only the photons due to Bragg scatter, no air or water scatter effects.
 
-create_ref = False # change this flag to True to create new reference images. Place all references under $LS49_BIG_DATA/references.
+create_ref = False # change this flag to True to create new reference images. Place all references under ls49_big_data/references.
 
 def run_monochromatic(create_ref):
   from LS49.sim.step5_pad import tst_all
@@ -24,7 +24,7 @@ def run_polychromatic(create_ref):
 
 if __name__=="__main__":
   import LS49.utils.safe_to_write as s2w
-  ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+  from LS49 import ls49_big_data
   mode = sys.argv[1]
   assert mode in ["mono","poly"]
   if mode == "poly":

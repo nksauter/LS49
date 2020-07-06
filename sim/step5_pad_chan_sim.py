@@ -15,8 +15,8 @@ ADD_SPOTS_ALGORITHM = "NKS"
 
 def full_path(filename):
   import os
-  big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
-  return os.path.join(big_data,filename)
+  from LS49 import ls49_big_data
+  return os.path.join(ls49_big_data,filename)
 
 def data():
   from LS49.sim.fdp_plot import george_sherrell

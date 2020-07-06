@@ -5,11 +5,10 @@ from LS49.work2_for_aca_lsq.abc_background import fit_roi_multichannel # implici
 # multichannel needed for unpickling
 
 # %%% boilerplate specialize to packaged big data %%%
-import os
 from LS49.sim import step5_pad
 from LS49.sim import step4_pad
 from LS49.spectra import generate_spectra
-ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+from LS49 import ls49_big_data
 step5_pad.big_data = ls49_big_data
 step4_pad.big_data = ls49_big_data
 generate_spectra.big_data = ls49_big_data

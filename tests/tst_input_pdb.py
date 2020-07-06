@@ -1,7 +1,7 @@
 from __future__ import division, print_function
 import os
 
-ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+from LS49 import ls49_big_data
 
 def get_results():
   pdb_lines = open(os.path.join(ls49_big_data,"1m2a.pdb"),"r").read()

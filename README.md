@@ -6,7 +6,7 @@ create a working directory ${WORK}
 ```
 cd ${WORK}
 wget https://raw.githubusercontent.com/cctbx/cctbx_project/master/libtbx/auto_build/bootstrap.py --no-check-certificate
-python bootstrap.py hot update base --builder=dials --mpi-build --use-conda --python=37 \
+python bootstrap.py --builder=dials --mpi-build --use-conda --python=37 \
 --config_flags="--enable_openmp_if_possible=True" --nproc=64 # conform to the number of cores available
 cd ${WORK}/modules
 git clone git@github.com:nksauter/LS49.git

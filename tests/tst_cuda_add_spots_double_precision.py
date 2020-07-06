@@ -23,7 +23,7 @@ def run_polychromatic():
 
 if __name__=="__main__":
   import LS49.utils.safe_to_write as s2w
-  ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+  from LS49 import ls49_big_data
   mode = sys.argv[1]
   assert mode in ["mono","poly"]
   if mode == "poly":

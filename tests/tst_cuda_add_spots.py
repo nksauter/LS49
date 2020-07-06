@@ -29,17 +29,15 @@ if __name__=="__main__":
   import sys
   mode = sys.argv[1]
   assert mode in ["mono","poly","laue"]
+  from LS49 import ls49_big_data
   if mode == "laue":
     run_laue(create=False)
-    ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
     compare_two_images(reference=os.path.join(ls49_big_data,"reference","step5laue_remote_ref_000000.img.gz"), test="./cuda_step5laue_000000.img.gz",tolerance_count=200)
   elif mode == "poly":
     run_polychromatic(create=False)
-    ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
     compare_two_images(reference=os.path.join(ls49_big_data,"reference","step5_MPIbatch_000000.img.gz"), test="./cuda_step5poly_000000.img.gz")
   else:
     run_monochromatic()
-    ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
     compare_two_images(reference=os.path.join(ls49_big_data,"reference","step5_000000.img.gz"), test="./cuda_step5_000000.img.gz")
     # test the raw photons due to Bragg scatter:
     compare_two_images(reference=os.path.join(ls49_big_data,"reference","step5_000000_intimage_001.img"), test="./cuda_step5_000000_intimage_001.img")

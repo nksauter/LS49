@@ -2,8 +2,7 @@ from __future__ import division, absolute_import, print_function
 
 from LS49.sim.fdp_plot import george_sherrell
 # %%% boilerplate context: specialize to packaged big data %%%
-import os
-ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+from LS49 import ls49_big_data
 from LS49.sim import step5_pad
 step5_pad.big_data = ls49_big_data
 from LS49.sim.step5_pad import full_path

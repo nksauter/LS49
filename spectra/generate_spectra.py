@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 # directory location for reference files
-ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+from LS49 import ls49_big_data
 
 def get_results():
   import six

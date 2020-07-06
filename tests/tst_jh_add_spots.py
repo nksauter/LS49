@@ -13,7 +13,7 @@ def run_monochromatic():
 
 if __name__=="__main__":
   run_monochromatic()
-  ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+  from LS49 import ls49_big_data
   compare_two_images(reference=os.path.join(ls49_big_data,"reference","step5_000000.img.gz"), test="./jh_step5_000000.img.gz")
   # test the raw photons due to Bragg scatter:
   compare_two_images(reference=os.path.join(ls49_big_data,"reference","step5_000000_intimage_001.img"), test="./jh_step5_000000_intimage_001.img")

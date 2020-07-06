@@ -3,7 +3,7 @@ from six.moves import cPickle
 import os
 import six
 
-ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+from LS49 import ls49_big_data
 
 def get_pdb_lines():
   return open(os.path.join(ls49_big_data,"1m2a.pdb"),"r").read()

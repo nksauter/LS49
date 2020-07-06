@@ -6,7 +6,7 @@ import six
 def get_pdb_lines():
   return open(os.path.join(ls49_big_data,"1m2a.pdb"),"r").read()
 
-ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+from LS49 import ls49_big_data
 
 from LS49.sim.fdp_plot import george_sherrell
 Fe_oxidized_model = george_sherrell(os.path.join(ls49_big_data,"data_sherrell/pf-rd-ox_fftkk.out"))

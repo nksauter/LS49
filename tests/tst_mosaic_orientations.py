@@ -7,7 +7,7 @@ import math
 from scitbx.matrix import col
 from libtbx.test_utils import approx_equal
 
-ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+from LS49 import ls49_big_data
 filename = "mosaic_domains.pickle"
 
 def channel_wavelength_fmodel(create):

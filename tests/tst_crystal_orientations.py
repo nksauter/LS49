@@ -4,7 +4,7 @@ from scitbx.array_family import flex
 from libtbx.test_utils import approx_equal
 import os
 
-ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+from LS49 import ls49_big_data
 filename = "crystal_orientations.pickle"
 
 def model(create):

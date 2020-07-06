@@ -5,11 +5,10 @@ from cctbx import crystal_orientation
 from simtbx.nanoBragg import nanoBragg
 import scitbx
 import math
-import os
 
 from LS49.sim import step5_pad
 from LS49.sim import step4_pad
-ls49_big_data = os.environ["LS49_BIG_DATA"] # get absolute path from environment
+from LS49 import ls49_big_data
 step5_pad.big_data = ls49_big_data
 step4_pad.big_data = ls49_big_data
 from LS49.sim.util_fmodel import gen_fmodel
