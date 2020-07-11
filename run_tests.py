@@ -8,7 +8,7 @@ tst_list = (
   "$D/tests/tst_structure_factors.py",
   "$D/tests/tst_sf_energies.py",
   "$D/tests/tst_mosaic_orientations.py",
-  #"$D/tests/tst_crystal_orientations.py",
+  "$D/tests/tst_crystal_orientations.py",
   "$D/tests/tst_monochromatic_image.py",
   "$D/tests/tst_polychromatic_image.py",
   "$D/tests/tst_jh_add_spots.py",
