@@ -16,11 +16,11 @@ from LS49.sim.step5_pad import data
 
 
 def tst_all(serial_no): #emulates the action of step5_pad.py in assigning a coarse orientation to each simulation event
-  mt = flex.mersenne_twister(seed=0)
-
   Nimages = 100000
+  from LS49 import legacy_random_orientations
+  random_orientations = legacy_random_orientations(Nimages)
   for iteration in range(Nimages):
-    rand_ori = sqr(mt.random_double_r3_rotation_matrix())
+    rand_ori = sqr(random_orientations[iteration])
     if serial_no == iteration:
       return rand_ori
   return None

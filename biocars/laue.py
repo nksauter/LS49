@@ -405,15 +405,16 @@ def tst_all(quick=False,prefix="step5"):
 
   #
   C = microcrystal(Deff_A = 4000, length_um = 4., beam_diameter_um = 1.0) # assume smaller than 10 um crystals
-  mt = flex.mersenne_twister(seed=0)
 
   if quick: prefix_root=prefix + "_%06d"
   else: prefix_root=prefix + "laue_%06d"
 
   Nimages = 1# 10000
+  from LS49 import legacy_random_orientations
+  random_orientations = legacy_random_orientations(Nimages)
   for iteration in range(Nimages):
     file_prefix = prefix_root%iteration
-    rand_ori = sqr(mt.random_double_r3_rotation_matrix())
+    rand_ori = sqr(random_orientations[iteration])
     run_sim2smv(prefix = file_prefix,crystal = C,spectra=iterator,rotation=rand_ori,quick=quick,rank=0)
 
 if __name__=="__main__":

@@ -18,13 +18,7 @@ from six.moves import cPickle as pickle
 json_glob = os.environ["JSON_GLOB"]
 pickle_glob = os.environ["PICKLE_GLOB"]
 
-def ersatz_all_orientations(N_total=100000):
-    ori_N_total = N_total # number of items to simulate
-    mt = flex.mersenne_twister(seed=0)
-    random_orientations = []
-    for iteration in range(ori_N_total):
-      random_orientations.append( mt.random_double_r3_rotation_matrix() )
-    return random_orientations
+from LS49 import legacy_random orientations as ersatz_all_orientations
 
 def get_item_from_key_and_glob(key,abc_glob):
       abc_file = abc_glob%key

@@ -293,10 +293,8 @@ def get_partiality_response(key,one_index,spectra_simulation,ROI):
   N_total = 100000 # number of items to simulate
   spectra = spectra_simulation
   crystal = microcrystal(Deff_A = 4000, length_um = 4., beam_diameter_um = 1.0) # assume smaller than 10 um crystals
-  mt = flex.mersenne_twister(seed=0)
-  random_orientations = []
-  for iteration in range(N_total):
-    random_orientations.append( mt.random_double_r3_rotation_matrix() )
+  from LS49 import legacy_random_orientations
+  random_orientations = legacy_random_orientations(N_total)
 
   iterator = spectra.generate_recast_renormalized_image(image=key,energy=7120.,total_flux=1e12)
 

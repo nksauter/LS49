@@ -513,11 +513,8 @@ if __name__=="__main__":
     from LS49.spectra.generate_spectra import spectra_simulation
     SS = spectra_simulation()
 
-    ori_N_total = N_total # number of items to simulate
-    mt = flex.mersenne_twister(seed=0)
-    random_orientations = []
-    for iteration in range(ori_N_total):
-      random_orientations.append( mt.random_double_r3_rotation_matrix() )
+    from LS49 import legacy_random_orientations
+    random_orientations = legacy_random_orientations(N_total)
 
     transmitted_info = dict(spectra = SS,
                             amplitudes = A,

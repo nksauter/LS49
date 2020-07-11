@@ -1,6 +1,5 @@
 from __future__ import division
 from six.moves import range
-from scitbx.array_family import flex
 from scitbx.matrix import sqr
 from simtbx.nanoBragg import nanoBragg
 import libtbx.load_env # possibly implicit
@@ -93,12 +92,10 @@ if __name__=="__main__":
   from LS49.sim.step4_pad import microcrystal
   SS = spectra_simulation()
   C = microcrystal(Deff_A = 4000, length_um = 1., beam_diameter_um = 1.0) # assume smaller than 10 um crystals
-  mt = flex.mersenne_twister(seed=0)
-  random_orientations = []
   N_total = 20160
   N_stride = 70 # total number of jobs
-  for iteration in range(N_total):
-    random_orientations.append( mt.random_double_r3_rotation_matrix() )
+  from LS49 import legacy_random_orientations
+  random_orientations = legacy_random_orientations(N_total)
 
   import sys
   job_no = int(sys.argv[1])

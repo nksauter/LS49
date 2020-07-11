@@ -1,6 +1,5 @@
 from __future__ import division, print_function
 from six.moves import range
-from scitbx.array_family import flex
 from scitbx.matrix import sqr
 import libtbx.load_env # possibly implicit
 from cctbx import crystal
@@ -52,10 +51,8 @@ if __name__=="__main__":
     print("hello2 from rank %d of %d"%(rank,size))
     SS = spectra_simulation()
     C = microcrystal(Deff_A = 4000, length_um = 4., beam_diameter_um = 1.0) # assume smaller than 10 um crystals
-    mt = flex.mersenne_twister(seed=0)
-    random_orientations = []
-    for iteration in range(N_total):
-      random_orientations.append( mt.random_double_r3_rotation_matrix() )
+    from LS49 import legacy_random_orientations
+    random_orientations = legacy_random_orientations(N_total)
     transmitted_info = dict(spectra = SS,
                             crystal = C,
                             random_orientations = random_orientations)
