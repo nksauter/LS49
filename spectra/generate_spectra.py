@@ -82,11 +82,11 @@ class spectra_simulation:
     for image in range(min(nlimit, self.N)):
       print(image,"ebeam = %7.2f eV"%(self.R["energy"][image]),"%5.1f%% of average pulse intensity"%(100.*
         self.bk_subtracted_sum[image]/self.average_integrated))
-      if axis is "idx":
+      if axis == "idx":
         plt.plot(range(self.NS),self.R['spectra'][image],"b-")
         plt.xlabel('Channel')
         plt.xlim([0,self.NS])
-      elif axis is "energy":
+      elif axis == "energy":
         plt.plot(spectrum_fitted_energy,self.R['spectra'][image],"b-")
         plt.xlabel('Energy (eV)')
         ebeam, = plt.plot([self.R["energy"][image],self.R["energy"][image]],
