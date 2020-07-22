@@ -9,20 +9,31 @@ tst_list = (
   "$D/tests/tst_sf_energies.py",
   "$D/tests/tst_mosaic_orientations.py",
   "$D/tests/tst_crystal_orientations.py",
-  "$D/tests/tst_monochromatic_image.py",  #OpenMP (optional)
-  "$D/tests/tst_polychromatic_image.py",  #OpenMP (required)
   "$D/tests/tst_jh_add_spots.py",
-  ["$D/tests/tst_cpu_add_spots_double_precision.py","mono"],  #OpenMP (optional)
-  ["$D/tests/tst_cpu_add_spots_double_precision.py","poly"],  #OpenMP (required)
   )
+
+OpenMP_optional = [
+    "$D/tests/tst_monochromatic_image.py",  #OpenMP (optional)
+    ["$D/tests/tst_cpu_add_spots_double_precision.py","mono"],  #OpenMP (optional)
+  ]
+
+OpenMP_required = [
+    "$D/tests/tst_polychromatic_image.py",  #OpenMP (required)
+    ["$D/tests/tst_cpu_add_spots_double_precision.py","poly"],  #OpenMP (required)
+  ]
+
+if libtbx.env.build_options.enable_openmp_if_possible:
+  tst_list_parallel = OpenMP_optional + OpenMP_required
+else:
+  tst_list = tst_list + OpenMP_optional
 
 OPT = libtbx.env.build_options
 if OPT.enable_cuda:
-  tst_list = tst_list + (
+  tst_list_parallel = tst_list_parallel + [
   ["$D/tests/tst_cuda_add_spots.py","mono"],
   ["$D/tests/tst_cuda_add_spots.py","poly"],
   # Laue hasn't worked recently, return to the issue later ["$D/tests/tst_cuda_add_spots.py","laue"]
-  )
+  ]
 
 def run_standalones():
   build_dir = libtbx.env.under_build("LS49")
