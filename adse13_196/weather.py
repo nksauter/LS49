@@ -71,11 +71,12 @@ def run(params):
     for line in open(os.path.join(root,filename)):
       if not line.startswith('idx------finis-------->'): continue
       try:
-        ts = float(line.strip().split()[4])
+        _, _, _, _, ts, _, elapsed = line.strip().split()
+        ts = float(ts)
       except ValueError:
         continue
       if reference is None:
-        reference = ts
+        reference = ts - float(elapsed)
 
       status = 'done'
       if status in ['stop','done','fail']:
