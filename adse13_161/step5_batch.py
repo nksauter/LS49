@@ -5,10 +5,9 @@ import libtbx.load_env # possibly implicit
 from cctbx import crystal
 from time import time
 from omptbx import omp_get_num_procs
-import cProfile
 
 # %%% boilerplate specialize to packaged big data %%%
-import os, io, sys
+import os
 from LS49.adse13_161 import step5_pad
 from LS49.sim import step4_pad
 from LS49.spectra import generate_spectra
@@ -33,8 +32,12 @@ def tst_one(image,spectra,crystal,random_orientation):
   run_sim2smv(prefix = file_prefix,crystal = crystal,spectra=iterator,rotation=rand_ori,quick=quick,rank=rank)
 
 if __name__=="__main__":
-  pr = cProfile.Profile()
-  pr.enable()
+  log_by_rank = bool(int(os.environ.get("LOG_BY_RANK",0)))
+  if log_by_rank:
+    import io, sys
+    import cProfile
+    pr = cProfile.Profile()
+    pr.enable()
 
   from mpi4py import MPI
   comm = MPI.COMM_WORLD
@@ -66,11 +69,12 @@ if __name__=="__main__":
   comm.barrier()
   parcels = list(range(rank,N_total,N_stride))
 
-  log_path = "rank_%d.log"%rank
-  error_path = "rank_%d.err"%rank
-  print("Rank %d redirecting stdout/stderr to"%rank, log_path, error_path)
-  sys.stdout = io.TextIOWrapper(open(log_path,'ab', 0), write_through=True)
-  sys.stderr = io.TextIOWrapper(open(error_path,'ab', 0), write_through=True)
+  if log_by_rank:
+    log_path = "rank_%d.log"%rank
+    error_path = "rank_%d.err"%rank
+    print("Rank %d redirecting stdout/stderr to"%rank, log_path, error_path)
+    sys.stdout = io.TextIOWrapper(open(log_path,'ab', 0), write_through=True)
+    sys.stderr = io.TextIOWrapper(open(error_path,'ab', 0), write_through=True)
   while len(parcels)>0:
     import random
     idx = random.choice(parcels)
@@ -82,6 +86,6 @@ if __name__=="__main__":
     parcels.remove(idx)
     print("idx------finis-------->",idx,"rank",rank,time(),"elapsed",time()-cache_time)
   print("OK exiting rank",rank,"at",datetime.datetime.now(),"seconds elapsed",time()-start_elapse)
-
-  pr.disable()
-  pr.dump_stats("cpu_%d.prof"%rank)
+  if log_by_rank:
+    pr.disable()
+    pr.dump_stats("cpu_%d.prof"%rank)

@@ -18,6 +18,7 @@
 # -n, tasks to run; -N number of nodes; -c cpus per task;
 # n = N x tasks_per_node (should be 40 tasks per node for Cori-gpu)
 
+export LOG_BY_RANK=1 # Use Aaron's profiler/rank logger
 export N_SIM=240 # total number of images to simulate
 export ADD_SPOTS_ALGORITHM=cuda # cuda or JH or NKS
 export DEVICES_PER_NODE=8
