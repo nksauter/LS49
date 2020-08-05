@@ -13,11 +13,13 @@ over OpenMP threads.
 Figure of Merit:  The total wall time for the simulation of 100,000 diffraction patterns, using 5% of the nodes on host computer.  This Table
 will also be included in the upcoming paper:
 
-| Host         | Elapsed |Nodes|MPI ranks |OpenMP threads/rank |Mean time/task|Mean time/rank=0 task|Effective throughput|
-|--------------|---------|-----|----------|--------------------|--------------|---------------------|--------------------|
-| edison       |  12.3 h | 280 |  6720    |  2                 | 2865 s       | 1950 s              | 2.26 Hz            |
-| cori/haswell |  15.5 h | 120 |  3840    |  2                 | 1855 s       | 2062 s              | 1.79 Hz            |
-| cori/knl     |   7.2 h | 484 |  8228    | 16                 | 1948 s       | 1991 s              | 3.86 Hz            |
+| Host         | Elapsed |Nodes|MPI ranks |HW model |Mean time/task|Effective throughput|
+|--------------|---------|-----|----------|---------|--------------|--------------------|
+| edison       |  12.3 h | 280 |  6720    | OpenMP  | 2865 s       | 2.26 Hz            |
+| cori/haswell |  15.5 h | 120 |  3840    | OpenMP  | 1855 s       | 1.79 Hz            |
+| cori/knl     |   7.2 h | 484 |  8228    | OpenMP  | 1948 s       | 3.86 Hz            |
+| <span style="color: red;">summit/GPU   |   0.5 h | 230 |  9660    |  GPU       |   97 s       | 100  Hz            |
+| summit/GPU   |   3 min | 230 |  9660    |  GPU       |   10 s       | 1000 Hz</span>            |
 
 ### New results on Cori GPU node, August 2019
 
