@@ -91,8 +91,8 @@ class gen_fmodel(object):
     #
     # take a detour to insist on calculating anomalous contribution of every atom
     scatterers = xray_structure.scatterers()
+    from cctbx.eltbx import sasaki, henke
     for sc in scatterers:
-      from cctbx.eltbx import sasaki, henke
       #expected_sasaki = sasaki.table(sc.element_symbol()).at_angstrom(wavelength)
       expected_henke = henke.table(sc.element_symbol()).at_angstrom(wavelength)
       sc.fp = expected_henke.fp()
