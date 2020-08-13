@@ -14,7 +14,7 @@ def run_monochromatic():
   from LS49.sim.step5_pad import tst_all
   tst_all(quick=True)
 
-def compare_two_images(reference, test, tolerance_count=10):
+def compare_two_images(reference, test, tolerance_count=10, verbose=True):
   print ("Comparing",reference,test)
   try:
     from dxtbx.format.Registry import Registry
@@ -33,7 +33,7 @@ def compare_two_images(reference, test, tolerance_count=10):
     beam.append( instance.get_beam() )
     detector.append( instance.get_detector() )
     data.append( instance.get_raw_data() )
-    if True: #optional test
+    if verbose: #optional test
       print (beam[-1])
       print (instance.get_goniometer())
       print (detector[-1])
