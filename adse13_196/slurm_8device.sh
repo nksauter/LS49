@@ -24,6 +24,6 @@ export ADD_SPOTS_ALGORITHM=cuda # cuda or JH or NKS
 export DEVICES_PER_NODE=8
 mkdir $SLURM_JOB_ID; cd $SLURM_JOB_ID
 date;ls
-srun -n 40 -c 2 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_161/step5_batch.py
+srun -n 40 -c 2 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_196/step5_batch.py
 date;ls
 sleep 5
