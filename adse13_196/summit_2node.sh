@@ -15,7 +15,7 @@ export ADD_SPOTS_ALGORITHM=cuda # cuda or JH or NKS
 export DEVICES_PER_NODE=1
 date;pwd;ls
 jsrun -n 6 -a 7 -c 7 -r 6 -g 1 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_196/test_mpi.py
-jsrun -n 12 -a 7 -c 7 -r 6 -g 1 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_161/step5_batch.py
+jsrun -n 12 -a 7 -c 7 -r 6 -g 1 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_196/step5_batch.py
 jsrun -n 6 -a 7 -c 7 -r 6 -g 1 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_196/test_mpi.py
 date;pwd;ls
 # -alloc_flags "gpumps" The GPU devices can be accessed by multiple MPI ranks
