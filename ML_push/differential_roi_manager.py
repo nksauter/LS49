@@ -179,7 +179,7 @@ class differential_roi_manager(object):
 
     self.SIM.region_of_interest = ROI
 
-    from boost.python import streambuf
+    from boost_adaptbx.boost.python import streambuf
     self.SIM.printout=True # only for the purpose of getting the P1 Miller index and structure factor
     fast = ROI[1][0] + (ROI[1][1]-ROI[1][0])//2
     slow = ROI[0][0] + (ROI[0][1]-ROI[0][0])//2

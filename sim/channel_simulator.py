@@ -6,7 +6,7 @@ from scitbx.matrix import sqr, col
 from scitbx.array_family import flex
 from simtbx.nanoBragg import shapetype
 from libtbx.development.timers import Profiler
-from boost.python import streambuf # will deposit printout into dummy StringIO as side effect
+from boost_adaptbx.boost.python import streambuf # will deposit printout into dummy StringIO as side effect
 
 
 class ChannelSimulator:

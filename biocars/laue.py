@@ -117,7 +117,7 @@ class channel_pixels:
   P = Profiler("nanoBragg")
   if add_spots_algorithm is "NKS":
     print ("USING NKS")
-    from boost.python import streambuf # will deposit printout into dummy StringIO as side effect
+    from boost_adaptbx.boost.python import streambuf # will deposit printout into dummy StringIO as side effect
     SIM.add_nanoBragg_spots_nks(streambuf(StringIO()))
   elif add_spots_algorithm is "JH":
     print ("USING JH")

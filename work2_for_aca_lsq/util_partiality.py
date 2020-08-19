@@ -74,7 +74,7 @@ def channel_pixels(ROI,wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,
   fast = ROI[1][0] + (ROI[1][1]-ROI[1][0])//2
   slow = ROI[0][0] + (ROI[0][1]-ROI[0][0])//2
   SIM.printout_pixel_fastslow=(slow,fast)
-  from boost.python import streambuf # will deposit printout into output as side effect
+  from boost_adaptbx.boost.python import streambuf # will deposit printout into output as side effect
   SIM.add_nanoBragg_spots_nks(streambuf(output))
   del P
   print(("SIM count > 0",(SIM.raw_pixels>0).count(True)))
