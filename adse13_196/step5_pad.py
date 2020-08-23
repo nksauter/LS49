@@ -10,6 +10,7 @@ from cctbx import crystal
 import math
 import scitbx
 import os
+from libtbx.development.timers import Profiler
 
 big_data = "." # directory location for reference files
 def full_path(filename):
@@ -29,7 +30,7 @@ def raw_to_pickle(raw_pixels, fileout):
   with open(fileout, "wb") as F:
     pickle.dump(raw_pixels, F)
 
-from LS49.sim.step4_pad import microcrystal
+from LS49.sim.step4_pad import microcrystal # implicit import
 
 """Changes in Step4K relative to Step4
 k_sol is now hard-coded to 0.435 instead of 0.35 to reduce solvent contrast
@@ -109,7 +110,6 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,rank,sfall_channel):
   if rank==7: print("Ncells_abc=",SIM.Ncells_abc)
   SIM.Ncells_abc=temp
 
-  from libtbx.development.timers import Profiler
   if rank==7: P = Profiler("nanoBragg C++ rank %d"%(rank))
   if add_spots_algorithm == "NKS":
     from boost.python import streambuf # will deposit printout into dummy StringIO as side effect
@@ -299,18 +299,43 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
   print(crystal.domains_per_crystal)
   SIM.raw_pixels *= crystal.domains_per_crystal; # must calculate the correct scale!
 
-  for x in range(len(flux)):
-    from libtbx.development.timers import Profiler
-    if rank==7: P = Profiler("nanoBragg Python and C++ rank %d"%(rank))
+  use_exascale_api = os.environ.get("USE_EXASCALE_API", "True")
+  assert use_exascale_api in ["True","False"]
+  use_exascale_api = (use_exascale_api=="True")
+  if use_exascale_api:
+    #something new
 
-    if rank==7: print("+++++++++++++++++++++++++++++++++++++++ Wavelength",x)
-    CH = channel_pixels(wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,rank,
+    # allocate GPU arrays
+    SIM.allocate_cuda()
+
+    # loop over energies
+    for x in range(len(flux)):
+      P = Profiler("USE_EXASCALE_API nanoBragg Python and C++ rank %d"%(rank))
+
+      print("USE_EXASCALE_API+++++++++++++++++++++++ Wavelength",x)
+      # from channel_pixels function
+      SIM.wavelength_A = wavlen[x]
+      SIM.flux = flux[x]
+      SIM.Fhkl = sfall_channels[x]
+      SIM.add_energy_channel_cuda()
+
+    # deallocate GPU arrays
+    SIM.get_raw_pixels_cuda()  # updates the raw_pixels member in SIM from GPU
+    SIM.raw_pixels = SIM.raw_pixels * crystal.domains_per_crystal
+    SIM.deallocate_cuda()
+
+  else:
+    for x in range(len(flux)):
+      if rank==7: P = Profiler("nanoBragg Python and C++ rank %d"%(rank))
+
+      if rank==7: print("+++++++++++++++++++++++++++++++++++++++ Wavelength",x)
+      CH = channel_pixels(wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,rank,
                         sfall_channels[x])
-    SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal
-    CHDBG_singleton.extract(channel_no=x, data=CH.raw_pixels)
-    CH.free_all()
+      SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal
+      CHDBG_singleton.extract(channel_no=x, data=CH.raw_pixels)
+      CH.free_all()
 
-    if rank==7: del P
+      if rank==7: del P
 
   # image 1: crystal Bragg scatter
   if quick or save_bragg:  SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
