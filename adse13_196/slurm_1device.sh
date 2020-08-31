@@ -2,13 +2,13 @@
 
 #SBATCH -q special    # regular or special queue
 #SBATCH -N 1          # Number of nodes
-#SBATCH -t 01:10:00   # wall clock time limit
+#SBATCH -t 00:15:00   # wall clock time limit
 #SBATCH -J test_gpu_job
 #SBATCH -L SCRATCH    # job requires SCRATCH files
 #SBATCH -C gpu
 #SBATCH -A m1759      # allocation
-#SBATCH -G 8          # devices per node
-#SBATCH -c 80         # total threads requested per node
+#SBATCH -G 1          # devices per node
+#SBATCH -c 10         # total threads requested per node
 #SBATCH -o slurm%j.out
 #SBATCH -e slurm%j.err
 #SBATCH --mail-user=nksauter@lbl.gov
@@ -20,15 +20,12 @@
 
 export USE_EXASCALE_API=True # "True" or "False" use granular host/device memory transfer
 export LOG_BY_RANK=1 # Use Aaron's profiler/rank logger
-export N_SIM=240 # total number of images to simulate
+export N_SIM=30 # total number of images to simulate
 export ADD_SPOTS_ALGORITHM=cuda # cuda or JH or NKS
-export DEVICES_PER_NODE=8
+export DEVICES_PER_NODE=1
 mkdir $SLURM_JOB_ID; cd $SLURM_JOB_ID
 date;ls
-srun -n 40 -c 2 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_196/step5_batch.py
-
-# Reproduce behavior prior to adse13-161 Python reorg that pre-computes energy channels.
-#srun -n 40 -c 2 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_161/step5_batch.py
-
+srun -n 5 -c 2 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_196/step5_batch.py
 date;ls
 sleep 5
+

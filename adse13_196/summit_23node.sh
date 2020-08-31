@@ -9,6 +9,7 @@ cd $WORK
 mkdir ${LSB_JOBID}
 cd ${LSB_JOBID}
 
+export USE_EXASCALE_API=True # "True" or "False" use granular host/device memory transfer
 export LOG_BY_RANK=1 # Use Aaron's profiler/rank logger
 export N_SIM=10000 # total number of images to simulate
 export ADD_SPOTS_ALGORITHM=cuda # cuda or JH or NKS

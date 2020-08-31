@@ -77,7 +77,7 @@ def write_safe(fname):
 
 add_spots_algorithm = str(os.environ.get("ADD_SPOTS_ALGORITHM"))
 def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,rank,sfall_channel):
-  if rank==7: print("USING scatterer-specific energy-dependent scattering factors")
+  if rank in [0, 7]: print("USING scatterer-specific energy-dependent scattering factors")
 
   SIM = nanoBragg(detpixels_slowfast=(3000,3000),pixel_size_mm=0.11,Ncells_abc=(N,N,N),
     wavelength_A=wavelength_A,verbose=0)
@@ -107,10 +107,10 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,rank,sfall_channel):
   # assumes round beam
   SIM.beamsize_mm=0.003 #cannot make this 3 microns; spots are too intense
   temp=SIM.Ncells_abc
-  if rank==7: print("Ncells_abc=",SIM.Ncells_abc)
+  if rank in [0, 7]: print("Ncells_abc=",SIM.Ncells_abc)
   SIM.Ncells_abc=temp
 
-  if rank==7: P = Profiler("nanoBragg C++ rank %d"%(rank))
+  if rank in [0, 7]: P = Profiler("nanoBragg C++ rank %d"%(rank))
   if add_spots_algorithm == "NKS":
     from boost.python import streambuf # will deposit printout into dummy StringIO as side effect
     SIM.add_nanoBragg_spots_nks(streambuf(StringIO()))
@@ -123,7 +123,7 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,rank,sfall_channel):
     #  os.system("nvidia-smi")
     SIM.add_nanoBragg_spots_cuda()
   else: raise Exception("unknown spots algorithm")
-  if rank==7: del P
+  if rank in [0, 7]: del P
   return SIM
 
 from LS49.sim.debug_utils import channel_extractor
@@ -314,28 +314,32 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
 
       print("USE_EXASCALE_API+++++++++++++++++++++++ Wavelength",x)
       # from channel_pixels function
+      devices_per_node = int(os.environ["DEVICES_PER_NODE"])
+      SIM.device_Id = rank%devices_per_node
       SIM.wavelength_A = wavlen[x]
       SIM.flux = flux[x]
       SIM.Fhkl = sfall_channels[x]
       SIM.add_energy_channel_cuda()
+      del P
 
     # deallocate GPU arrays
     SIM.get_raw_pixels_cuda()  # updates the raw_pixels member in SIM from GPU
     SIM.raw_pixels = SIM.raw_pixels * crystal.domains_per_crystal
     SIM.deallocate_cuda()
-
+    SIM.wavelength_A = wavelength_A # return to canonical energy for subsequent background
+    SIM.Amatrix_RUB = Amatrix_rot # return to canonical orientation
   else:
     for x in range(len(flux)):
-      if rank==7: P = Profiler("nanoBragg Python and C++ rank %d"%(rank))
+      if rank in [0, 7]: P = Profiler("nanoBragg Python and C++ rank %d"%(rank))
 
-      if rank==7: print("+++++++++++++++++++++++++++++++++++++++ Wavelength",x)
+      if rank in [0, 7]: print("+++++++++++++++++++++++++++++++++++++++ Wavelength",x)
       CH = channel_pixels(wavlen[x],flux[x],N,UMAT_nm,Amatrix_rot,rank,
                         sfall_channels[x])
       SIM.raw_pixels += CH.raw_pixels * crystal.domains_per_crystal
       CHDBG_singleton.extract(channel_no=x, data=CH.raw_pixels)
       CH.free_all()
 
-      if rank==7: del P
+      if rank in [0, 7]: del P
 
   # image 1: crystal Bragg scatter
   if quick or save_bragg:  SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
