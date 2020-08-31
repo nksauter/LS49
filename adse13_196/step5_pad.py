@@ -304,6 +304,8 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
   use_exascale_api = (use_exascale_api=="True")
   if use_exascale_api:
     #something new
+    devices_per_node = int(os.environ["DEVICES_PER_NODE"])
+    SIM.device_Id = rank%devices_per_node
 
     # allocate GPU arrays
     SIM.allocate_cuda()
@@ -314,8 +316,6 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
 
       print("USE_EXASCALE_API+++++++++++++++++++++++ Wavelength",x)
       # from channel_pixels function
-      devices_per_node = int(os.environ["DEVICES_PER_NODE"])
-      SIM.device_Id = rank%devices_per_node
       SIM.wavelength_A = wavlen[x]
       SIM.flux = flux[x]
       SIM.Fhkl = sfall_channels[x]
