@@ -302,6 +302,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
   use_exascale_api = os.environ.get("USE_EXASCALE_API", "True")
   assert use_exascale_api in ["True","False"]
   use_exascale_api = (use_exascale_api=="True")
+  QQ = Profiler("nanoBragg Bragg spots rank %d"%(rank))
   if use_exascale_api:
     #something new
     devices_per_node = int(os.environ["DEVICES_PER_NODE"])
@@ -341,6 +342,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
 
       if rank in [0, 7]: del P
 
+  QQ = Profiler("nanoBragg background rank %d"%(rank))
   # image 1: crystal Bragg scatter
   if quick or save_bragg:  SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
 
@@ -383,6 +385,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
   #SIM.apply_psf()
   print("One pixel-->",SIM.raw_pixels[500000])
 
+  QQ = Profiler("nanoBragg noise rank %d"%(rank))
   # at this point we scale the raw pixels so that the output array is on an scale from 0 to 50000.
   # that is the default behavior (intfile_scale<=0), otherwise it applies intfile_scale as a multiplier on an abs scale.
   if quick:  SIM.to_smv_format(fileout=prefix + "_intimage_003.img")
@@ -399,6 +402,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
   print("detector_psf_fwhm_mm=",SIM.detector_psf_fwhm_mm)
   print("detector_psf_kernel_radius_pixels=",SIM.detector_psf_kernel_radius_pixels)
   SIM.add_noise() #converts phtons to ADU.
+  del QQ
 
   print("raw_pixels=",SIM.raw_pixels)
   extra = "PREFIX=%s;\nRANK=%d;\n"%(prefix,rank)
