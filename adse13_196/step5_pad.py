@@ -76,6 +76,8 @@ def write_safe(fname):
   return (not os.path.isfile(fname)) and (not os.path.isfile(fname+".gz"))
 
 add_spots_algorithm = str(os.environ.get("ADD_SPOTS_ALGORITHM"))
+add_background_algorithm = str(os.environ.get("ADD_BACKGROUND_ALGORITHM","jh"))
+assert add_background_algorithm in ["jh","sort_stable","cuda"]
 def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,rank,sfall_channel):
   if rank in [0, 7]: print("USING scatterer-specific energy-dependent scattering factors")
 
@@ -294,6 +296,11 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
   print("interpolate=",SIM.interpolate)
   print("integral_form=",SIM.integral_form)
 
+  # rough approximation to water: interpolation points for sin(theta/lambda) vs structure factor
+  water_bg = flex.vec2_double([(0,2.57),(0.0365,2.58),(0.07,2.8),(0.12,5),(0.162,8),(0.2,6.75),(0.18,7.32),(0.216,6.75),(0.236,6.5),(0.28,4.5),(0.3,4.3),(0.345,4.36),(0.436,3.77),(0.5,3.17)])
+  # rough approximation to air
+  air_bg = flex.vec2_double([(0,14.1),(0.045,13.5),(0.174,8.35),(0.35,4.78),(0.5,4.22)])
+
   # simulated crystal is only 125 unit cells (25 nm wide)
   # amplify spot signal to simulate physical crystal of 4000x larger: 100 um (64e9 x the volume)
   print(crystal.domains_per_crystal)
@@ -322,13 +329,30 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
       SIM.Fhkl = sfall_channels[x]
       SIM.add_energy_channel_cuda()
       del P
+    SIM.scale_in_place_cuda(crystal.domains_per_crystal) # apply scale directly on GPU
+    SIM.wavelength_A = wavelength_A # return to canonical energy for subsequent background
+
+    if add_background_algorithm == "cuda":
+      QQ = Profiler("nanoBragg background rank %d"%(rank))
+      SIM.Fbg_vs_stol = water_bg
+      SIM.amorphous_sample_thick_mm = 0.1
+      SIM.amorphous_density_gcm3 = 1
+      SIM.amorphous_molecular_weight_Da = 18
+      SIM.flux=1e12
+      SIM.beamsize_mm=0.003 # square (not user specified)
+      SIM.exposure_s=1.0 # multiplies flux x exposure
+      SIM.add_background_cuda()
+      SIM.Fbg_vs_stol = air_bg
+      SIM.amorphous_sample_thick_mm = 10 # between beamstop and collimator
+      SIM.amorphous_density_gcm3 = 1.2e-3
+      SIM.amorphous_sample_molecular_weight_Da = 28 # nitrogen = N2
+      SIM.add_background_cuda()
 
     # deallocate GPU arrays
-    SIM.get_raw_pixels_cuda()  # updates the raw_pixels member in SIM from GPU
-    SIM.raw_pixels = SIM.raw_pixels * crystal.domains_per_crystal
+    SIM.get_raw_pixels_cuda()  # updates SIM.raw_pixels from GPU
     SIM.deallocate_cuda()
-    SIM.wavelength_A = wavelength_A # return to canonical energy for subsequent background
     SIM.Amatrix_RUB = Amatrix_rot # return to canonical orientation
+    del QQ
   else:
     for x in range(len(flux)):
       if rank in [0, 7]: P = Profiler("nanoBragg Python and C++ rank %d"%(rank))
@@ -342,36 +366,33 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
 
       if rank in [0, 7]: del P
 
-  QQ = Profiler("nanoBragg background rank %d"%(rank))
-  # image 1: crystal Bragg scatter
-  if quick or save_bragg:  SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
+  if add_background_algorithm in ["jh","sort_stable"]:
+    QQ = Profiler("nanoBragg background rank %d"%(rank))
+    # image 1: crystal Bragg scatter
+    if quick or save_bragg:  SIM.to_smv_format(fileout=prefix + "_intimage_001.img")
+    if save_bragg: raw_to_pickle(SIM.raw_pixels, fileout=prefix + "_dblprec_001.pickle")
 
-  if save_bragg: raw_to_pickle(SIM.raw_pixels, fileout=prefix + "_dblprec_001.pickle")
+    SIM.Fbg_vs_stol = water_bg
+    SIM.amorphous_sample_thick_mm = 0.1
+    SIM.amorphous_density_gcm3 = 1
+    SIM.amorphous_molecular_weight_Da = 18
+    SIM.flux=1e12
+    SIM.beamsize_mm=0.003 # square (not user specified)
+    SIM.exposure_s=1.0 # multiplies flux x exposure
+    SIM.add_background(sort_stable=(add_background_algorithm=="sort_stable"))
+    if quick:  SIM.to_smv_format(fileout=prefix + "_intimage_002.img")
 
-  # rough approximation to water: interpolation points for sin(theta/lambda) vs structure factor
-  bg = flex.vec2_double([(0,2.57),(0.0365,2.58),(0.07,2.8),(0.12,5),(0.162,8),(0.2,6.75),(0.18,7.32),(0.216,6.75),(0.236,6.5),(0.28,4.5),(0.3,4.3),(0.345,4.36),(0.436,3.77),(0.5,3.17)])
-  SIM.Fbg_vs_stol = bg
-  SIM.amorphous_sample_thick_mm = 0.1
-  SIM.amorphous_density_gcm3 = 1
-  SIM.amorphous_molecular_weight_Da = 18
-  SIM.flux=1e12
-  SIM.beamsize_mm=0.003 # square (not user specified)
-  SIM.exposure_s=1.0 # multiplies flux x exposure
-  SIM.add_background()
-  if quick:  SIM.to_smv_format(fileout=prefix + "_intimage_002.img")
-
-  # rough approximation to air
-  bg = flex.vec2_double([(0,14.1),(0.045,13.5),(0.174,8.35),(0.35,4.78),(0.5,4.22)])
-  SIM.Fbg_vs_stol = bg
-  #SIM.amorphous_sample_thick_mm = 35 # between beamstop and collimator
-  SIM.amorphous_sample_thick_mm = 10 # between beamstop and collimator
-  SIM.amorphous_density_gcm3 = 1.2e-3
-  SIM.amorphous_sample_molecular_weight_Da = 28 # nitrogen = N2
-  print("amorphous_sample_size_mm=",SIM.amorphous_sample_size_mm)
-  print("amorphous_sample_thick_mm=",SIM.amorphous_sample_thick_mm)
-  print("amorphous_density_gcm3=",SIM.amorphous_density_gcm3)
-  print("amorphous_molecular_weight_Da=",SIM.amorphous_molecular_weight_Da)
-  SIM.add_background()
+    SIM.Fbg_vs_stol = air_bg
+    #SIM.amorphous_sample_thick_mm = 35 # between beamstop and collimator
+    SIM.amorphous_sample_thick_mm = 10 # between beamstop and collimator
+    SIM.amorphous_density_gcm3 = 1.2e-3
+    SIM.amorphous_sample_molecular_weight_Da = 28 # nitrogen = N2
+    print("amorphous_sample_size_mm=",SIM.amorphous_sample_size_mm)
+    print("amorphous_sample_thick_mm=",SIM.amorphous_sample_thick_mm)
+    print("amorphous_density_gcm3=",SIM.amorphous_density_gcm3)
+    print("amorphous_molecular_weight_Da=",SIM.amorphous_molecular_weight_Da)
+    SIM.add_background(sort_stable=(add_background_algorithm=="sort_stable"))
+    del QQ
 
   #apply beamstop mask here
 
