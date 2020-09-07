@@ -10,15 +10,16 @@ mkdir ${LSB_JOBID}
 cd ${LSB_JOBID}
 
 export USE_EXASCALE_API=True # "True" or "False" use granular host/device memory transfer
-export LOG_BY_RANK=1 # Use Aaron's profiler/rank logger
+export LOG_BY_RANK=1 # Use Aaron's rank logger
+export RANK_PROFILE=0 # 0 or 1 Use cProfiler, default 1
 export N_SIM=240 # total number of images to simulate
 export ADD_SPOTS_ALGORITHM=cuda # cuda or JH or NKS
 export DEVICES_PER_NODE=1
-date;pwd;ls
+echo "jobstart $(date)";pwd;ls
 jsrun -n 6 -a 7 -c 7 -r 6 -g 1 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_196/test_mpi.py
 jsrun -n 6 -a 7 -c 7 -r 6 -g 1 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_196/step5_batch.py
 jsrun -n 6 -a 7 -c 7 -r 6 -g 1 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_196/test_mpi.py
-date;pwd;ls
+echo "jobend $(date)";pwd
 # -alloc_flags "gpumps" The GPU devices can be accessed by multiple MPI ranks
 # DEVICES_PER_NODE=1    In the Summit architecture, the GPU DeviceID is always 0
 # -n 6                  --nrs number of resource sets, 6 per node

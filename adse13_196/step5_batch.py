@@ -46,8 +46,10 @@ def tst_one(image,spectra,crystal,random_orientation,sfall_channels):
 
 if __name__=="__main__":
   log_by_rank = bool(int(os.environ.get("LOG_BY_RANK",0)))
+  rank_profile = bool(int(os.environ.get("RANK_PROFILE",1)))
   if log_by_rank:
     import io, sys
+  if rank_profile:
     import cProfile
     pr = cProfile.Profile()
     pr.enable()
@@ -138,6 +140,6 @@ if __name__=="__main__":
     parcels.remove(idx)
     print("idx------finis-------->",idx,"rank",rank,time(),"elapsed",time()-cache_time)
   print("OK exiting rank",rank,"at",datetime.datetime.now(),"seconds elapsed",time()-start_elapse)
-  if log_by_rank:
+  if rank_profile:
     pr.disable()
     pr.dump_stats("cpu_%d.prof"%rank)
