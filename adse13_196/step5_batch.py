@@ -1,9 +1,11 @@
 from __future__ import division, print_function
+from time import time
+start_elapse = time()
+
 from six.moves import range
 from scitbx.matrix import sqr
 import libtbx.load_env # possibly implicit
 from cctbx import crystal
-from time import time
 from omptbx import omp_get_num_procs
 from scitbx.array_family import flex
 
@@ -65,7 +67,7 @@ if __name__=="__main__":
   N_stride = size # total number of worker tasks
   print("hello from rank %d of %d"%(rank,size),"with omp_threads=",omp_get_num_procs())
   import datetime
-  start_elapse = time()
+  start_comp = time()
   if rank == 0:
     print("Rank 0 time", datetime.datetime.now())
     from LS49.spectra.generate_spectra import spectra_simulation
@@ -139,7 +141,9 @@ if __name__=="__main__":
         sfall_channels=sfall_channels)
     parcels.remove(idx)
     print("idx------finis-------->",idx,"rank",rank,time(),"elapsed",time()-cache_time)
-  print("OK exiting rank",rank,"at",datetime.datetime.now(),"seconds elapsed",time()-start_elapse)
+  comm.barrier()
+  print("Overall rank",rank,"at",datetime.datetime.now(),"seconds elapsed after srun startup %.3f"%(time()-start_elapse))
+  print("Overall rank",rank,"at",datetime.datetime.now(),"seconds elapsed after Python imports %.3f"%(time()-start_comp))
   if rank_profile:
     pr.disable()
     pr.dump_stats("cpu_%d.prof"%rank)
