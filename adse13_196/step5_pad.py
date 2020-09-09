@@ -78,6 +78,7 @@ def write_safe(fname):
 add_spots_algorithm = str(os.environ.get("ADD_SPOTS_ALGORITHM"))
 add_background_algorithm = str(os.environ.get("ADD_BACKGROUND_ALGORITHM","jh"))
 assert add_background_algorithm in ["jh","sort_stable","cuda"]
+if add_background_algorithm=="cuda": assert add_spots_algorithm == "cuda"
 def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,rank,sfall_channel):
   if rank in [0, 7]: print("USING scatterer-specific energy-dependent scattering factors")
 
@@ -297,9 +298,11 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
   print("integral_form=",SIM.integral_form)
 
   # rough approximation to water: interpolation points for sin(theta/lambda) vs structure factor
-  water_bg = flex.vec2_double([(0,2.57),(0.0365,2.58),(0.07,2.8),(0.12,5),(0.162,8),(0.2,6.75),(0.18,7.32),(0.216,6.75),(0.236,6.5),(0.28,4.5),(0.3,4.3),(0.345,4.36),(0.436,3.77),(0.5,3.17)])
+  water_bg = flex.vec2_double([(0,2.57),(0.0365,2.58),(0.07,2.8),(0.12,5),(0.162,8),(0.18,7.32),(0.2,6.75),(0.216,6.75),(0.236,6.5),(0.28,4.5),(0.3,4.3),(0.345,4.36),(0.436,3.77),(0.5,3.17)])
+  assert [a[0] for a in water_bg] == sorted([a[0] for a in water_bg])
   # rough approximation to air
   air_bg = flex.vec2_double([(0,14.1),(0.045,13.5),(0.174,8.35),(0.35,4.78),(0.5,4.22)])
+  assert [a[0] for a in air_bg] == sorted([a[0] for a in air_bg])
 
   # simulated crystal is only 125 unit cells (25 nm wide)
   # amplify spot signal to simulate physical crystal of 4000x larger: 100 um (64e9 x the volume)
