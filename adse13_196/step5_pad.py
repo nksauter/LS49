@@ -132,8 +132,8 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,rank,sfall_channel):
 from LS49.sim.debug_utils import channel_extractor
 CHDBG_singleton = channel_extractor()
 
-def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=False,
-                sfall_channels=None):
+def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,
+                quick=False,save_bragg=False,sfall_channels=None):
 
   smv_fileout = prefix + ".img"
   if not quick:
@@ -310,13 +310,24 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
   SIM.raw_pixels *= crystal.domains_per_crystal; # must calculate the correct scale!
 
   use_exascale_api = os.environ.get("USE_EXASCALE_API", "True")
-  assert use_exascale_api in ["True","False"]
+  cache_fhkl_on_gpu = os.environ.get("CACHE_FHKL_ON_GPU", "True")
+  assert use_exascale_api in ["True","False"] and cache_fhkl_on_gpu in ["True","False"]
   use_exascale_api = (use_exascale_api=="True")
+  cache_fhkl_on_gpu = (cache_fhkl_on_gpu=="True")
   QQ = Profiler("nanoBragg Bragg spots rank %d"%(rank))
   if use_exascale_api:
     #something new
     devices_per_node = int(os.environ["DEVICES_PER_NODE"])
     SIM.device_Id = rank%devices_per_node
+
+    assert gpu_channels_singleton.get_deviceID()==SIM.device_Id
+    if cache_fhkl_on_gpu: #flag to switch on GPU energy channels
+      if gpu_channels_singleton.get_nchannels() == 0: # if uninitialized
+        P = Profiler("Initialize the channels singleton rank %d"%(rank))
+        for x in range(len(flux)):
+          gpu_channels_singleton.structure_factors_to_GPU_direct_cuda(
+           x, sfall_channels[x].indices(), sfall_channels[x].data())
+        del P
 
     # allocate GPU arrays
     SIM.allocate_cuda()
@@ -329,8 +340,11 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,quick=False,save_bragg=Fals
       # from channel_pixels function
       SIM.wavelength_A = wavlen[x]
       SIM.flux = flux[x]
-      SIM.Fhkl = sfall_channels[x]
-      SIM.add_energy_channel_cuda()
+      if cache_fhkl_on_gpu: # new interface, use singleton to store all-image energy channels
+        SIM.add_energy_channel_from_gpu_amplitudes_cuda(x,gpu_channels_singleton)
+      else: # old interface, host-to-device each energy channel, each image
+        SIM.Fhkl = sfall_channels[x]
+        SIM.add_energy_channel_cuda()
       del P
     SIM.scale_in_place_cuda(crystal.domains_per_crystal) # apply scale directly on GPU
     SIM.wavelength_A = wavelength_A # return to canonical energy for subsequent background
