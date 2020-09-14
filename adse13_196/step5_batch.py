@@ -30,7 +30,7 @@ from LS49.adse13_196.step5_pad import data
 # sfall_main not used?
 # evaluate air + water as a singleton
 
-def tst_one(image,spectra,crystal,random_orientation,sfall_channels):
+def tst_one(image,spectra,crystal,random_orientation,sfall_channels,gpu_channels_singleton):
 
   iterator = spectra.generate_recast_renormalized_image(image=image,energy=7120.,total_flux=1e12)
 
@@ -44,6 +44,7 @@ def tst_one(image,spectra,crystal,random_orientation,sfall_channels):
   run_sim2smv(prefix = file_prefix,
               crystal = crystal,
               spectra=iterator,rotation=rand_ori,quick=quick,rank=rank,
+              gpu_channels_singleton=gpu_channels_singleton,
               sfall_channels=sfall_channels)
 
 if __name__=="__main__":
@@ -130,6 +131,11 @@ if __name__=="__main__":
   sfall_channels = comm.bcast(sfall_info, root = 0)
 
   import random
+  from simtbx.nanoBragg import gpu_energy_channels
+  gpu_channels_singleton = gpu_energy_channels (
+    deviceId = rank % int(os.environ.get("DEVICES_PER_NODE",1)))
+    # singleton will instantiate, regardless of cuda, device count, or exascale API
+
   while len(parcels)>0:
     idx = random.choice(parcels)
     cache_time = time()
@@ -138,7 +144,7 @@ if __name__=="__main__":
     tst_one(image=idx,spectra=transmitted_info["spectra"],
         crystal=transmitted_info["crystal"],
         random_orientation=transmitted_info["random_orientations"][idx],
-        sfall_channels=sfall_channels)
+        sfall_channels=sfall_channels, gpu_channels_singleton=gpu_channels_singleton)
     parcels.remove(idx)
     print("idx------finis-------->",idx,"rank",rank,time(),"elapsed",time()-cache_time)
   comm.barrier()

@@ -24,10 +24,14 @@ export RANK_PROFILE=0 # 0 or 1 Use cProfiler, default 1
 export N_SIM=240 # total number of images to simulate
 export ADD_SPOTS_ALGORITHM=cuda # cuda or JH or NKS
 export ADD_BACKGROUND_ALGORITHM=cuda # cuda or jh or sort_stable
+export CACHE_FHKL_ON_GPU=True # "True" or "False" use single object per rank
 export DEVICES_PER_NODE=8
 mkdir $SLURM_JOB_ID; cd $SLURM_JOB_ID
 echo "jobstart $(date)";pwd;ls
 srun -n 40 -c 2 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_196/step5_batch.py
+
+# Run the following script as a standalone test of the gpu_energy_channels singleton
+#srun -n 40 -c 2 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_196/tst_gpu_channels.py
 
 # Reproduce behavior prior to adse13-161 Python reorg that pre-computes energy channels.
 #srun -n 40 -c 2 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_161/step5_batch.py
