@@ -69,30 +69,8 @@ if __name__=="__main__":
   print("hello from rank %d of %d"%(rank,size),"with omp_threads=",omp_get_num_procs())
   import datetime
   start_comp = time()
-  if rank == 0:
-    print("Rank 0 time", datetime.datetime.now())
-    from LS49.spectra.generate_spectra import spectra_simulation
-    from LS49.adse13_196.step5_pad import microcrystal
-    print("hello2 from rank %d of %d"%(rank,size))
-    SS = spectra_simulation()
-    C = microcrystal(Deff_A = 4000, length_um = 4., beam_diameter_um = 1.0) # assume smaller than 10 um crystals
-    from LS49 import legacy_random_orientations
-    random_orientations = legacy_random_orientations(N_total)
-    transmitted_info = dict(spectra = SS,
-                            crystal = C,
-                            random_orientations = random_orientations)
-  else:
-    transmitted_info = None
-  transmitted_info = comm.bcast(transmitted_info, root = 0)
-  comm.barrier()
-  parcels = list(range(rank,N_total,N_stride))
 
-  if log_by_rank:
-    log_path = "rank_%d.log"%rank
-    error_path = "rank_%d.err"%rank
-    print("Rank %d redirecting stdout/stderr to"%rank, log_path, error_path)
-    sys.stdout = io.TextIOWrapper(open(log_path,'ab', 0), write_through=True)
-    sys.stderr = io.TextIOWrapper(open(error_path,'ab', 0), write_through=True)
+  # now inside the Python imports, begin energy channel calculation
 
   wavelength_A = 1.74 # general ballpark X-ray wavelength in Angstroms
   wavlen = flex.double([12398.425/(7070.5 + w) for w in range(100)])
@@ -124,11 +102,37 @@ if __name__=="__main__":
     for report in reports:  sfall_channels.update(report)
   comm.barrier()
 
+  # finished with the calculation of channels, now construct single broadcast
+
   if rank == 0:
-    sfall_info = sfall_channels
+    print("Rank 0 time", datetime.datetime.now())
+    from LS49.spectra.generate_spectra import spectra_simulation
+    from LS49.adse13_196.step5_pad import microcrystal
+    print("hello2 from rank %d of %d"%(rank,size))
+    SS = spectra_simulation()
+    C = microcrystal(Deff_A = 4000, length_um = 4., beam_diameter_um = 1.0) # assume smaller than 10 um crystals
+    from LS49 import legacy_random_orientations
+    random_orientations = legacy_random_orientations(N_total)
+    transmitted_info = dict(spectra = SS,
+                            crystal = C,
+                            sfall_info = sfall_channels,
+                            random_orientations = random_orientations)
   else:
-    sfall_info = None
-  sfall_channels = comm.bcast(sfall_info, root = 0)
+    transmitted_info = None
+  transmitted_info = comm.bcast(transmitted_info, root = 0)
+  comm.barrier()
+  parcels = list(range(rank,N_total,N_stride))
+
+  # done with the single broadcast, now set up the rank logger
+
+  if log_by_rank:
+    log_path = "rank_%d.log"%rank
+    error_path = "rank_%d.err"%rank
+    print("Rank %d redirecting stdout/stderr to"%rank, log_path, error_path)
+    sys.stdout = io.TextIOWrapper(open(log_path,'ab', 0), write_through=True)
+    sys.stderr = io.TextIOWrapper(open(error_path,'ab', 0), write_through=True)
+
+  #  set up the rank logger, now construct the GPU cache container
 
   import random
   from simtbx.nanoBragg import gpu_energy_channels
@@ -144,7 +148,7 @@ if __name__=="__main__":
     tst_one(image=idx,spectra=transmitted_info["spectra"],
         crystal=transmitted_info["crystal"],
         random_orientation=transmitted_info["random_orientations"][idx],
-        sfall_channels=sfall_channels, gpu_channels_singleton=gpu_channels_singleton)
+        sfall_channels=transmitted_info["sfall_info"], gpu_channels_singleton=gpu_channels_singleton)
     parcels.remove(idx)
     print("idx------finis-------->",idx,"rank",rank,time(),"elapsed",time()-cache_time)
   comm.barrier()
