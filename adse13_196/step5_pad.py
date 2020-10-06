@@ -151,7 +151,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,
     print("Quick sim, lambda=%f, flux=%f"%(wavelength_A,flux[0]))
 
   # use crystal structure to initialize Fhkl array
-  sfall_channels[0].show_summary(prefix = "Amplitudes used ")
+  #sfall_channels[0].show_summary(prefix = "Amplitudes used ")
   N = crystal.number_of_cells(sfall_channels[0].unit_cell())
 
   #SIM = nanoBragg(detpixels_slowfast=(2000,2000),pixel_size_mm=0.11,Ncells_abc=(5,5,5),verbose=0)
@@ -228,7 +228,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,
   # prints out value of one pixel only.  will not render full image!
   #SIM.printout_pixel_fastslow=(500,500)
   #SIM.printout=True
-  SIM.show_params()
+  #SIM.show_params()
   # flux is always in photons/s
   SIM.flux=1e12
   SIM.exposure_s=1.0 # so total fluence is e12
@@ -328,6 +328,8 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,
           gpu_channels_singleton.structure_factors_to_GPU_direct_cuda(
            x, sfall_channels[x].indices(), sfall_channels[x].data())
         del P
+        import time
+        print("datetime for channels singleton rank %d"%(rank),time.time())
 
     # allocate GPU arrays
     SIM.allocate_cuda()
