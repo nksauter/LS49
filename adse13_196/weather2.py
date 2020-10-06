@@ -82,6 +82,25 @@ def get_log():
         end_time = time.mktime(time.strptime(" ".join(line.split()[2:]),"%a %b %d %H:%M:%S %Y"))
     print("OK")
   return float(start_time), float(end_time)
+def get_channcalc():
+  log_dir = os.path.basename(os.path.abspath("."))
+  log_file = os.path.join("..","job%s.out"%(log_dir))
+  channcalc=flex.double()
+  channrank=flex.int()
+  sbcalc = flex.double()
+  sbrank = flex.int()
+  with open(log_file,"r") as F:
+    lines = F.read().strip().split("\n")
+    for line in lines:
+      if "finished with the calculation" in line:
+        tokens = line.split()
+        channcalc.append(float(tokens[1]))
+        channrank.append(int(tokens[0]))
+      if "finished with single" in line:
+        tokens = line.split()
+        sbcalc.append(float(tokens[1]))
+        sbrank.append(int(tokens[0]))
+  return channcalc, channrank, sbcalc, sbrank
 
 
 def run(params):
@@ -94,7 +113,11 @@ def run(params):
   good_total = fail_total = 0
   good_timepoints = flex.double()
   good_elapsed = flex.double()
+  good_channels = flex.double()
+  good_logger = flex.double()
   all_rank = flex.int()
+  channels_rank = flex.int()
+  logger_rank = flex.int()
 
   for filename in os.listdir(root):
     if os.path.splitext(filename)[1] != '.log': continue
@@ -104,6 +127,14 @@ def run(params):
     counter += 1
     print (filename, rank)
     for line in open(os.path.join(root,filename)):
+      if line.startswith('datetime for channels'):
+        goodtime = float(line.split()[6])
+        good_channels.append(goodtime)
+        channels_rank.append(rank)
+      if "finished with the rank logger" in line:
+        goodtime = float(line.split()[1])
+        good_logger.append(goodtime)
+        logger_rank.append(rank)
       if not line.startswith('idx------finis-------->'): continue
       try:
         _, _, _, _, ts, _, elapsed = line.strip().split()
@@ -120,13 +151,19 @@ def run(params):
       good_elapsed.append(elapsed)
       all_rank.append(rank)
 
-
+  try:
+    chanx,chany,sbx,sby = get_channcalc()
+    plt.plot(chanx-datum, chany, 'c.', markersize="0.8")
+    plt.plot(sbx-datum, sby, 'b.', markersize="0.8")
+  except Exception: pass
+  plt.plot(good_channels-datum, channels_rank, 'r.', markersize="1")
   plt.plot(good_timepoints-datum, all_rank, 'g.', markersize="1")
+  plt.plot(good_logger-datum, logger_rank, 'k.', markersize="0.8")
   good_total = len(good_timepoints)
   max_rank = max(all_rank)
 
   sorted_elapsed = sorted(list(good_elapsed))
-  print ("the median weather time is %.5f"%(sorted_elapsed[len(sorted_elapsed)//2]))
+  print ("the median weather time is %.5f"%(sorted_elapsed[len(sorted_elapsed)//2]), "for job", os.path.basename(os.path.abspath(".")))
   print("Five number summary of %d good image processing times:"%good_total, ["%.5f"%a for a in five_number_summary(good_elapsed)])
 
   plt.plot([0., max(good_timepoints)-datum],[-(1./30.)*max_rank,-(1./30.)*max_rank], 'r-', label="foreach image")
@@ -150,9 +187,21 @@ def run(params):
   plt.plot([script_start-datum, script_finis-datum],[-(4./30.)*max_rank,-(4./30.)*max_rank], color = "magenta", label="jsrun time")
   print ("The total script time is %.1f seconds, with %.1f sec for ahead and %.1f sec trailing"%(
            script_finis - script_start, py_start - script_start, script_finis - py_finish ))
-
-
-  plt.title(params.plot_title)
+  print ("""Diff times:
+A: startup jsrun  %6.2f
+B: Python imports %6.2f
+C: MPI gather SF  %6.2f
+D: MPI broadcast  %6.2f
+E: logger redirect%6.2f, mean %6.2f
+F: set CUDA device%6.2f
+G: big data to GPU%6.2f, mean %6.2f
+"""%(py_start - script_start, mpi_start - py_start, flex.max(chanx) - mpi_start, flex.max(sbx) - flex.max(chanx),
+     flex.max(good_logger) - flex.max(sbx),
+     flex.mean(good_logger - flex.max(sbx)),
+     datum - flex.max(good_logger), flex.max(good_channels-datum), flex.mean(good_channels-datum)
+)
+  )
+  plt.title(params.plot_title + " " + os.path.basename(os.path.abspath(".")))
   if params.pickle_plot:
     from libtbx.easy_pickle import dump
     dump('%s'%params.pickle_filename, fig_object)
@@ -165,4 +214,7 @@ if __name__ == '__main__':
     print (message)
     exit()
   params = params_from_phil(sys.argv[1:])
+  if not params.show_plot:
+    import matplotlib
+    matplotlib.use("pdf")
 run(params)

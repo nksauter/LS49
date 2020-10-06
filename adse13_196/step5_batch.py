@@ -102,7 +102,7 @@ if __name__=="__main__":
     for report in reports:  sfall_channels.update(report)
   comm.barrier()
 
-  # finished with the calculation of channels, now construct single broadcast
+  print(rank, time(), "finished with the calculation of channels, now construct single broadcast")
 
   if rank == 0:
     print("Rank 0 time", datetime.datetime.now())
@@ -123,16 +123,16 @@ if __name__=="__main__":
   comm.barrier()
   parcels = list(range(rank,N_total,N_stride))
 
-  # done with the single broadcast, now set up the rank logger
+  print(rank, time(), "finished with single broadcast, now set up the rank logger")
 
   if log_by_rank:
     log_path = "rank_%d.log"%rank
     error_path = "rank_%d.err"%rank
-    print("Rank %d redirecting stdout/stderr to"%rank, log_path, error_path)
+    #print("Rank %d redirecting stdout/stderr to"%rank, log_path, error_path)
     sys.stdout = io.TextIOWrapper(open(log_path,'ab', 0), write_through=True)
     sys.stderr = io.TextIOWrapper(open(error_path,'ab', 0), write_through=True)
 
-  #  set up the rank logger, now construct the GPU cache container
+  print(rank, time(), "finished with the rank logger, now construct the GPU cache container")
 
   import random
   from simtbx.nanoBragg import gpu_energy_channels
@@ -140,6 +140,7 @@ if __name__=="__main__":
     deviceId = rank % int(os.environ.get("DEVICES_PER_NODE",1)))
     # singleton will instantiate, regardless of cuda, device count, or exascale API
 
+  comm.barrier()
   while len(parcels)>0:
     idx = random.choice(parcels)
     cache_time = time()
