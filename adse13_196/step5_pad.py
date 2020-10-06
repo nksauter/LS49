@@ -441,7 +441,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,
   print("detector_psf_type=",SIM.detector_psf_type)
   print("detector_psf_fwhm_mm=",SIM.detector_psf_fwhm_mm)
   print("detector_psf_kernel_radius_pixels=",SIM.detector_psf_kernel_radius_pixels)
-  SIM.add_noise() #converts phtons to ADU.
+  #SIM.add_noise() #converts phtons to ADU.
   del QQ
 
   print("raw_pixels=",SIM.raw_pixels)
