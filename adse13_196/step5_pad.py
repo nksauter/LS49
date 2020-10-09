@@ -115,7 +115,7 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,rank,sfall_channel):
 
   if rank in [0, 7]: P = Profiler("nanoBragg C++ rank %d"%(rank))
   if add_spots_algorithm == "NKS":
-    from boost.python import streambuf # will deposit printout into dummy StringIO as side effect
+    from boost_adaptbx.boost.python import streambuf # will deposit printout into dummy StringIO as side effect
     SIM.add_nanoBragg_spots_nks(streambuf(StringIO()))
   elif add_spots_algorithm == "JH":
     SIM.add_nanoBragg_spots()
