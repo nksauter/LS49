@@ -125,7 +125,7 @@ def run(params):
 
     rank = int(filename.split('_')[1].split('.')[0])
     counter += 1
-    print (filename, rank)
+    if counter%100==1: print (filename, counter)
     for line in open(os.path.join(root,filename)):
       if line.startswith('datetime for channels'):
         goodtime = float(line.split()[6])
