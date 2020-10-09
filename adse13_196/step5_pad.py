@@ -132,13 +132,15 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,rank,sfall_channel):
 from LS49.sim.debug_utils import channel_extractor
 CHDBG_singleton = channel_extractor()
 
-def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,
+def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,params,
                 quick=False,save_bragg=False,sfall_channels=None):
-
   smv_fileout = prefix + ".img"
+  burst_buffer_expand_dir = os.path.expandvars(params.logger.outdir)
+  burst_buffer_fileout = os.path.join(burst_buffer_expand_dir,smv_fileout)
+  reference_fileout = os.path.join(".",smv_fileout)
   if not quick:
-    if not write_safe(smv_fileout):
-      print("File %s already exists, skipping in rank %d"%(smv_fileout,rank))
+    if not write_safe(reference_fileout):
+      print("File %s already exists, skipping in rank %d"%(reference_fileout,rank))
       return
 
   direct_algo_res_limit = 1.7
@@ -331,7 +333,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,
   del QQ
 
   extra = "PREFIX=%s;\nRANK=%d;\n"%(prefix,rank)
-  SIM.to_smv_format_py(fileout=smv_fileout,intfile_scale=1,rotmat=True,extra=extra,gz=True)
+  SIM.to_smv_format_py(fileout=burst_buffer_fileout,intfile_scale=1,rotmat=True,extra=extra,gz=True)
 
   SIM.free_all()
 

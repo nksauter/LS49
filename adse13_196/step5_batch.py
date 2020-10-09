@@ -30,7 +30,33 @@ from LS49.adse13_196.step5_pad import data
 # sfall_main not used?
 # evaluate air + water as a singleton
 
-def tst_one(image,spectra,crystal,random_orientation,sfall_channels,gpu_channels_singleton):
+def parse_input():
+  from iotbx.phil import parse
+  master_phil="""
+    logger {
+      outdir = .
+        .type = path
+        .help = Use "/mnt/bb/${USER}" for Summit NVME burst buffer
+    }
+  """
+  phil_scope = parse(master_phil)
+  # The script usage
+  import libtbx.load_env # implicit import
+  help_message = '''ADSE13-196.'''
+  usage = ""
+  '''Initialize the script.'''
+  from dials.util.options import OptionParser
+  # Create the parser
+  parser = OptionParser(
+        usage=usage,
+        phil=phil_scope,
+        epilog=help_message)
+
+  # Parse the command line. quick_parse is required for MPI compatibility
+  params, options = parser.parse_args(show_diff_phil=True,quick_parse=True)
+  return params,options
+
+def tst_one(image,spectra,crystal,random_orientation,sfall_channels,gpu_channels_singleton,params):
 
   iterator = spectra.generate_recast_renormalized_image(image=image,energy=7120.,total_flux=1e12)
 
@@ -45,9 +71,10 @@ def tst_one(image,spectra,crystal,random_orientation,sfall_channels,gpu_channels
               crystal = crystal,
               spectra=iterator,rotation=rand_ori,quick=quick,rank=rank,
               gpu_channels_singleton=gpu_channels_singleton,
-              sfall_channels=sfall_channels)
+              sfall_channels=sfall_channels,params=params)
 
 if __name__=="__main__":
+  params,options = parse_input()
   log_by_rank = bool(int(os.environ.get("LOG_BY_RANK",0)))
   rank_profile = bool(int(os.environ.get("RANK_PROFILE",1)))
   if log_by_rank:
@@ -126,8 +153,9 @@ if __name__=="__main__":
   print(rank, time(), "finished with single broadcast, now set up the rank logger")
 
   if log_by_rank:
-    log_path = "rank_%d.log"%rank
-    error_path = "rank_%d.err"%rank
+    expand_dir = os.path.expandvars(params.logger.outdir)
+    log_path = os.path.join(expand_dir,"rank_%d.log"%rank)
+    error_path = os.path.join(expand_dir,"rank_%d.err"%rank)
     #print("Rank %d redirecting stdout/stderr to"%rank, log_path, error_path)
     sys.stdout = io.TextIOWrapper(open(log_path,'ab', 0), write_through=True)
     sys.stderr = io.TextIOWrapper(open(error_path,'ab', 0), write_through=True)
@@ -149,7 +177,9 @@ if __name__=="__main__":
     tst_one(image=idx,spectra=transmitted_info["spectra"],
         crystal=transmitted_info["crystal"],
         random_orientation=transmitted_info["random_orientations"][idx],
-        sfall_channels=transmitted_info["sfall_info"], gpu_channels_singleton=gpu_channels_singleton)
+        sfall_channels=transmitted_info["sfall_info"], gpu_channels_singleton=gpu_channels_singleton,
+        params=params
+    )
     parcels.remove(idx)
     print("idx------finis-------->",idx,"rank",rank,time(),"elapsed",time()-cache_time)
   comm.barrier()
