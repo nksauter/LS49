@@ -14,7 +14,7 @@ def run_monochromatic():
   from LS49.sim.step5_pad import tst_all
   tst_all(quick=True)
 
-def compare_two_images(reference, test, tolerance_count=10, verbose=True):
+def compare_two_images(reference, test, tolerance_delta=50, tolerance_count=10, verbose_pixels=False, verbose=True):
   print ("Comparing",reference,test)
   try:
     from dxtbx.format.Registry import Registry
@@ -52,16 +52,29 @@ def compare_two_images(reference, test, tolerance_count=10, verbose=True):
 
   assert len(data[1])==len(data[0])
   diff_data = data[1]-data[0]
-  no_differences=True
-  ndiff = 0
-  for idiff,diff in enumerate(diff_data):
-    if diff!=0:
-      if ndiff < 200: print ("difference index %d:(%d,%d)"%(idiff,idiff//3000,idiff%3000),diff,data[0][idiff]) # only print the first 200 differences
-      ndiff += 1
-      no_differences=False
-  print("There are %d differences"%ndiff)
-  #assert no_differences
-  assert ndiff < tolerance_count, "There are %d differences"%ndiff
+  from scitbx.array_family import flex
+  abs_diff_data = flex.abs(diff_data)
+
+  #verbose output of diffs
+  if verbose_pixels:
+    nonzero_deltas = (abs_diff_data > 0)
+    ndiff = 0
+    for idiff,diff in enumerate(diff_data):
+      if diff!=0:
+        if ndiff < 200: print ("difference index %d:(%d,%d)"%(idiff,idiff//3000,idiff%3000),diff,data[0][idiff]) # only print the first 200 differences
+        ndiff += 1
+    print("There are %d differences"%ndiff)
+
+  # first filter, do not allow any |delta| greater than tolerance_delta
+  N_large_deltas = (abs_diff_data > tolerance_delta).count(True)
+  assert N_large_deltas == 0, "%d pixels have |delta| larger than cutoff %d"%(N_large_deltas,tolerance_delta)
+
+  # next filter, allow a maximum |delta| of tolerance_delta for no more than tolerance_count pixels
+  nonzero_deltas = (abs_diff_data > 0)
+  N_non_zero_deltas = nonzero_deltas.count(True)
+  if N_non_zero_deltas > 0:
+    print("%d pixels have |delta| up to %d"%(N_non_zero_deltas,tolerance_delta))
+  assert N_non_zero_deltas <= tolerance_count, "%d pixels have |delta| up to %d"%(N_non_zero_deltas,tolerance_delta)
 
 def compare_two_raw_images(reference, test, tol=1.E-7): # TODO: run more tests to decide on the default tolerance
   from six.moves import cPickle as pickle
