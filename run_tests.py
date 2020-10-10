@@ -29,7 +29,10 @@ else:
 
 OPT = libtbx.env.build_options
 if OPT.enable_cuda:
-  tst_list_parallel = tst_list_parallel + [
+  tst_list_parallel = [
+   "$D/adse13_196/tst_gpu_channels.py",
+   "$D/adse13_196/tst_step5_batch_single_process_GPU.py",
+  ] + tst_list_parallel + [
   ["$D/tests/tst_cuda_add_spots.py","mono"],
   ["$D/tests/tst_cuda_add_spots.py","poly"],
   # Laue hasn't worked recently, return to the issue later ["$D/tests/tst_cuda_add_spots.py","laue"]

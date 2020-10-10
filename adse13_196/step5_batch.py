@@ -56,7 +56,7 @@ def parse_input():
   params, options = parser.parse_args(show_diff_phil=True,quick_parse=True)
   return params,options
 
-def tst_one(image,spectra,crystal,random_orientation,sfall_channels,gpu_channels_singleton,params):
+def tst_one(image,spectra,crystal,random_orientation,sfall_channels,gpu_channels_singleton,rank,params):
 
   iterator = spectra.generate_recast_renormalized_image(image=image,energy=7120.,total_flux=1e12)
 
@@ -73,7 +73,7 @@ def tst_one(image,spectra,crystal,random_orientation,sfall_channels,gpu_channels
               gpu_channels_singleton=gpu_channels_singleton,
               sfall_channels=sfall_channels,params=params)
 
-if __name__=="__main__":
+def run_step5_batch(test_without_mpi=False):
   params,options = parse_input()
   log_by_rank = bool(int(os.environ.get("LOG_BY_RANK",0)))
   rank_profile = bool(int(os.environ.get("RANK_PROFILE",1)))
@@ -84,7 +84,12 @@ if __name__=="__main__":
     pr = cProfile.Profile()
     pr.enable()
 
-  from libtbx.mpi4py import MPI
+  if test_without_mpi:
+    from LS49.adse13_196.mock_mpi import mpiEmulator
+    MPI = mpiEmulator()
+  else:
+    from libtbx.mpi4py import MPI
+
   comm = MPI.COMM_WORLD
   rank = comm.Get_rank()
   size = comm.Get_size()
@@ -178,7 +183,7 @@ if __name__=="__main__":
         crystal=transmitted_info["crystal"],
         random_orientation=transmitted_info["random_orientations"][idx],
         sfall_channels=transmitted_info["sfall_info"], gpu_channels_singleton=gpu_channels_singleton,
-        params=params
+        rank=rank,params=params
     )
     parcels.remove(idx)
     print("idx------finis-------->",idx,"rank",rank,time(),"elapsed",time()-cache_time)
@@ -188,3 +193,6 @@ if __name__=="__main__":
   if rank_profile:
     pr.disable()
     pr.dump_stats("cpu_%d.prof"%rank)
+
+if __name__=="__main__":
+  run_step5_batch()
