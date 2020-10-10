@@ -14,9 +14,9 @@ from LS49.adse13_196.step5_pad import data
 # %%%%%%
 from libtbx.development.timers import Profiler
 
-def create_cpu_channels():
+def create_cpu_channels(utilize):
   wavelength_A = 1.74 # general ballpark X-ray wavelength in Angstroms
-  wavlen = flex.double([12398.425/(7070.5 + w) for w in range(10)])
+  wavlen = flex.double([12398.425/(7070.5 + w) for w in range(utilize)])
   direct_algo_res_limit = 1.7
 
   local_data = data() # later put this through broadcast
@@ -40,13 +40,13 @@ def create_cpu_channels():
     print("CPU channel",x)
   return sfall_channels
 
-def create_gpu_channels(cpu_channels):
+def create_gpu_channels(cpu_channels,utilize):
   from libtbx.mpi4py import MPI
   comm = MPI.COMM_WORLD
   rank = comm.Get_rank()
   size = comm.Get_size()
 
-  devices_per_node = int(os.environ["DEVICES_PER_NODE"])
+  devices_per_node = int(os.environ.get("DEVICES_PER_NODE", 1))
   this_device = rank%devices_per_node
 
   from simtbx.nanoBragg import gpu_energy_channels
@@ -64,7 +64,10 @@ def create_gpu_channels(cpu_channels):
           x, cpu_channels[x].indices(), cpu_channels[x].data())
       print("Finished sending to gpu %d channels"%gpu_channels_singleton.get_nchannels())
     del P
+    assert len(cpu_channels)==utilize
 
 if __name__=="__main__":
-  CPU = create_cpu_channels()
-  create_gpu_channels(CPU)
+  utilize=10
+  CPU = create_cpu_channels(utilize)
+  create_gpu_channels(CPU,utilize)
+  print ("OK")
