@@ -58,7 +58,7 @@ def parse_input():
 
 def tst_one(image,spectra,crystal,random_orientation,sfall_channels,gpu_channels_singleton,rank,params):
 
-  iterator = spectra.generate_recast_renormalized_image(image=image,energy=7120.,total_flux=1e12)
+  iterator = spectra.generate_recast_renormalized_image(image=image%100000,energy=7120.,total_flux=1e12)
 
   quick = False
   if quick: prefix_root="step5_batch_%06d"
