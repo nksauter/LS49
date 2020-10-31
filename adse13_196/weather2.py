@@ -17,6 +17,9 @@ phil_scope = parse('''
   input_path = .
     .type = str
     .help = path to where the processing results are. For example path to XXX_rgYYYY
+  prefix = job
+    .type = str
+    .help = Use "job" for Summit/LFS, "slurm" for Cori/Slurm
   num_nodes = 1
     .type = int
     .help = Number of nodes used to do data processing. Used in timing information
@@ -70,9 +73,10 @@ def get_py_time():
     elapsed = float(MPIlog_tokens[11])
     ctime = " ".join(MPIlog_tokens[4:6])
     return time.mktime(time.strptime(ctime,"%Y-%m-%d %H:%M:%S.%f")), elapsed
-def get_log():
+def get_log(params):
   log_dir = os.path.basename(os.path.abspath("."))
-  log_file = os.path.join("..","job%s.out"%(log_dir))
+  log_file = os.path.join("..","%s%s.out"%(params.prefix,log_dir))
+  start_time, end_time = None, None
   with open(log_file,"r") as F:
     lines = F.read().strip().split("\n")
     for line in lines:
@@ -81,10 +85,11 @@ def get_log():
       if "Terminated" in line:
         end_time = time.mktime(time.strptime(" ".join(line.split()[2:]),"%a %b %d %H:%M:%S %Y"))
     print("OK")
+  if start_time is None:  return None,None
   return float(start_time), float(end_time)
-def get_channcalc():
+def get_channcalc(params):
   log_dir = os.path.basename(os.path.abspath("."))
-  log_file = os.path.join("..","job%s.out"%(log_dir))
+  log_file = os.path.join("..","%s%s.out"%(params.prefix,log_dir))
   channcalc=flex.double()
   channrank=flex.int()
   sbcalc = flex.double()
@@ -104,7 +109,7 @@ def get_channcalc():
 
 
 def run(params):
-  script_start, script_finis = get_log()
+  script_start, script_finis = get_log(params)
 
   counter = 0
   datum = None
@@ -152,7 +157,7 @@ def run(params):
       all_rank.append(rank)
 
   try:
-    chanx,chany,sbx,sby = get_channcalc()
+    chanx,chany,sbx,sby = get_channcalc(params)
     plt.plot(chanx-datum, chany, 'c.', markersize="0.8")
     plt.plot(sbx-datum, sby, 'b.', markersize="0.8")
   except Exception: pass
@@ -184,18 +189,18 @@ def run(params):
   print ("The total Python time is %.1f seconds, with %.1f sec for imports and %.1f sec trailing"%(
            py_elapse, mpi_start - py_start, py_finish - mpi_finish ))
 
-  plt.plot([script_start-datum, script_finis-datum],[-(4./30.)*max_rank,-(4./30.)*max_rank], color = "magenta", label="jsrun time")
-  print ("The total script time is %.1f seconds, with %.1f sec for ahead and %.1f sec trailing"%(
+  if script_start is not None:
+    plt.plot([script_start-datum, script_finis-datum],[-(4./30.)*max_rank,-(4./30.)*max_rank], color = "magenta", label="jsrun time")
+    print ("The total script time is %.1f seconds, with %.1f sec for ahead and %.1f sec trailing"%(
            script_finis - script_start, py_start - script_start, script_finis - py_finish ))
-  print ("""Diff times:
-A: startup jsrun  %6.2f
-B: Python imports %6.2f
+    print ("""A: startup jsrun  %6.2f"""%(py_start - script_start))
+  print ("""B: Python imports %6.2f
 C: MPI gather SF  %6.2f
 D: MPI broadcast  %6.2f
 E: logger redirect%6.2f, mean %6.2f
 F: set CUDA device%6.2f
 G: big data to GPU%6.2f, mean %6.2f
-"""%(py_start - script_start, mpi_start - py_start, flex.max(chanx) - mpi_start, flex.max(sbx) - flex.max(chanx),
+"""%(mpi_start - py_start, flex.max(chanx) - mpi_start, flex.max(sbx) - flex.max(chanx),
      flex.max(good_logger) - flex.max(sbx),
      flex.mean(good_logger - flex.max(sbx)),
      datum - flex.max(good_logger), flex.max(good_channels-datum), flex.mean(good_channels-datum)
