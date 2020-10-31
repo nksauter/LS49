@@ -66,8 +66,31 @@ def create_gpu_channels(cpu_channels,utilize):
     del P
     assert len(cpu_channels)==utilize
 
+def create_gpu_channels_one_rank(cpu_channels,utilize):
+  this_device = 0
+
+  from simtbx.nanoBragg import gpu_energy_channels
+  gpu_channels_singleton = gpu_energy_channels (
+    deviceId = this_device )
+
+  assert gpu_channels_singleton.get_deviceID()==this_device
+  print ("QQQ to gpu %d channels"%gpu_channels_singleton.get_nchannels(),"one rank")
+
+  if gpu_channels_singleton.get_nchannels() == 0: # if uninitialized
+    P = Profiler("Initialize the channels singleton rank None, device %d"%(this_device))
+    for x in range(len(cpu_channels)):
+      print("starting with ",x)
+      gpu_channels_singleton.structure_factors_to_GPU_direct_cuda(
+          x, cpu_channels[x].indices(), cpu_channels[x].data())
+      print("Finished sending to gpu %d channels"%gpu_channels_singleton.get_nchannels())
+    del P
+    assert len(cpu_channels)==utilize
+
 if __name__=="__main__":
   utilize=10
   CPU = create_cpu_channels(utilize)
-  create_gpu_channels(CPU,utilize)
+  create_gpu_channels_one_rank(CPU,utilize)
+  #create_gpu_channels(CPU,utilize)
+  # the multirank implementation cannot apparently be run within libtbx.run_tests_parallel
+  # on Cori-GPU (works on Summit).  Need to revisit later
   print ("OK")
