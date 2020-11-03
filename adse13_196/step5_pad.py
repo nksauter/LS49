@@ -120,6 +120,7 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,rank,sfall_channel):
   elif add_spots_algorithm == "JH":
     SIM.add_nanoBragg_spots()
   elif add_spots_algorithm == "cuda":
+    SIM.xtal_shape=shapetype.Gauss_argchk
     devices_per_node = int(os.environ["DEVICES_PER_NODE"])
     SIM.device_Id = rank%devices_per_node
     #if rank==7:
@@ -205,7 +206,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,para
   Ori = crystal_orientation.crystal_orientation(Amat, crystal_orientation.basis_type.reciprocal)
 
   # fastest option, least realistic
-  SIM.xtal_shape=shapetype.Gauss # both crystal & RLP are Gaussian
+  SIM.xtal_shape=shapetype.Gauss_argchk # both crystal & RLP are Gaussian
   # only really useful for long runs
   SIM.progress_meter=False
   # prints out value of one pixel only.  will not render full image!
