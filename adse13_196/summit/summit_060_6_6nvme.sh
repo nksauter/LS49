@@ -1,6 +1,6 @@
 #!/bin/bash
 #BSUB -P CHM137
-#BSUB -W 00:10
+#BSUB -W 00:30
 #BSUB -nnodes 60
 #BSUB -alloc_flags "gpumps nvme"
 #BSUB -o job%J.out
@@ -28,7 +28,7 @@ jsrun -n 360 -a 6 -c 6 -r 6 -g 1 libtbx.python \
 #echo "verify local files"
 #ls -l
 
-jsrun -n 60 -r 1 find ${BBPATH} -type f -exec mv {} . \;
+jsrun -n 60 -r 1 find ${BBPATH} -type f -exec cp {} . \;
 
 #echo "check that the files have been written to local GPFS"
 #ls -l
