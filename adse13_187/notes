@@ -1,0 +1,43 @@
+1148491
+small_batch.py Baseline reproduce the MemoryError.
+does not reproduce with the --exclusive flag removed.
+Ran to completion, 75 images
+libtbx.python ../../cctbx_deployment/opt/cctbx/modules/LS49/adse13_196/weather2.py
+commenting out split times
+envelope time=4692 sec, median weather time 318.0 sec; batch time 1h19m
+
+1148541
+put the --exclusive flag back in.  This also runs to completion, 75 images
+envelope time=4693.7 sec, median weather time 311.0 sec; batch time 1h06m
+
+1148574
+cyto_1device, getting back to the development effort. fail.
+
+1148667
+cp_cyto_1device, off-git development platform, try to reproduce the MemoryError
+with srun -n5 N_total=75, -t 00:05:00 --exclusive
+it looks like the exclusive flag is preventing quick turnaround debugging
+
+1148717
+same but not exclusive.  It runs, will redo
+
+1148790
+1148813
+1149017
+1149154
+rerun the developmental with N_total=10
+envelope time=708 sec, median weather time 322.3 sec; batch time 11m56s
+
+1149251--error, no function implementations yet
+1149765
+1149779
+1149792
+cp_cyto_1device, novice detector, no gpu data yet
+
+
+
+
+
+
+
+
