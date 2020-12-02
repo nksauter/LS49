@@ -69,7 +69,7 @@ def create_gpu_channels(cpu_channels,utilize):
 def create_gpu_channels_one_rank(cpu_channels,utilize):
   this_device = 0
 
-  from simtbx.nanoBragg import gpu_energy_channels
+  from simtbx.gpu import gpu_energy_channels
   gpu_channels_singleton = gpu_energy_channels (
     deviceId = this_device )
 

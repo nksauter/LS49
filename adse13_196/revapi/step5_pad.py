@@ -79,7 +79,7 @@ def write_safe(fname):
 add_background_algorithm = str(os.environ.get("ADD_BACKGROUND_ALGORITHM","jh"))
 assert add_background_algorithm in ["jh","sort_stable","cuda"]
 
-def basic_detector():
+def basic_detector(): # from development, not actually used here but useful for reference
   # make a detector panel
   # monolithic camera description
   print("Make a dxtbx detector")
@@ -224,8 +224,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,para
     gpu_simulation = exascale_api(nanoBragg = SIM)
     gpu_simulation.allocate_cuda()
 
-    DETECTOR = basic_detector()
-    gpu_detector = gpud(deviceId=SIM.device_Id, detector=DETECTOR)
+    gpu_detector = gpud(deviceId=SIM.device_Id, nanoBragg=SIM)
     gpu_detector.each_image_allocate_cuda()
 
     # loop over energies

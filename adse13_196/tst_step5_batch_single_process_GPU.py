@@ -12,7 +12,7 @@ if __name__=="__main__":
   os.environ["CACHE_FHKL_ON_GPU"] = "True" # "True" or "False" use single object per rank
 
   # defined script-specific environment variables before application imports
-  from LS49.adse13_196 import step5_batch as s5b
+  from LS49.adse13_196.revapi import step5_batch as s5b
 
   # create and change directory
   os.makedirs("s5bdir",exist_ok=True)
