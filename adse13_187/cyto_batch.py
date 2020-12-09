@@ -40,6 +40,12 @@ def parse_input():
     use_exascale_api = True
       .type = bool
       .help = aim for 3 second image turnaround
+    test_pixel_congruency = False
+      .type = bool
+      .help = ensure the new /old style agree at per-pixel level 
+    include_background = True
+      .type = bool
+      .help = whether to add background to model 
   """
   phil_scope = parse(master_phil)
   # The script usage
@@ -69,7 +75,7 @@ def multipanel_sim(
   verbose=0, default_F=0, interpolate=0, recenter=True, profile="gauss",
   spot_scale_override=None,
   add_water = False, add_air=False, water_path_mm=0.005, air_path_mm=0,
-  adc_offset=0, readout_noise=3, psf_fwhm=0, gain=1, mosaicity_random_seeds=None):
+  adc_offset=0, readout_noise=3, psf_fwhm=0, gain=1, mosaicity_random_seeds=None, include_background=True):
   """
   :param CRYSTAL: dxtbx Crystal model
   :param DETECTOR: dxtbx detector model
@@ -157,6 +163,8 @@ def multipanel_sim(
 
     SIM = S.D # the nanoBragg instance
     assert Famp.get_deviceID()==SIM.device_Id
+    if spot_scale_override is not None:
+      SIM.spot_scale = spot_scale_override
     assert Famp.get_nchannels() == 1 # non-anomalous scenario
 
     from simtbx.gpu import exascale_api
@@ -185,8 +193,7 @@ def multipanel_sim(
     per_image_scale_factor = 1./len(energies)
     gpu_detector.scale_in_place_cuda(per_image_scale_factor) # apply scale directly on GPU
 
-    cuda_background = True
-    if cuda_background:
+    if include_background:
       SIM.beamsize_mm = beamsize_mm
 
       wavelength_weights = np.array(background_wavelength_weights)
@@ -238,11 +245,10 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     oversample = 1  # oversample factor, 1,2, or 3 probable enough
     panel_list = None  # integer list of panels, usefule for debugging
     rois_only = False  # only set True if you are running openMP, or CPU-only (i.e. not for GPU)
-    include_background = True  # default is to add water background 100 mm thick
+    include_background = params.include_background   # default is to add water background 100 mm thick
     verbose = 0  # leave as 0, unles debug
     flat = True  # enfore that the camera has 0 thickness
-    # <><><><><><><><><><><><><><><><>
-
+    #<><><><><><><><>
     # XXX new code
     El = ExperimentListFactory.from_json_file(experiment_file,
                                               check_format=True)
@@ -307,7 +313,8 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
         mos_dom=mosaic_spread_samples, mos_spread=mosaic_spread,
         beamsize_mm=beamsize_mm,show_params=show_params,
         time_panels=time_panels, verbose=verbose,
-        spot_scale_override=spot_scale)
+        spot_scale_override=spot_scale,
+        include_background=include_background)
       print ("Exascale time",time()-BEG)
       if save_data_too:
         data = exper.imageset.get_raw_data(0)
@@ -357,6 +364,11 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
 
     pid_and_pdata = sorted(pid_and_pdata, key=lambda x: x[0])
     _, pdata = zip(*pid_and_pdata)
+
+    if params.test_pixel_congruency:
+      assert np.allclose(pdata, JF16M_numpy_array)
+      print("pixel congruency: OK!")
+      exit()
 
     # pdata is a list of 256 2D numpy arrays, now.
 
