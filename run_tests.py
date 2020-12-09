@@ -25,7 +25,7 @@ OpenMP_required = [
 if libtbx.env.build_options.enable_openmp_if_possible:
   tst_list_parallel = OpenMP_optional + OpenMP_required
 else:
-  tst_list = tst_list + OpenMP_optional
+  tst_list = list(tst_list) + list(OpenMP_optional)
 
 OPT = libtbx.env.build_options
 if OPT.enable_cuda:
