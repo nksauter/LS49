@@ -2,7 +2,7 @@ from __future__ import division
 from libtbx import test_utils
 import libtbx.load_env
 
-tst_list = (
+tst_list = [
   "$D/tests/tst_numpy_lsq.py",
   "$D/tests/tst_spectrum_iterator.py",
   "$D/tests/tst_structure_factors.py",
@@ -10,7 +10,7 @@ tst_list = (
   "$D/tests/tst_mosaic_orientations.py",
   "$D/tests/tst_crystal_orientations.py",
   "$D/tests/tst_jh_add_spots.py",
-  )
+]
 
 OpenMP_optional = [
     "$D/tests/tst_monochromatic_image.py",  #OpenMP (optional)
@@ -25,7 +25,7 @@ OpenMP_required = [
 if libtbx.env.build_options.enable_openmp_if_possible:
   tst_list_parallel = OpenMP_optional + OpenMP_required
 else:
-  tst_list = list(tst_list) + list(OpenMP_optional)
+  tst_list = tst_list + OpenMP_optional
 
 OPT = libtbx.env.build_options
 if OPT.enable_cuda:
