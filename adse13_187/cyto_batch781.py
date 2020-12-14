@@ -17,6 +17,11 @@ from omptbx import omp_get_num_procs
 from xfel.merging.application.utils.memory_usage import get_memory_usage
 import os,sys
 
+from scitbx.array_family import flex
+FBG_VS_STOL = flex.vec2_double([
+    (0, 2.57), (0.0365, 2.58), (0.07, 2.8), (0.12, 5), (0.162, 8), (0.18, 7.32), (0.2, 6.75),
+    (0.216, 6.75), (0.236, 6.5), (0.28, 4.5), (0.3, 4.3), (0.345, 4.36), (0.436, 3.77), (0.5, 3.17)])
+
 def parse_input():
   from iotbx.phil import parse
   master_phil="""
@@ -46,6 +51,9 @@ def parse_input():
     include_background = True
       .type = bool
       .help = whether to add background to model 
+    write_output = False
+      .type = bool
+      .help = whether to write an output file
   """
   phil_scope = parse(master_phil)
   # The script usage
@@ -71,45 +79,12 @@ def multipanel_sim(
   density_gcm3=1, molecular_weight=18,
   cuda=False, oversample=0, Ncells_abc=(50, 50, 50),
   mos_dom=1, mos_spread=0, beamsize_mm=0.001,
-  show_params=False, crystal_size_mm=0.01, printout_pix=None, time_panels=True,
-  verbose=0, default_F=0, interpolate=0, recenter=True, profile="gauss",
-  spot_scale_override=None,
+  crystal_size_mm=0.01,
+  verbose=0, default_F=0, interpolate=0, profile="gauss",
+  spot_scale_override=None, show_params=False, time_panels=False,
   add_water = False, add_air=False, water_path_mm=0.005, air_path_mm=0,
   adc_offset=0, readout_noise=3, psf_fwhm=0, gain=1, mosaicity_random_seeds=None, include_background=True):
-  """
-  :param CRYSTAL: dxtbx Crystal model
-  :param DETECTOR: dxtbx detector model
-  :param BEAM: dxtbx beam model
-  :param Famp: gpu_channels_singleton(cctbx miller array (amplitudes))
-  :param energies: list of energies to simulate the scattering
-  :param fluxes:  list of pulse fluences per energy (same length as energies)
-  :param cuda: whether to use GPU (only works for nvidia builds)
-  :param oversample: pixel oversample factor (0 means nanoBragg will decide)
-  :param Ncells_abc: number of unit cells along each crystal direction in the mosaic block
-  :param mos_dom: number of mosaic domains in used to sample mosaic spread (texture)
-  :param mos_spread: mosaicity in degrees (spherical cap width)
-  :param beamsize_mm: focal size of the beam
-  :param show_params: show the nanoBragg parameters
-  :param crystal_size_mm: size of the crystal (increases the intensity of the spots)
-  :param printout_pix: debug pixel position : tuple of (pixel_fast_coord, pixel_slow_coord)
-  :param time_panels: show timing info
-  :param verbose: verbosity level for nanoBragg (0-10), 0 is quiet
-  :param default_F: default amplitude value for nanoBragg
-  :param interpolate: whether to interpolate for small mosaic domains
-  :param recenter: recenter for tilted cameras, deprecated
-  :param profile: profile shape, can be : gauss, round, square, or tophat
-  :param spot_scale_override: scale the simulated scattering bythis amounth (overrides value based on crystal thickness)
-  :param add_water: add water to similated pattern
-  :param add_air: add ait to simulated pattern
-  :param water_path_mm: length of water the beam travels through
-  :param air_path_mm: length of air the beam travels through
-  :param adc_offset: add this value to each pixel in simulated pattern
-  :param readout_noise: readout noise level (usually 3-5 ADU)
-  :param psf_fwhm: point spread kernel FWHM
-  :param gain: photon gain
-  :param mosaicity_random_seeds: random seeds to simulating mosaic texture
-  :return: list of [(panel_id0,simulated pattern0), (panel_id1, simulated_pattern1), ...]
-  """
+
   from simtbx.nanoBragg.nanoBragg_beam import NBbeam
   from simtbx.nanoBragg.nanoBragg_crystal import NBcrystal
   from simtbx.nanoBragg.sim_data import SimData
@@ -118,6 +93,7 @@ def multipanel_sim(
   from scipy import constants
   import numpy as np
   ENERGY_CONV = 10000000000.0 * constants.c * constants.h / constants.electron_volt
+  assert cuda
 
   nbBeam = NBbeam()
   nbBeam.size_mm = beamsize_mm
@@ -144,8 +120,6 @@ def multipanel_sim(
     S.beam = nbBeam
     S.crystal = nbCrystal
     S.panel_id = pid
-    S.using_cuda = cuda
-    S.using_omp = False
     S.add_air = add_air
     S.air_path_mm = air_path_mm
     S.add_water = add_water
@@ -187,13 +161,12 @@ def multipanel_sim(
       x, Famp, gpu_detector)
     del P
 #now in position to implement the detector panel loop
-# figure out whether flux and wavelength_A are used
-# figure out if Derek's panel recentering is relevant
 
     per_image_scale_factor = 1./len(energies)
     gpu_detector.scale_in_place_cuda(per_image_scale_factor) # apply scale directly on GPU
 
     if include_background:
+      t_bkgrd_start = time()
       SIM.beamsize_mm = beamsize_mm
 
       wavelength_weights = np.array(background_wavelength_weights)
@@ -203,21 +176,19 @@ def multipanel_sim(
       SIM.xray_beams = xray_beams
  #XXX assert these are the same:
       from simtbx.nanoBragg.tst_gauss_argchk import water
-      SIM.Fbg_vs_stol = water
-      SIM.Fbg_vs_stol = flex.vec2_double([
-      (0, 2.57), (0.0365, 2.58), (0.07, 2.8), (0.12, 5), (0.162, 8), (0.18, 7.32), (0.2, 6.75),
-      (0.216, 6.75), (0.236, 6.5), (0.28, 4.5), (0.3, 4.3), (0.345, 4.36), (0.436, 3.77), (0.5, 3.17)])
+      SIM.Fbg_vs_stol = FBG_VS_STOL
       SIM.flux=sum(weights)
       SIM.amorphous_sample_thick_mm = background_sample_thick_mm
       SIM.amorphous_density_gcm3 = density_gcm3
       SIM.amorphous_molecular_weight_Da = molecular_weight
-
       gpu_simulation.add_background_cuda(gpu_detector)
+      TIME_BG = time()-t_bkgrd_start
+
     packed_numpy = gpu_detector.get_raw_pixels_cuda().as_numpy_array()
     gpu_detector.each_image_free_cuda()
     print("done free")
 
-    return packed_numpy
+    return packed_numpy, TIME_BG
 
 def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     from simtbx.nanoBragg import utils
@@ -233,14 +204,14 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     refl_file = "/global/cfs/cdirs/m3562/der/run795/top_%d.refl" % i_exp
     cuda = True  # False  # whether to use cuda
     omp = False
-    ngpu_on_node = 1 # 8  # number of available GPUs
+    ngpu_on_node = 1  # 8  # number of available GPUs
     mosaic_spread = 0.07  # degrees
-    mosaic_spread_samples = 500 # 30  # 50  # number of mosaic blocks sampling mosaicity
+    mosaic_spread_samples = 500  # 30  # 50  # number of mosaic blocks sampling mosaicity
     Ncells_abc = 30, 30, 10  # medians from best stage1
     ev_res = 1.5  # resolution of the downsample spectrum
     total_flux = 1e12  # total flux across channels
     beamsize_mm = 0.000886226925452758  # sqrt of beam focal area
-    spot_scale = 500. # 5.16324  # median from best stage1
+    spot_scale = 500.  # 5.16324  # median from best stage1
     plot_spec = False  # plot the downsample spectra before simulating
     oversample = 1  # oversample factor, 1,2, or 3 probable enough
     panel_list = None  # integer list of panels, usefule for debugging
@@ -253,7 +224,6 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     El = ExperimentListFactory.from_json_file(experiment_file,
                                               check_format=True)
     exper = El[0]
-
 
     crystal = exper.crystal
     detector = exper.detector
@@ -285,7 +255,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
       device_Id = gpu_channels_singleton.get_deviceID()
 
     print("Rank %d will use device %d" % (rank, device_Id))
-    show_params = (rank == 0)  # False
+    show_params = False #(rank == 0)  # False
     time_panels = (rank == 0)
 
     mn_energy = (energies*weights).sum() / weights.sum()
@@ -302,7 +272,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
           x, F_P1.indices(), F_P1.data())
       assert gpu_channels_singleton.get_nchannels() == 1
 
-      JF16M_numpy_array = multipanel_sim(
+      JF16M_numpy_array, TIME_BG = multipanel_sim(
         CRYSTAL=crystal, DETECTOR=detector, BEAM=beam,
         Famp = gpu_channels_singleton,
         energies=list(energies), fluxes=list(weights),
@@ -315,7 +285,8 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
         time_panels=time_panels, verbose=verbose,
         spot_scale_override=spot_scale,
         include_background=include_background)
-      print ("Exascale time",time()-BEG)
+      TIME_EXA = time()-BEG
+      print ("Exascale time",TIME_EXA)
       if save_data_too:
         data = exper.imageset.get_raw_data(0)
 
@@ -331,28 +302,33 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
         beam_dict.pop("spectrum_weights")
       except Exception: pass
 # XXX no longer have two separate files
-      with utils.H5AttributeGeomWriter("exap_%d.hdf5"%i_exp,
-                                image_shape=img_sh, num_images=num_output_images,
-                                detector=det_dict, beam=beam_dict,
-                                detector_and_beam_are_dicts=True) as writer:
-        writer.add_image(JF16M_numpy_array)
+      if params.write_output:
+          with utils.H5AttributeGeomWriter("exap_%d.hdf5"%i_exp,
+                                    image_shape=img_sh, num_images=num_output_images,
+                                    detector=det_dict, beam=beam_dict,
+                                    detector_and_beam_are_dicts=True) as writer:
+            writer.add_image(JF16M_numpy_array)
 
-        if save_data_too:
-            data = [data[pid].as_numpy_array() for pid in panel_list]
-            writer.add_image(data)
+            if save_data_too:
+                data = [data[pid].as_numpy_array() for pid in panel_list]
+                writer.add_image(data)
 
       tsave = time() - tsave
       print("Saved output to file %s. Saving took %.4f sec" % ("exap_%d.hdf5"%i_exp, tsave, ))
 
     BEG2 = time()
     #optional background
+
+    #pids_for_rank =[14]
+    TIME_BG2 = time()
     backgrounds = {pid: None for pid in panel_list}
     if include_background:
         backgrounds = {pid: utils.sim_background( # default is for water
                 detector, beam, wavelengths=[mn_wave], wavelength_weights=[1],
-                total_flux=total_flux,
-                pidx=pid, beam_size_mm=beamsize_mm, sample_thick_mm=0.5) # 0.1)
+                total_flux=total_flux, Fbg_vs_stol=FBG_VS_STOL,
+                pidx=pid, beam_size_mm=beamsize_mm, sample_thick_mm=0.5)
             for pid in pids_for_rank}
+    TIME_BG2 = time()-TIME_BG2
 
     pid_and_pdata = utils.flexBeam_sim_colors(
       CRYSTAL=crystal, DETECTOR=detector, BEAM=beam,
@@ -362,13 +338,22 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
       time_panels=time_panels, show_params=show_params, spot_scale_override=spot_scale,
       mos_dom=mosaic_spread_samples, mos_spread=mosaic_spread, beamsize_mm=beamsize_mm,
       background_raw_pixels=backgrounds, include_noise=False, rois_perpanel=None)
-
     pid_and_pdata = sorted(pid_and_pdata, key=lambda x: x[0])
     _, pdata = zip(*pid_and_pdata)
-    print("nanoBragg utils time", time()-BEG2)
+    #import tabulate
+    TIME_VINTAGE = time()-BEG2
+    print("nanoBragg utils total time", TIME_VINTAGE)
+
+    print("\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>")
+    print("\tBreakdown:")
+    if params.use_exascale_api:
+        print("\t\tExascale: time for bg sim: %.4f seconds; total time: %.4f seconds" % (TIME_BG, TIME_EXA))
+    print("\t\tVintage:  time for bg sim: %.4f seconds; total time: %.4f seconds" % (TIME_BG2, TIME_VINTAGE))
+    print("<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n")
     
     if params.test_pixel_congruency and params.use_exascale_api:
-      assert np.allclose(pdata, JF16M_numpy_array)
+      abs_diff = np.abs(np.array(pdata) - JF16M_numpy_array).max()
+      assert np.allclose(pdata, JF16M_numpy_array), "max per-pixel difference: %f photons" % abs_diff
       print("pixel congruency: OK!")
 
     # pdata is a list of 256 2D numpy arrays, now.
@@ -388,7 +373,6 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     pdata = np.array(pdata) # now pdata is a numpy array of shape 256,254,254
     img_sh = pdata.shape
     num_output_images = 3 + int(save_data_too) #NKS FIXME
-    print("Saving output data of shape", img_sh)
     print("BOOPZ: Rank=%d ; i_exp=%d, RAM usage=%f" % (rank, i_exp,get_memory_usage()/1e6 ))
     beam_dict = beam.to_dict()
     det_dict = detector.to_dict()
@@ -396,19 +380,21 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
       beam_dict.pop("spectrum_energies")
       beam_dict.pop("spectrum_weights")
     except Exception: pass
-    with utils.H5AttributeGeomWriter(outfile, image_shape=img_sh, num_images=num_output_images,
-                                detector=det_dict, beam=beam_dict,
-                                detector_and_beam_are_dicts=True) as writer:
-        writer.add_image(JF16M_numpy_array/pdata)
-        writer.add_image(JF16M_numpy_array)
-        writer.add_image(pdata)
+    if params.write_output:
+        print("Saving output data of shape", img_sh)
+        with utils.H5AttributeGeomWriter(outfile, image_shape=img_sh, num_images=num_output_images,
+                                    detector=det_dict, beam=beam_dict,
+                                    detector_and_beam_are_dicts=True) as writer:
+            writer.add_image(JF16M_numpy_array/pdata)
+            writer.add_image(JF16M_numpy_array)
+            writer.add_image(pdata)
 
-        if save_data_too:
-            data = [data[pid].as_numpy_array() for pid in panel_list]
-            writer.add_image(data)
+            if save_data_too:
+                data = [data[pid].as_numpy_array() for pid in panel_list]
+                writer.add_image(data)
 
-    tsave = time() - tsave
-    print("Saved output to file %s. Saving took %.4f sec" % (outfile, tsave, ))
+        tsave = time() - tsave
+        print("Saved output to file %s. Saving took %.4f sec" % (outfile, tsave, ))
 
 
 def run_batch_job(test_without_mpi=False):
