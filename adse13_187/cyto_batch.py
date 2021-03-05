@@ -42,10 +42,10 @@ def parse_input():
       .help = aim for 3 second image turnaround
     test_pixel_congruency = False
       .type = bool
-      .help = ensure the new /old style agree at per-pixel level 
+      .help = ensure the new /old style agree at per-pixel level
     include_background = True
       .type = bool
-      .help = whether to add background to model 
+      .help = whether to add background to model
   """
   phil_scope = parse(master_phil)
   # The script usage

@@ -47,10 +47,10 @@ def parse_input():
       .help = aim for 3 second image turnaround
     test_pixel_congruency = False
       .type = bool
-      .help = ensure the new /old style agree at per-pixel level 
+      .help = ensure the new /old style agree at per-pixel level
     include_background = True
       .type = bool
-      .help = whether to add background to model 
+      .help = whether to add background to model
     write_output = False
       .type = bool
       .help = whether to write an output file
@@ -350,7 +350,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
         print("\t\tExascale: time for bg sim: %.4f seconds; total time: %.4f seconds" % (TIME_BG, TIME_EXA))
     print("\t\tVintage:  time for bg sim: %.4f seconds; total time: %.4f seconds" % (TIME_BG2, TIME_VINTAGE))
     print("<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n")
-    
+
     if params.test_pixel_congruency and params.use_exascale_api:
       abs_diff = np.abs(np.array(pdata) - JF16M_numpy_array).max()
       assert np.allclose(pdata, JF16M_numpy_array), "max per-pixel difference: %f photons" % abs_diff
