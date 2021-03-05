@@ -46,6 +46,9 @@ def parse_input():
     include_background = True
       .type = bool
       .help = whether to add background to model
+    mosaic_spread_samples = 500
+      .type = int
+      .help = granularity of mosaic rotation, double it to find number of umats
   """
   phil_scope = parse(master_phil)
   # The script usage
@@ -235,7 +238,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     omp = False
     ngpu_on_node = 1 # 8  # number of available GPUs
     mosaic_spread = 0.07  # degrees
-    mosaic_spread_samples = 500 # 30  # 50  # number of mosaic blocks sampling mosaicity
+    mosaic_spread_samples = params.mosaic_spread_samples # number of mosaic blocks sampling mosaicity
     Ncells_abc = 30, 30, 10  # medians from best stage1
     ev_res = 1.5  # resolution of the downsample spectrum
     total_flux = 1e12  # total flux across channels

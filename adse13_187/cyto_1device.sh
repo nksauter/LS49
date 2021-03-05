@@ -20,6 +20,6 @@
 
 mkdir $SLURM_JOB_ID; cd $SLURM_JOB_ID
 echo "jobstart $(date)";pwd;ls
-srun -n 1 -c 2 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_187/cyto_batch.py N_total=1
+srun -n 1 -c 2 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_187/cyto_batch.py N_total=1 mosaic_spread_samples=500
 echo "jobend $(date)";pwd;ls
 
