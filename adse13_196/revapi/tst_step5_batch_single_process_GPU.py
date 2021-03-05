@@ -1,5 +1,8 @@
 from __future__ import division, print_function
 import os
+"""Basic test of the exascale API (13_228) applied to the single-panel LS49 step5 simulation.
+Test the simulated images against references using the compare script, and
+scrape the logs to make a weather plot (not output except in plot mode)."""
 
 if __name__=="__main__":
   os.environ["DEVICES_PER_NODE"] = "1"
@@ -10,6 +13,7 @@ if __name__=="__main__":
   os.environ["ADD_SPOTS_ALGORITHM"] = "cuda" # cuda or JH or NKS
   os.environ["ADD_BACKGROUND_ALGORITHM"] = "cuda" # cuda or jh or sort_stable
   os.environ["CACHE_FHKL_ON_GPU"] = "True" # "True" or "False" use single object per rank
+  os.environ["MOS_DOM"] = "25"
 
   # defined script-specific environment variables before application imports
   from LS49.adse13_196.revapi import step5_batch as s5b
