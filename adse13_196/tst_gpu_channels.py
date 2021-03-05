@@ -49,7 +49,7 @@ def create_gpu_channels(cpu_channels,utilize):
   devices_per_node = int(os.environ.get("DEVICES_PER_NODE", 1))
   this_device = rank%devices_per_node
 
-  from simtbx.nanoBragg import gpu_energy_channels
+  from simtbx.gpu import gpu_energy_channels
   gpu_channels_singleton = gpu_energy_channels (
     deviceId = this_device )
 
@@ -90,7 +90,5 @@ if __name__=="__main__":
   utilize=10
   CPU = create_cpu_channels(utilize)
   create_gpu_channels_one_rank(CPU,utilize)
-  #create_gpu_channels(CPU,utilize)
-  # the multirank implementation cannot apparently be run within libtbx.run_tests_parallel
-  # on Cori-GPU (works on Summit).  Need to revisit later
+  create_gpu_channels(CPU,utilize)
   print ("OK")
