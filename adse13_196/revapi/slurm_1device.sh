@@ -9,8 +9,8 @@
 #SBATCH -A m1759      # allocation
 #SBATCH -G 1          # devices per node
 #SBATCH -c 10         # total threads requested per node
-#SBATCH -o slurm%j.out
-#SBATCH -e slurm%j.err
+#SBATCH -o job%j.out
+#SBATCH -e job%j.err
 #SBATCH --mail-user=nksauter@lbl.gov
 #SBATCH --mail-type=ALL
 # do not use #SBATCH --exclusive
