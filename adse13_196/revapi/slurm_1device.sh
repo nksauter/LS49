@@ -17,13 +17,15 @@
 
 # -n, tasks to run; -N number of nodes; -c cpus per task;
 # n = N x tasks_per_node (should be 40 tasks per node for Cori-gpu)
-export LD_PRELOAD=$MVAPICH2_DIR/lib/libmpi.so
+#export LD_PRELOAD=$MVAPICH2_DIR/lib/libmpi.so
 
 export LOG_BY_RANK=1 # Use Aaron's rank logger
 export RANK_PROFILE=0 # 0 or 1 Use cProfiler, default 1
 export N_SIM=30 # total number of images to simulate
 export ADD_BACKGROUND_ALGORITHM=cuda # cuda or jh or sort_stable
 export DEVICES_PER_NODE=1
+export MOS_DOM=25
+
 mkdir $SLURM_JOB_ID; cd $SLURM_JOB_ID
 echo "jobstart $(date)";pwd;ls
 srun -n 5 -c 2 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_196/revapi/step5_batch.py
