@@ -17,10 +17,8 @@ from omptbx import omp_get_num_procs
 from xfel.merging.application.utils.memory_usage import get_memory_usage
 import os,sys
 
-from scitbx.array_family import flex
-FBG_VS_STOL = flex.vec2_double([
-    (0, 2.57), (0.0365, 2.58), (0.07, 2.8), (0.12, 5), (0.162, 8), (0.18, 7.32), (0.2, 6.75),
-    (0.216, 6.75), (0.236, 6.5), (0.28, 4.5), (0.3, 4.3), (0.345, 4.36), (0.436, 3.77), (0.5, 3.17)])
+from simtbx.nanoBragg.tst_gauss_argchk import water
+# water is a flex.vec2_double, with structure factor background vs. sin-theta over lambda
 
 def parse_input():
   from iotbx.phil import parse
@@ -177,9 +175,7 @@ def multipanel_sim(
       spectrum = list(zip(background_wavelengths, weights))
       xray_beams = get_xray_beams(spectrum, BEAM)
       SIM.xray_beams = xray_beams
- #XXX assert these are the same:
-      from simtbx.nanoBragg.tst_gauss_argchk import water
-      SIM.Fbg_vs_stol = FBG_VS_STOL
+      SIM.Fbg_vs_stol = water
       SIM.flux=sum(weights)
       SIM.amorphous_sample_thick_mm = background_sample_thick_mm
       SIM.amorphous_density_gcm3 = density_gcm3
@@ -207,14 +203,14 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     refl_file = "/global/cfs/cdirs/m3562/der/run795/top_%d.refl" % i_exp
     cuda = True  # False  # whether to use cuda
     omp = False
-    ngpu_on_node = 1  # 8  # number of available GPUs
+    ngpu_on_node = 1 # 8  # number of available GPUs
     mosaic_spread = 0.07  # degrees
     mosaic_spread_samples = params.mosaic_spread_samples # number of mosaic blocks sampling mosaicity
     Ncells_abc = 30, 30, 10  # medians from best stage1
     ev_res = 1.5  # resolution of the downsample spectrum
     total_flux = 1e12  # total flux across channels
     beamsize_mm = 0.000886226925452758  # sqrt of beam focal area
-    spot_scale = 500.  # 5.16324  # median from best stage1
+    spot_scale = 500. # 5.16324  # median from best stage1
     plot_spec = False  # plot the downsample spectra before simulating
     oversample = 1  # oversample factor, 1,2, or 3 probable enough
     panel_list = None  # integer list of panels, usefule for debugging
@@ -306,15 +302,15 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
       except Exception: pass
 # XXX no longer have two separate files
       if params.write_output:
-          with utils.H5AttributeGeomWriter("exap_%d.hdf5"%i_exp,
-                                    image_shape=img_sh, num_images=num_output_images,
-                                    detector=det_dict, beam=beam_dict,
-                                    detector_and_beam_are_dicts=True) as writer:
-            writer.add_image(JF16M_numpy_array)
+       with utils.H5AttributeGeomWriter("exap_%d.hdf5"%i_exp,
+                                image_shape=img_sh, num_images=num_output_images,
+                                detector=det_dict, beam=beam_dict,
+                                detector_and_beam_are_dicts=True) as writer:
+        writer.add_image(JF16M_numpy_array)
 
-            if save_data_too:
-                data = [data[pid].as_numpy_array() for pid in panel_list]
-                writer.add_image(data)
+        if save_data_too:
+             data = [data[pid].as_numpy_array() for pid in panel_list]
+             writer.add_image(data)
 
       tsave = time() - tsave
       print("Saved output to file %s. Saving took %.4f sec" % ("exap_%d.hdf5"%i_exp, tsave, ))
@@ -328,7 +324,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     if include_background:
         backgrounds = {pid: utils.sim_background( # default is for water
                 detector, beam, wavelengths=[mn_wave], wavelength_weights=[1],
-                total_flux=total_flux, Fbg_vs_stol=FBG_VS_STOL,
+                total_flux=total_flux, Fbg_vs_stol=water,
                 pidx=pid, beam_size_mm=beamsize_mm, sample_thick_mm=0.5)
             for pid in pids_for_rank}
     TIME_BG2 = time()-TIME_BG2
@@ -356,7 +352,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
 
     if params.test_pixel_congruency and params.use_exascale_api:
       abs_diff = np.abs(np.array(pdata) - JF16M_numpy_array).max()
-      assert np.allclose(pdata, JF16M_numpy_array), "max per-pixel difference: %f photons" % abs_diff
+      assert np.allclose(pdata, JF16M_numpy_array), "max per-pixel difference: %f photons"%abs_diff
       print("pixel congruency: OK!")
 
     # pdata is a list of 256 2D numpy arrays, now.
@@ -384,20 +380,20 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
       beam_dict.pop("spectrum_weights")
     except Exception: pass
     if params.write_output:
-        print("Saving output data of shape", img_sh)
-        with utils.H5AttributeGeomWriter(outfile, image_shape=img_sh, num_images=num_output_images,
-                                    detector=det_dict, beam=beam_dict,
-                                    detector_and_beam_are_dicts=True) as writer:
-            writer.add_image(JF16M_numpy_array/pdata)
-            writer.add_image(JF16M_numpy_array)
-            writer.add_image(pdata)
+      print("Saving output data of shape", img_sh)
+      with utils.H5AttributeGeomWriter(outfile, image_shape=img_sh, num_images=num_output_images,
+                                detector=det_dict, beam=beam_dict,
+                                detector_and_beam_are_dicts=True) as writer:
+        writer.add_image(JF16M_numpy_array/pdata)
+        writer.add_image(JF16M_numpy_array)
+        writer.add_image(pdata)
 
-            if save_data_too:
-                data = [data[pid].as_numpy_array() for pid in panel_list]
-                writer.add_image(data)
+        if save_data_too:
+            data = [data[pid].as_numpy_array() for pid in panel_list]
+            writer.add_image(data)
 
-        tsave = time() - tsave
-        print("Saved output to file %s. Saving took %.4f sec" % (outfile, tsave, ))
+      tsave = time() - tsave
+      print("Saved output to file %s. Saving took %.4f sec" % (outfile, tsave, ))
 
 
 def run_batch_job(test_without_mpi=False):

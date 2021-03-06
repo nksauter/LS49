@@ -17,6 +17,9 @@ from omptbx import omp_get_num_procs
 from xfel.merging.application.utils.memory_usage import get_memory_usage
 import os,sys
 
+from simtbx.nanoBragg.tst_gauss_argchk import water
+# water is a flex.vec2_double, with structure factor background vs. sin-theta over lambda
+
 def parse_input():
   from iotbx.phil import parse
   master_phil="""
@@ -46,6 +49,9 @@ def parse_input():
     include_background = True
       .type = bool
       .help = whether to add background to model
+    write_output = False
+      .type = bool
+      .help = whether to write an output file
     mosaic_spread_samples = 500
       .type = int
       .help = granularity of mosaic rotation, double it to find number of umats
@@ -79,40 +85,7 @@ def multipanel_sim(
   spot_scale_override=None,
   add_water = False, add_air=False, water_path_mm=0.005, air_path_mm=0,
   adc_offset=0, readout_noise=3, psf_fwhm=0, gain=1, mosaicity_random_seeds=None, include_background=True):
-  """
-  :param CRYSTAL: dxtbx Crystal model
-  :param DETECTOR: dxtbx detector model
-  :param BEAM: dxtbx beam model
-  :param Famp: gpu_channels_singleton(cctbx miller array (amplitudes))
-  :param energies: list of energies to simulate the scattering
-  :param fluxes:  list of pulse fluences per energy (same length as energies)
-  :param cuda: whether to use GPU (only works for nvidia builds)
-  :param oversample: pixel oversample factor (0 means nanoBragg will decide)
-  :param Ncells_abc: number of unit cells along each crystal direction in the mosaic block
-  :param mos_dom: number of mosaic domains in used to sample mosaic spread (texture)
-  :param mos_spread: mosaicity in degrees (spherical cap width)
-  :param beamsize_mm: focal size of the beam
-  :param show_params: show the nanoBragg parameters
-  :param crystal_size_mm: size of the crystal (increases the intensity of the spots)
-  :param printout_pix: debug pixel position : tuple of (pixel_fast_coord, pixel_slow_coord)
-  :param time_panels: show timing info
-  :param verbose: verbosity level for nanoBragg (0-10), 0 is quiet
-  :param default_F: default amplitude value for nanoBragg
-  :param interpolate: whether to interpolate for small mosaic domains
-  :param recenter: recenter for tilted cameras, deprecated
-  :param profile: profile shape, can be : gauss, round, square, or tophat
-  :param spot_scale_override: scale the simulated scattering bythis amounth (overrides value based on crystal thickness)
-  :param add_water: add water to similated pattern
-  :param add_air: add ait to simulated pattern
-  :param water_path_mm: length of water the beam travels through
-  :param air_path_mm: length of air the beam travels through
-  :param adc_offset: add this value to each pixel in simulated pattern
-  :param readout_noise: readout noise level (usually 3-5 ADU)
-  :param psf_fwhm: point spread kernel FWHM
-  :param gain: photon gain
-  :param mosaicity_random_seeds: random seeds to simulating mosaic texture
-  :return: list of [(panel_id0,simulated pattern0), (panel_id1, simulated_pattern1), ...]
-  """
+
   from simtbx.nanoBragg.nanoBragg_beam import NBbeam
   from simtbx.nanoBragg.nanoBragg_crystal import NBcrystal
   from simtbx.nanoBragg.sim_data import SimData
@@ -190,8 +163,6 @@ def multipanel_sim(
       x, Famp, gpu_detector)
     del P
 #now in position to implement the detector panel loop
-# figure out whether flux and wavelength_A are used
-# figure out if Derek's panel recentering is relevant
 
     per_image_scale_factor = 1./len(energies)
     gpu_detector.scale_in_place_cuda(per_image_scale_factor) # apply scale directly on GPU
@@ -204,12 +175,7 @@ def multipanel_sim(
       spectrum = list(zip(background_wavelengths, weights))
       xray_beams = get_xray_beams(spectrum, BEAM)
       SIM.xray_beams = xray_beams
- #XXX assert these are the same:
-      from simtbx.nanoBragg.tst_gauss_argchk import water
       SIM.Fbg_vs_stol = water
-      SIM.Fbg_vs_stol = flex.vec2_double([
-      (0, 2.57), (0.0365, 2.58), (0.07, 2.8), (0.12, 5), (0.162, 8), (0.18, 7.32), (0.2, 6.75),
-      (0.216, 6.75), (0.236, 6.5), (0.28, 4.5), (0.3, 4.3), (0.345, 4.36), (0.436, 3.77), (0.5, 3.17)])
       SIM.flux=sum(weights)
       SIM.amorphous_sample_thick_mm = background_sample_thick_mm
       SIM.amorphous_density_gcm3 = density_gcm3
@@ -352,8 +318,8 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     if include_background:
         backgrounds = {pid: utils.sim_background( # default is for water
                 detector, beam, wavelengths=[mn_wave], wavelength_weights=[1],
-                total_flux=total_flux,
-                pidx=pid, beam_size_mm=beamsize_mm, sample_thick_mm=0.5) # 0.1)
+                total_flux=total_flux, Fbg_vs_stol=water,
+                pidx=pid, beam_size_mm=beamsize_mm, sample_thick_mm=0.5)
             for pid in pids_for_rank}
 
     pid_and_pdata = utils.flexBeam_sim_colors(
@@ -368,10 +334,10 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     pid_and_pdata = sorted(pid_and_pdata, key=lambda x: x[0])
     _, pdata = zip(*pid_and_pdata)
 
-    if params.test_pixel_congruency:
-      assert np.allclose(pdata, JF16M_numpy_array)
+    if params.test_pixel_congruency and params.use_exascale_api:
+      abs_diff = np.abs(np.array(pdata) - JF16M_numpy_array).max()
+      assert np.allclose(pdata, JF16M_numpy_array), "max per-pixel difference: %f photons"%abs_diff
       print("pixel congruency: OK!")
-      exit()
 
     # pdata is a list of 256 2D numpy arrays, now.
 
@@ -390,7 +356,6 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     pdata = np.array(pdata) # now pdata is a numpy array of shape 256,254,254
     img_sh = pdata.shape
     num_output_images = 3 + int(save_data_too) #NKS FIXME
-    print("Saving output data of shape", img_sh)
     print("BOOPZ: Rank=%d ; i_exp=%d, RAM usage=%f" % (rank, i_exp,get_memory_usage()/1e6 ))
     beam_dict = beam.to_dict()
     det_dict = detector.to_dict()
@@ -398,7 +363,9 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
       beam_dict.pop("spectrum_energies")
       beam_dict.pop("spectrum_weights")
     except Exception: pass
-    with utils.H5AttributeGeomWriter(outfile, image_shape=img_sh, num_images=num_output_images,
+    if params.write_output:
+      print("Saving output data of shape", img_sh)
+      with utils.H5AttributeGeomWriter(outfile, image_shape=img_sh, num_images=num_output_images,
                                 detector=det_dict, beam=beam_dict,
                                 detector_and_beam_are_dicts=True) as writer:
         writer.add_image(JF16M_numpy_array/pdata)
@@ -409,8 +376,8 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
             data = [data[pid].as_numpy_array() for pid in panel_list]
             writer.add_image(data)
 
-    tsave = time() - tsave
-    print("Saved output to file %s. Saving took %.4f sec" % (outfile, tsave, ))
+      tsave = time() - tsave
+      print("Saved output to file %s. Saving took %.4f sec" % (outfile, tsave, ))
 
 
 def run_batch_job(test_without_mpi=False):
