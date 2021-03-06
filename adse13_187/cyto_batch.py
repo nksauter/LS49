@@ -33,10 +33,14 @@ def parse_input():
       by_rank = True
         .type = bool
         .help = Brewster-style split of logs for each rank
+        .help = Set to False for IPython debugging
       rank_profile = False
         .type = bool
         .help = create a cProfile output for each rank
     }
+    test_without_mpi = False
+      .type = bool
+      .help = True forces the one-rank MPI emulator
     devices_per_node = 1
       .type = int
       .help = always 1 per Summit resource group, either 1 or 8 for Cori GPU
@@ -51,7 +55,7 @@ def parse_input():
       .help = whether to add background to model
     write_output = False
       .type = bool
-      .help = whether to write an output file
+      .help = whether to write an output image file (hdf5)
     mosaic_spread_samples = 500
       .type = int
       .help = granularity of mosaic rotation, double it to find number of umats
@@ -199,8 +203,9 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
 
     save_data_too = True
     outfile = "boop_%d.hdf5" % i_exp
-    experiment_file = "/global/cfs/cdirs/m3562/der/run795/top_%d.expt" % i_exp
-    refl_file = "/global/cfs/cdirs/m3562/der/run795/top_%d.refl" % i_exp
+    from LS49.adse13_187.case_data import retrieve_from_repo
+    experiment_file = retrieve_from_repo(i_exp)
+    # Not used # refl_file = "/global/cfs/cdirs/m3562/der/run795/top_%d.refl" % i_exp
     cuda = True  # False  # whether to use cuda
     omp = False
     ngpu_on_node = 1 # 8  # number of available GPUs
@@ -401,7 +406,7 @@ def run_batch_job(test_without_mpi=False):
     pr = cProfile.Profile()
     pr.enable()
 
-  if test_without_mpi:
+  if test_without_mpi or params.test_without_mpi:
     from LS49.adse13_196.mock_mpi import mpiEmulator
     MPI = mpiEmulator()
   else:
@@ -425,19 +430,13 @@ def run_batch_job(test_without_mpi=False):
     print("Rank 0 time", datetime.datetime.now())
 
     spectrum_dict = {}
-    #with open("../test.pickle","rb") as F:
-    #  for i_exp in range(75):
-    #    import pickle
-    #    i_exp_p, energies, weights = pickle.load(F)
-    #    assert i_exp == i_exp_p
-    #    spectrum_dict[i_exp] = (energies, weights)
 
     from iotbx.reflection_file_reader import any_reflection_file
-    merge_file = "/global/cfs/cdirs/m3562/der/cyto_init_merge.mtz"
+    from LS49 import ls49_big_data
+    merge_file = os.path.join(ls49_big_data,"adse13_228","cyto_init_merge.mtz")
     Fmerge = any_reflection_file(merge_file).as_miller_arrays()[0].as_amplitude_array()
 
-    if comm.rank == 0:
-        print("Fmerge min/max = %f / %f" % (min(Fmerge.data()), max(Fmerge.data())))
+    print("Fmerge min/max = %f / %f" % (min(Fmerge.data()), max(Fmerge.data())))
 
     transmitted_info = dict(spectra = spectrum_dict,
                             amplitudes = Fmerge,
@@ -452,6 +451,7 @@ def run_batch_job(test_without_mpi=False):
 
   if params.log.by_rank:
     expand_dir = os.path.expandvars(params.log.outdir)
+    os.makedirs(expand_dir, exist_ok=True)
     log_path = os.path.join(expand_dir,"rank_%d.log"%rank)
     error_path = os.path.join(expand_dir,"rank_%d.err"%rank)
     #print("Rank %d redirecting stdout/stderr to"%rank, log_path, error_path)
