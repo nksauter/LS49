@@ -94,7 +94,7 @@ def multipanel_sim(
   from scipy import constants
   import numpy as np
   ENERGY_CONV = 10000000000.0 * constants.c * constants.h / constants.electron_volt
-  assert cuda
+  assert cuda # disallow the default
 
   nbBeam = NBbeam()
   nbBeam.size_mm = beamsize_mm
@@ -254,7 +254,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
       device_Id = gpu_channels_singleton.get_deviceID()
 
     print("Rank %d will use device %d" % (rank, device_Id))
-    show_params = False #(rank == 0)  # False
+    show_params = False
     time_panels = (rank == 0)
 
     mn_energy = (energies*weights).sum() / weights.sum()
@@ -309,16 +309,14 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
         writer.add_image(JF16M_numpy_array)
 
         if save_data_too:
-             data = [data[pid].as_numpy_array() for pid in panel_list]
-             writer.add_image(data)
+            data = [data[pid].as_numpy_array() for pid in panel_list]
+            writer.add_image(data)
 
-      tsave = time() - tsave
-      print("Saved output to file %s. Saving took %.4f sec" % ("exap_%d.hdf5"%i_exp, tsave, ))
+       tsave = time() - tsave
+       print("Saved output to file %s. Saving took %.4f sec" % ("exap_%d.hdf5"%i_exp, tsave, ))
 
     BEG2 = time()
     #optional background
-
-    #pids_for_rank =[14]
     TIME_BG2 = time()
     backgrounds = {pid: None for pid in panel_list}
     if include_background:
@@ -339,9 +337,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
       background_raw_pixels=backgrounds, include_noise=False, rois_perpanel=None)
     pid_and_pdata = sorted(pid_and_pdata, key=lambda x: x[0])
     _, pdata = zip(*pid_and_pdata)
-    #import tabulate
     TIME_VINTAGE = time()-BEG2
-    print("nanoBragg utils total time", TIME_VINTAGE)
 
     print("\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>")
     print("\tBreakdown:")

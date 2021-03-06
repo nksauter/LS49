@@ -80,9 +80,9 @@ def multipanel_sim(
   density_gcm3=1, molecular_weight=18,
   cuda=False, oversample=0, Ncells_abc=(50, 50, 50),
   mos_dom=1, mos_spread=0, beamsize_mm=0.001,
-  show_params=False, crystal_size_mm=0.01, printout_pix=None, time_panels=True,
-  verbose=0, default_F=0, interpolate=0, recenter=True, profile="gauss",
-  spot_scale_override=None,
+  crystal_size_mm=0.01,
+  verbose=0, default_F=0, interpolate=0, profile="gauss",
+  spot_scale_override=None, show_params=False, time_panels=False,
   add_water = False, add_air=False, water_path_mm=0.005, air_path_mm=0,
   adc_offset=0, readout_noise=3, psf_fwhm=0, gain=1, mosaicity_random_seeds=None, include_background=True):
 
@@ -94,6 +94,7 @@ def multipanel_sim(
   from scipy import constants
   import numpy as np
   ENERGY_CONV = 10000000000.0 * constants.c * constants.h / constants.electron_volt
+  assert cuda # disallow the default
 
   nbBeam = NBbeam()
   nbBeam.size_mm = beamsize_mm
@@ -120,8 +121,6 @@ def multipanel_sim(
     S.beam = nbBeam
     S.crystal = nbCrystal
     S.panel_id = pid
-    S.using_cuda = cuda
-    S.using_omp = False
     S.add_air = add_air
     S.air_path_mm = air_path_mm
     S.add_water = add_water
@@ -168,6 +167,7 @@ def multipanel_sim(
     gpu_detector.scale_in_place_cuda(per_image_scale_factor) # apply scale directly on GPU
 
     if include_background:
+      t_bkgrd_start = time()
       SIM.beamsize_mm = beamsize_mm
 
       wavelength_weights = np.array(background_wavelength_weights)
@@ -180,13 +180,14 @@ def multipanel_sim(
       SIM.amorphous_sample_thick_mm = background_sample_thick_mm
       SIM.amorphous_density_gcm3 = density_gcm3
       SIM.amorphous_molecular_weight_Da = molecular_weight
-
       gpu_simulation.add_background_cuda(gpu_detector)
+      TIME_BG = time()-t_bkgrd_start
+
     packed_numpy = gpu_detector.get_raw_pixels_cuda().as_numpy_array()
     gpu_detector.each_image_free_cuda()
     print("done free")
 
-    return packed_numpy
+    return packed_numpy, TIME_BG
 
 def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     from simtbx.nanoBragg import utils
@@ -223,7 +224,6 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
                                               check_format=True)
     exper = El[0]
 
-
     crystal = exper.crystal
     detector = exper.detector
     if flat:
@@ -254,7 +254,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
       device_Id = gpu_channels_singleton.get_deviceID()
 
     print("Rank %d will use device %d" % (rank, device_Id))
-    show_params = (rank == 0)  # False
+    show_params = False
     time_panels = (rank == 0)
 
     mn_energy = (energies*weights).sum() / weights.sum()
@@ -271,7 +271,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
           x, F_P1.indices(), F_P1.data())
       assert gpu_channels_singleton.get_nchannels() == 1
 
-      JF16M_numpy_array = multipanel_sim(
+      JF16M_numpy_array, TIME_BG = multipanel_sim(
         CRYSTAL=crystal, DETECTOR=detector, BEAM=beam,
         Famp = gpu_channels_singleton,
         energies=list(energies), fluxes=list(weights),
@@ -284,7 +284,8 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
         time_panels=time_panels, verbose=verbose,
         spot_scale_override=spot_scale,
         include_background=include_background)
-      print ("Exascale time",time()-BEG)
+      TIME_EXA = time()-BEG
+      print ("Exascale time",TIME_EXA)
       if save_data_too:
         data = exper.imageset.get_raw_data(0)
 
@@ -300,7 +301,8 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
         beam_dict.pop("spectrum_weights")
       except Exception: pass
 # XXX no longer have two separate files
-      with utils.H5AttributeGeomWriter("exap_%d.hdf5"%i_exp,
+      if params.write_output:
+       with utils.H5AttributeGeomWriter("exap_%d.hdf5"%i_exp,
                                 image_shape=img_sh, num_images=num_output_images,
                                 detector=det_dict, beam=beam_dict,
                                 detector_and_beam_are_dicts=True) as writer:
@@ -310,10 +312,12 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
             data = [data[pid].as_numpy_array() for pid in panel_list]
             writer.add_image(data)
 
-      tsave = time() - tsave
-      print("Saved output to file %s. Saving took %.4f sec" % ("exap_%d.hdf5"%i_exp, tsave, ))
+       tsave = time() - tsave
+       print("Saved output to file %s. Saving took %.4f sec" % ("exap_%d.hdf5"%i_exp, tsave, ))
 
+    BEG2 = time()
     #optional background
+    TIME_BG2 = time()
     backgrounds = {pid: None for pid in panel_list}
     if include_background:
         backgrounds = {pid: utils.sim_background( # default is for water
@@ -321,6 +325,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
                 total_flux=total_flux, Fbg_vs_stol=water,
                 pidx=pid, beam_size_mm=beamsize_mm, sample_thick_mm=0.5)
             for pid in pids_for_rank}
+    TIME_BG2 = time()-TIME_BG2
 
     pid_and_pdata = utils.flexBeam_sim_colors(
       CRYSTAL=crystal, DETECTOR=detector, BEAM=beam,
@@ -330,9 +335,16 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
       time_panels=time_panels, show_params=show_params, spot_scale_override=spot_scale,
       mos_dom=mosaic_spread_samples, mos_spread=mosaic_spread, beamsize_mm=beamsize_mm,
       background_raw_pixels=backgrounds, include_noise=False, rois_perpanel=None)
-
     pid_and_pdata = sorted(pid_and_pdata, key=lambda x: x[0])
     _, pdata = zip(*pid_and_pdata)
+    TIME_VINTAGE = time()-BEG2
+
+    print("\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>")
+    print("\tBreakdown:")
+    if params.use_exascale_api:
+        print("\t\tExascale: time for bg sim: %.4f seconds; total time: %.4f seconds" % (TIME_BG, TIME_EXA))
+    print("\t\tVintage:  time for bg sim: %.4f seconds; total time: %.4f seconds" % (TIME_BG2, TIME_VINTAGE))
+    print("<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n")
 
     if params.test_pixel_congruency and params.use_exascale_api:
       abs_diff = np.abs(np.array(pdata) - JF16M_numpy_array).max()
