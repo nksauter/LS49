@@ -164,6 +164,7 @@ def multipanel_sim(
     P = Profiler("from gpu amplitudes cuda")
     gpu_simulation.add_energy_channel_from_gpu_amplitudes_cuda(
       x, Famp, gpu_detector)
+    TIME_BRAGG = time()-P.start_el
     del P
 #now in position to implement the detector panel loop
 
@@ -189,9 +190,8 @@ def multipanel_sim(
 
     packed_numpy = gpu_detector.get_raw_pixels_cuda().as_numpy_array()
     gpu_detector.each_image_free_cuda()
-    print("done free")
 
-    return packed_numpy, TIME_BG
+    return packed_numpy, TIME_BG, TIME_BRAGG
 
 def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     from simtbx.nanoBragg import utils
@@ -276,7 +276,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
           x, F_P1.indices(), F_P1.data())
       assert gpu_channels_singleton.get_nchannels() == 1
 
-      JF16M_numpy_array, TIME_BG = multipanel_sim(
+      JF16M_numpy_array, TIME_BG, TIME_BRAGG = multipanel_sim(
         CRYSTAL=crystal, DETECTOR=detector, BEAM=beam,
         Famp = gpu_channels_singleton,
         energies=list(energies), fluxes=list(weights),
