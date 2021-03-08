@@ -1,9 +1,15 @@
 from __future__ import division, print_function
 from time import time
+import os
 """
 This is a specialization of cyto_batch.py script, but using the
-exascale api implementation only.  The test is to run the simulation
-with and without argchk and to assert that the results are the same.
+exascale api implementation only, and only gauss_argchk.
+The script tests two actions:
+1) write_output=True:
+   simulating the image and writing out single-frame HDF5 files containing the simulated data.
+2) write_output=False:
+   simulating the image, reading in a reference from ls49_big_data, and comparing.
+   This action requires instantiating the special-case format class from this directory.
 """
 from LS49.adse13_187.cyto_batch import run_batch_job, multipanel_sim
 
@@ -77,11 +83,9 @@ def tst_one_monkeypatch(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params)
 
     mn_energy = (energies*weights).sum() / weights.sum()
     mn_wave = utils.ENERGY_CONV / mn_energy
-    jf16m_numpy_array = {}
-    from_gpu_amplitudes_cuda = {}
     print("\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>")
     print("\tBreakdown:")
-    for shapetype in ["gauss_argchk","gauss"]:
+    for shapetype in ["gauss_argchk"]:
       BEG=time()
       print (gpu_channels_singleton.get_deviceID(),"device",shapetype)
       Famp_is_uninitialized = ( gpu_channels_singleton.get_nchannels() == 0 )
@@ -108,23 +112,53 @@ def tst_one_monkeypatch(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params)
         spot_scale_override=spot_scale,
         include_background=include_background)
       TIME_EXA = time()-BEG
-      jf16m_numpy_array[shapetype]=JF16M_numpy_array
-      from_gpu_amplitudes_cuda[shapetype]=TIME_BRAGG
 
       print("\t\tExascale: time for bkgrd sim: %.4fs; Bragg sim: %.4fs; total: %.4fs" % (TIME_BG, TIME_BRAGG, TIME_EXA))
-    ratio = from_gpu_amplitudes_cuda["gauss"]/from_gpu_amplitudes_cuda["gauss_argchk"]
-    print("<><><><><><><><><ratio<%.2f><><><><><><><><><><><><><><><><><><><>\n"%(
-      ratio))
+    print("<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n")
 
-    # assertion on elapsed time:
-    assert ratio > 1.1,"ratio is %.3f, experiment %d"%(ratio,i_exp)
+    if params.write_output:
+      if params.write_experimental_data:
+        data = exper.imageset.get_raw_data(0)
+      img_sh = JF16M_numpy_array.shape
+      assert img_sh == (256,254,254)
+      num_output_images = 1 + int(params.write_experimental_data)
+      print("Saving exascale output data of shape", img_sh)
+      beam_dict = beam.to_dict()
+      det_dict = detector.to_dict()
+      try:
+        beam_dict.pop("spectrum_energies")
+        beam_dict.pop("spectrum_weights")
+      except Exception: pass
 
-    # assertion on equality:
-    abs_diff = np.abs(jf16m_numpy_array["gauss"] - \
-                      jf16m_numpy_array["gauss_argchk"]).max()
-    assert np.allclose(jf16m_numpy_array["gauss"], \
-                       jf16m_numpy_array["gauss_argchk"]), \
-    "max per-pixel difference: %f photons, experiment %d"%(abs_diff,i_exp)
+      with utils.H5AttributeGeomWriter(os.path.join(params.log.outdir,"exap_%d.hdf5"%i_exp),
+                                image_shape=img_sh, num_images=num_output_images,
+                                detector=det_dict, beam=beam_dict,
+                                detector_and_beam_are_dicts=True) as writer:
+        writer.add_image(JF16M_numpy_array)
+
+        if params.write_experimental_data:
+            data = [data[pid].as_numpy_array() for pid in panel_list]
+            writer.add_image(data)
+        print("Saved output to file %s" % ("exap_%d.hdf5"%i_exp))
+
+    if not params.write_output:
+      # ability to read in the special file format
+      # note to end-user:  The special file format can be installed permanently into a
+      #   developmental version of dials/cctbx:
+      # dxtbx.install_format ./FormatHDF5AttributeGeometry.py --global # writes to build directory
+      #   or alternatively to the user's account:
+      # dxtbx.install_format ./FormatHDF5AttributeGeometry.py --user # writes to ~/.dxtbx
+      from LS49.adse13_187.FormatHDF5AttributeGeometry import FormatHDF5AttributeGeometry as format_instance
+      from LS49 import ls49_big_data
+      filename = os.path.join(ls49_big_data,"adse13_228","exap_%d.hdf5"%i_exp)
+      instance = format_instance(filename)
+      reference = [D.as_numpy_array() for D in instance.get_raw_data()]
+      print("reference length for %s is %d"%("exap_%d.hdf5"%i_exp,len(reference)))
+
+      # assertion on equality:
+      abs_diff = np.abs(JF16M_numpy_array - reference).max()
+      assert np.allclose(JF16M_numpy_array, reference), \
+      "max per-pixel difference: %f photons, experiment %d"%(abs_diff,i_exp)
 
 LS49.adse13_187.cyto_batch.tst_one = tst_one_monkeypatch
 

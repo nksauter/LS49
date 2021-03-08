@@ -35,6 +35,9 @@ if OPT.enable_cuda:
     "log.outdir=mp1"],
    ["$D/adse13_187/tst_multipanel_argchk.py", "N_total=1",
     "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp2"],
+   ["$D/adse13_187/tst_write_file_action.py", "N_total=1",
+    "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp3",
+    "write_output=False"],
    "$D/adse13_196/tst_gpu_channels.py",
    "$D/adse13_196/revapi/tst_step5_batch_single_process_GPU.py",
   ] + tst_list_parallel + [

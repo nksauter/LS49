@@ -56,6 +56,10 @@ def parse_input():
     write_output = False
       .type = bool
       .help = whether to write an output image file (hdf5)
+    write_experimental_data = False
+      .type = bool
+      .help = if hdf5 file is written, also include a frame giving the experimental data
+      .help = needs to be a command line argument in case the experimental data are unavailable
     mosaic_spread_samples = 500
       .type = int
       .help = granularity of mosaic rotation, double it to find number of umats
@@ -201,7 +205,6 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     print("Experiment %d" % i_exp, flush=True)
     sys.stdout.flush()
 
-    save_data_too = True
     outfile = "boop_%d.hdf5" % i_exp
     from LS49.adse13_187.case_data import retrieve_from_repo
     experiment_file = retrieve_from_repo(i_exp)
@@ -291,13 +294,13 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
         include_background=include_background)
       TIME_EXA = time()-BEG
       print ("Exascale time",TIME_EXA)
-      if save_data_too:
+      if params.write_experimental_data:
         data = exper.imageset.get_raw_data(0)
 
       tsave = time()
       img_sh = JF16M_numpy_array.shape
       assert img_sh == (256,254,254)
-      num_output_images = 1 + int(save_data_too)
+      num_output_images = 1 + int(params.write_experimental_data)
       print("Saving exascale output data of shape", img_sh)
       beam_dict = beam.to_dict()
       det_dict = detector.to_dict()
@@ -313,7 +316,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
                                 detector_and_beam_are_dicts=True) as writer:
         writer.add_image(JF16M_numpy_array)
 
-        if save_data_too:
+        if params.write_experimental_data:
             data = [data[pid].as_numpy_array() for pid in panel_list]
             writer.add_image(data)
 
@@ -368,13 +371,13 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
         #for pid in panel_list:
         #    new_det.add_panel(detector[pid])
         #detector = new_det
-    if save_data_too:
+    if params.write_experimental_data:
         data = exper.imageset.get_raw_data(0)
 
     tsave = time()
     pdata = np.array(pdata) # now pdata is a numpy array of shape 256,254,254
     img_sh = pdata.shape
-    num_output_images = 3 + int(save_data_too) #NKS FIXME
+    num_output_images = 3 + int(params.write_experimental_data)
     print("BOOPZ: Rank=%d ; i_exp=%d, RAM usage=%f" % (rank, i_exp,get_memory_usage()/1e6 ))
     beam_dict = beam.to_dict()
     det_dict = detector.to_dict()
@@ -391,7 +394,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
         writer.add_image(JF16M_numpy_array)
         writer.add_image(pdata)
 
-        if save_data_too:
+        if params.write_experimental_data:
             data = [data[pid].as_numpy_array() for pid in panel_list]
             writer.add_image(data)
 
