@@ -112,7 +112,7 @@ def tst_one_monkeypatch(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params)
       jf16m_numpy_array[shapetype]=JF16M_numpy_array
       from_gpu_amplitudes_cuda[shapetype]=TIME_BRAGG
 
-      print("\t\tExascale: time for bg sim: %.4fs; Bragg sim: %.4fs; total: %.4fs" % (TIME_BG, TIME_BRAGG, TIME_EXA))
+      print("\t\tExascale: time for bkgrd sim: %.4fs; Bragg sim: %.4fs; total: %.4fs" % (TIME_BG, TIME_BRAGG, TIME_EXA))
     ratio = from_gpu_amplitudes_cuda["gauss"]/from_gpu_amplitudes_cuda["gauss_argchk"]
     print("<><><><><><><><><ratio<%.2f><><><><><><><><><><><><><><><><><><><>\n"%(
       ratio))

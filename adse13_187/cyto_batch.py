@@ -332,6 +332,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
             for pid in pids_for_rank}
     TIME_BG2 = time()-TIME_BG2
 
+    TIME_BRAGG2 = time()
     pid_and_pdata = utils.flexBeam_sim_colors(
       CRYSTAL=crystal, DETECTOR=detector, BEAM=beam,
       energies=list(energies), fluxes=list(weights), Famp=Fmerge,
@@ -340,6 +341,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
       time_panels=time_panels, show_params=show_params, spot_scale_override=spot_scale,
       mos_dom=mosaic_spread_samples, mos_spread=mosaic_spread, beamsize_mm=beamsize_mm,
       background_raw_pixels=backgrounds, include_noise=False, rois_perpanel=None)
+    TIME_BRAGG2 = time()-TIME_BRAGG2
     pid_and_pdata = sorted(pid_and_pdata, key=lambda x: x[0])
     _, pdata = zip(*pid_and_pdata)
     TIME_VINTAGE = time()-BEG2
@@ -347,8 +349,8 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     print("\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>")
     print("\tBreakdown:")
     if params.use_exascale_api:
-        print("\t\tExascale: time for bg sim: %.4f seconds; total time: %.4f seconds" % (TIME_BG, TIME_EXA))
-    print("\t\tVintage:  time for bg sim: %.4f seconds; total time: %.4f seconds" % (TIME_BG2, TIME_VINTAGE))
+        print("\t\tExascale: time for bkgrd sim: %.4fs; Bragg sim: %.4fs; total: %.4fs" % (TIME_BG, TIME_BRAGG, TIME_EXA))
+    print("\t\tVintage:  time for bkgrd sim: %.4fs; Bragg sim: %.4fs; total: %.4fs" % (TIME_BG2, TIME_BRAGG2, TIME_VINTAGE))
     print("<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n")
 
     if params.test_pixel_congruency and params.use_exascale_api:

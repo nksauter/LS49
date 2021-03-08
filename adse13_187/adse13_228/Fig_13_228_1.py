@@ -40,6 +40,7 @@ ax = axes[0]
 ax.set_title("""a) Jungfrau, adse13-187""")
 loglogslope = 1.
 extrap = exp( log(53.31) - loglogslope * (log(2.88)-log(0.0225)) )
+ax.loglog([1.0735,], [43.63,], color=colmap[2], marker="o", markersize=10) # emphasis canonical problem size
 ax.loglog([0.0225,2.88], [extrap,53.31],"--",color=colmap[7], label="ideal scaling")
 
 ax.loglog(Tera_ops, Mullen_argchk_addspots_wall, color=colmap[2], marker="o",
@@ -66,6 +67,7 @@ ax = axes[1]
 ax.set_title("""b) LS49, adse13-196""")
 loglogslope = 1.
 extrap = exp( log(53.31) - loglogslope * (log(2.88)-log(0.0225)) )
+ax.loglog([0.0225,], [1.52,], color=colmap[2], marker="o", markersize=10) # emphasis canonical problem size
 ax.loglog([0.0225,2.88], [extrap,53.31],"--",color=colmap[7], label="ideal scaling")
 
 ax.loglog(Tera_ops, Mullen_argchk_addspots_wall, color=colmap[2], marker="o",
