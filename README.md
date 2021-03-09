@@ -38,4 +38,10 @@ source build/setpaths.sh
 export OMP_NUM_THREADS=24
 ```
 
+### Testing CUDA on Linux 
+```
+# at the bootstrap step (above) add cuda: --config_flags="--enable_cuda"
+# On Cori-GPU, run the tests inside of an srun command (allocates GPU):
+srun -n 1 -c 10 libtbx.run_tests_parallel nproc=Auto module=LS49 module=simtbx
+```
 
