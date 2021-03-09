@@ -60,6 +60,10 @@ def parse_input():
       .type = bool
       .help = if hdf5 file is written, also include a frame giving the experimental data
       .help = needs to be a command line argument in case the experimental data are unavailable
+    nxmx_local_data = "must_provide_NeXus_data_in_phil"
+      .type = path
+      .help = file location of the NeXus master file for the experimental raw data
+      .help = this is only mandatory if write_experimental_data is True
     mosaic_spread_samples = 500
       .type = int
       .help = granularity of mosaic rotation, double it to find number of umats
@@ -411,6 +415,8 @@ def run_batch_job(test_without_mpi=False):
     pr = cProfile.Profile()
     pr.enable()
 
+  # workaround for getting master nexus
+  os.environ["NXMX_LOCAL_DATA"] = params.nxmx_local_data
   if test_without_mpi or params.test_without_mpi:
     from LS49.adse13_196.mock_mpi import mpiEmulator
     MPI = mpiEmulator()

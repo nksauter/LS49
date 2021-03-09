@@ -18,6 +18,6 @@
 
 mkdir $SLURM_JOB_ID; cd $SLURM_JOB_ID
 echo "jobstart $(date)";pwd;ls
-srun -n 1 -c 2 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_187/cyto_batch.py N_total=1 test_pixel_congruency=True mosaic_spread_samples=500 write_output=True write_experimental_data=True
+srun -n 1 -c 2 libtbx.python $(libtbx.find_in_repositories LS49)/adse13_187/cyto_batch.py N_total=1 test_pixel_congruency=True mosaic_spread_samples=500 write_output=True write_experimental_data=True nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5
 echo "jobend $(date)";pwd;ls
 
