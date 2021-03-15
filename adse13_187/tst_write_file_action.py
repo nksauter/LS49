@@ -110,7 +110,8 @@ def tst_one_monkeypatch(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params)
         show_params=show_params,
         time_panels=time_panels, verbose=verbose,
         spot_scale_override=spot_scale,
-        include_background=include_background)
+        include_background=include_background,
+        mask_file=params.mask_file)
       TIME_EXA = time()-BEG
 
       print("\t\tExascale: time for bkgrd sim: %.4fs; Bragg sim: %.4fs; total: %.4fs" % (TIME_BG, TIME_BRAGG, TIME_EXA))

@@ -67,6 +67,9 @@ def parse_input():
     mosaic_spread_samples = 500
       .type = int
       .help = granularity of mosaic rotation, double it to find number of umats
+    mask_file = ""
+      .type = path
+      .help = for the exascale api only, specifying this path chooses the debranched-maskall kernel
   """
   phil_scope = parse(master_phil)
   # The script usage
@@ -96,7 +99,8 @@ def multipanel_sim(
   verbose=0, default_F=0, interpolate=0, profile="gauss",
   spot_scale_override=None, show_params=False, time_panels=False,
   add_water = False, add_air=False, water_path_mm=0.005, air_path_mm=0,
-  adc_offset=0, readout_noise=3, psf_fwhm=0, gain=1, mosaicity_random_seeds=None, include_background=True):
+  adc_offset=0, readout_noise=3, psf_fwhm=0, gain=1, mosaicity_random_seeds=None,
+  include_background=True, mask_file=""):
 
   from simtbx.nanoBragg.nanoBragg_beam import NBbeam
   from simtbx.nanoBragg.nanoBragg_crystal import NBcrystal
@@ -127,7 +131,7 @@ def multipanel_sim(
   pid = 0 # remove the loop, use C++ iteration over detector panels
   use_exascale_api = True
   if use_exascale_api:
-    tinit = time()
+
     S = SimData()
     S.detector = DETECTOR
     S.beam = nbBeam
@@ -169,9 +173,16 @@ def multipanel_sim(
       #SIM.flux = self.flux[x]
       #SIM.wavelength_A = self.wavlen[x]
     from libtbx.development.timers import Profiler
-    P = Profiler("from gpu amplitudes cuda")
-    gpu_simulation.add_energy_channel_from_gpu_amplitudes_cuda(
+    if mask_file is "": # select kernel based on masking or not
+      P = Profiler("from gpu amplitudes cuda")
+      gpu_simulation.add_energy_channel_from_gpu_amplitudes_cuda(
       x, Famp, gpu_detector)
+    else:
+      from LS49.adse13_187.adse13_221.mask_utils import mask_from_file
+      boolean_mask = mask_from_file(mask_file)
+      P = Profiler("from gpu amplitudes cuda")
+      gpu_simulation.add_energy_channel_mask_allpanel_cuda(
+      x, Famp, gpu_detector, boolean_mask )
     TIME_BRAGG = time()-P.start_el
     del P
 #now in position to implement the detector panel loop
@@ -195,6 +206,7 @@ def multipanel_sim(
       SIM.amorphous_molecular_weight_Da = molecular_weight
       gpu_simulation.add_background_cuda(gpu_detector)
       TIME_BG = time()-t_bkgrd_start
+    else: TIME_BG=0.
 
     packed_numpy = gpu_detector.get_raw_pixels_cuda().as_numpy_array()
     gpu_detector.each_image_free_cuda()
@@ -295,7 +307,8 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
         beamsize_mm=beamsize_mm,show_params=show_params,
         time_panels=time_panels, verbose=verbose,
         spot_scale_override=spot_scale,
-        include_background=include_background)
+        include_background=include_background,
+        mask_file=params.mask_file)
       TIME_EXA = time()-BEG
       print ("Exascale time",TIME_EXA)
       if params.write_experimental_data:

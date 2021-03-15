@@ -30,14 +30,28 @@ else:
 OPT = libtbx.env.build_options
 if OPT.enable_cuda:
   tst_list_parallel = [
+   # these three tests, break portability after realizing that the spectral dispersion curve
+   # comes directly from the nexus master and the expt must be read with check_format=True
    ["$D/adse13_187/cyto_batch.py", "N_total=1", "test_pixel_congruency=True",
     "mosaic_spread_samples=50", "write_output=False", "test_without_mpi=True",
-    "log.outdir=mp1"],
+    "log.outdir=mp1",
+    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+   ],
    ["$D/adse13_187/tst_multipanel_argchk.py", "N_total=1",
-    "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp2"],
+    "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp2",
+    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+   ],
    ["$D/adse13_187/tst_write_file_action.py", "N_total=1",
     "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp3",
-    "write_output=False"],
+    "write_output=False",
+    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+   ],
+   # this single test is developmental only, not portable, only checks run-without-crash, not results
+   ["$D/adse13_187/tst_write_file_action.py", "N_total=1", "write_output=True", "write_experimental_data=True",
+    "mosaic_spread_samples=62", "test_without_mpi=True", "log.outdir=mp4",
+    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+    "mask_file=/global/cscratch1/sd/nksauter/adse13_187/13_221/event_648.mask",
+   ],
    "$D/adse13_196/tst_gpu_channels.py",
    "$D/adse13_196/revapi/tst_step5_batch_single_process_GPU.py",
   ] + tst_list_parallel + [
