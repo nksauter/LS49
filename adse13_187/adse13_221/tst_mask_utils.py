@@ -3,6 +3,7 @@ from dials.array_family import flex
 import pickle
 from dxtbx.model.experiment_list import ExperimentListFactory
 from libtbx.development.timers import Profiler
+import math
 
 def top_75_iterator():
   import re
@@ -60,6 +61,77 @@ class mask_manager:
              self.shoebox_mask[midx].count(True), "result", newmask.count(True))
     print (N_true,"pixels were visited in the %d shoeboxes (with borders)"%size)
     print (N_bad_pizel,"of these were bad pixels")
+
+  def refl_analysis(self,dials_model):
+    """This function sets up some data structures (spots_*) allowing us to index into the spots
+    and pixels of interest.  These will be repeatedly used during parameter refinement
+    to calculate target function and intermediate statistics.
+    """
+    Z = self.refl_table
+    indices = Z['miller_index']
+    expts = ExperimentListFactory.from_json_file(dials_model,
+                                              check_format=False)
+    self.dials_model=expts[0]
+    CRYS = self.dials_model.crystal
+    UC = CRYS.get_unit_cell()
+    strong_resolutions = UC.d(indices)
+    order = flex.sort_permutation(strong_resolutions, reverse=True)
+    Z["spots_order"] = order
+    self.spots_pixels = flex.size_t()
+    spots_offset = flex.int(len(order),-1)
+    spots_size = flex.int(len(order),-1)
+
+    P = panels = Z['panel']
+    S = shoeboxes = Z['shoebox']
+    N_visited = 0; N_bad = 0
+    for oidx in range(len(order)): #loop through the shoeboxes in correct order
+      sidx = order[oidx] # index into the Miller indices
+      ipanel = P[sidx]
+      slow_size = 254
+      fast_size = 254
+      panel_size=slow_size*fast_size
+      bbox = S[sidx].bbox
+      first_position = spots_offset[sidx] = self.spots_pixels.size()
+      for islow in range(max(0,bbox[2]-3), min(slow_size,bbox[3]+3)):
+        for ifast in range(max(0,bbox[0]-3), min(fast_size,bbox[1]+3)):
+          value = self.trusted_mask[ipanel][islow*slow_size + ifast]
+          N_visited += 1
+          if value: self.spots_pixels.append(ipanel*panel_size+islow*slow_size+ifast)
+          else: N_bad+=1
+      spot_size = spots_size[sidx] = self.spots_pixels.size() - first_position
+    Z["spots_offset"] = spots_offset
+    Z["spots_size"] = spots_size
+    print (N_visited,"pixels were visited in the %d shoeboxes (with borders)"%len(order))
+    print (N_bad,"of these were bad pixels, leaving %d in target"%(len(self.spots_pixels)))
+
+  def simple_rmsd(self,calc_data="xyzcal.px",plot=False):
+    """Function does a rudimentary plot of model vs. experimental spot position, and optionally
+    a plot of deviation vs. Bragg angle.
+    """
+    Z = self.refl_table
+    devs = flex.double()
+    sqdevs = flex.double()
+    for oidx in range(len(Z["spots_order"])): #loop through the shoeboxes in correct order
+      sidx = Z["spots_order"][oidx] # index into the Miller indices
+      calc = Z[calc_data][sidx][0:2]
+      obs  = Z['xyzobs.px.value'][sidx][0:2]
+      sqdev= (calc[0]-obs[0])**2 + (calc[1]-obs[1])**2
+      dev  = math.sqrt(sqdev)
+      devs.append(dev)
+      sqdevs.append(sqdev)
+      #print("%20s %6.2fpx"%(Z["miller_index"][sidx], dev))
+    print ("The rmsd is %6.2f px"%math.sqrt(flex.mean(sqdevs)))
+    if plot:
+      from matplotlib import pyplot as plt
+      plt.plot(range(len(devs)),devs)
+      running_range = range(15,len(devs),15)
+      plt.plot(running_range, [flex.mean(devs[I-15:I]) for I in running_range], "r-",
+         label="RMSD=%6.2fpx"%math.sqrt(flex.mean(sqdevs)))
+      plt.title("Model vs. Experimental Bragg spot position")
+      plt.xlabel("Spots ordered by increasing Bragg angle →")
+      plt.ylabel("Deviation in pixels")
+      plt.legend(loc='upper left')
+      plt.show()
 
   def plot_pixel_histograms(self):
     exp_data = self.expt.imageset.get_raw_data(0) # experimental data
@@ -159,7 +231,7 @@ modeim_kernel_width=15
         assert len(exp_data) == 256 # Jungfrau panels
       img_sh = self.lunus_filtered_data.shape
       assert img_sh == (256,254,254)
-      num_output_images = 3 # 1 + int(params.write_experimental_data)
+      num_output_images = 4 # 1 + int(params.write_experimental_data)
       print("Saving exascale output data of shape", img_sh)
       beam_dict = self.expt.beam.to_dict()
       det_dict = self.expt.detector.to_dict()
@@ -180,8 +252,40 @@ modeim_kernel_width=15
 
         if True: # params.write_experimental_data:
             exp_data = [exp_data[pid].as_numpy_array() for pid in range(len(exp_data))]
+            self.simulation_mockup(exp_data); writer.add_image(self.lunus_filtered_data)
             writer.add_image(exp_data)
         print("Saved output to file %s" % (filenm))
+
+  def simulation_mockup(self,experimental):
+    """Function modifies the self.lunus_filtered_data.  Provides an alternate view of the
+    background vs. experiment data.  It zeroes out the pixels from the shoeboxes of interest,
+    but then adds the experimental pixels back.  Here "experimental pixels" means res-data
+    minus planar-fit-lunus-model.
+    """
+    Z = self.refl_table
+    size = len(Z)
+    SOFF = Z["spots_offset"]
+    SSIZ = Z["spots_size"]
+    panel_size = 254 * 254
+    slow_size = 254
+    mockup_ctr_of_mass = flex.vec3_double()
+    from scitbx.matrix import col
+    for sidx in range(size): #loop through the shoeboxes
+      SUM_VEC = col((0.,0.))
+      SUM_wt = 0.
+      for idxpx in self.spots_pixels[SOFF[sidx]:SOFF[sidx]+SSIZ[sidx]]:
+        ipanel = idxpx//panel_size; panelpx = idxpx%panel_size
+        islow = panelpx//slow_size; ifast = panelpx%slow_size
+        model_value = ( experimental[ipanel][islow,ifast] -
+                        self.lunus_filtered_data[ipanel,islow,ifast])
+        SUM_VEC = SUM_VEC + float(model_value) * col((float(islow),float(ifast)))
+        SUM_wt += model_value
+        self.lunus_filtered_data[ipanel,islow,ifast] = model_value
+      c_o_m = SUM_VEC/SUM_wt
+      # there is a half pixel offset in our understanding of position
+      mockup_ctr_of_mass.append((c_o_m[1]+0.5,c_o_m[0]+0.5,0.0))
+    Z["spots_mockup_xyzcal.px"] = mockup_ctr_of_mass
+    self.simple_rmsd(calc_data="spots_mockup_xyzcal.px",plot=True)
 
   def modify_shoeboxes(self, verbose=False): # and printing the shoeboxes in verbose mode
     exp_data = self.expt.imageset.get_raw_data(0) # experimental data
@@ -204,6 +308,19 @@ modeim_kernel_width=15
         fast_sum=0
         for ifast in range(ifast_limits[0], ifast_limits[1]):
           value = exp_data[ipanel][islow*slow_size + ifast]
+          print("%6.0f"%value, end="")
+          fast_count+=1
+          fast_sum+=value
+        print(" =%6.0f"%(fast_sum/fast_count))
+      print()
+      # print out the trusted mask
+      flag=True
+      for islow in range(islow_limits[0], islow_limits[1]):
+        fast_count=0
+        fast_sum=0
+        for ifast in range(ifast_limits[0], ifast_limits[1]):
+          value = float(int(self.resultant[ipanel][islow*slow_size + ifast]))
+          if value==False:flag=False
           print("%6.0f"%value, end="")
           fast_count+=1
           fast_sum+=value
@@ -258,6 +375,7 @@ def multiple_cases():
       E = Empty()
       E.trusted_mask_file = "/global/cscratch1/sd/nksauter/adse13_187/bernina/trusted_Py3.mask"
       E.expt_file = "/global/cscratch1/sd/nksauter/adse13_187/bernina/split_c/split_%04d.expt"%item
+      E.dials_model = "/global/cscratch1/sd/nksauter/adse13_187/bernina/split2b/split_%04d.expt"%item
       E.out_file = "top_event_%04d.mask"%idx
       E.hdf5_file = "top_exa_%04d.hdf5"%idx
       E.refl_file = "/global/cscratch1/sd/nksauter/adse13_187/bernina/split2b/split_%04d.refl"%(
@@ -269,6 +387,8 @@ def multiple_cases():
     print(E.refl_file)
     M = mask_manager.from_files(E.trusted_mask_file, E.refl_file, E.expt_file)
     M.get_trusted_and_refl_mask()
+    M.refl_analysis(E.dials_model)
+    M.simple_rmsd()
     #M.plot_pixel_histograms()
     # compute lunus-repl image.  write res-data and lunus-repl to an HDF5 file
     M.get_lunus_repl(E.hdf5_file)
