@@ -172,7 +172,7 @@ class mask_manager:
                                               check_format=True)
     return cls(mask,refl_table,expts[0])
 
-  def get_lunus_repl(self,filenm):
+  def get_lunus_repl(self):
     P = Profiler("LUNUS")
     # first get the lunus image
     from lunus.command_line.filter_peaks import get_image_params
@@ -223,12 +223,16 @@ modeim_kernel_width=15
     lunus_filtered_data.reshape(flex.grid((256,254,254)))
     self.lunus_filtered_data = lunus_filtered_data.as_numpy_array()
 
+  def get_image_res_data(self):
+    if True: # params.write_experimental_data:
+      self.exp_data = self.expt.imageset.get_raw_data(0) # why a different access pattern? Are the data different?
+      assert len(self.exp_data) == 256 # Jungfrau panels
+      self.exp_data = [self.exp_data[pid].as_numpy_array() for pid in range(len(self.exp_data))]
+
+  def write_hdf5(self,filenm):
     # then write the data
     from simtbx.nanoBragg import utils
     if True: # params.write_output:
-      if True: # params.write_experimental_data:
-        exp_data = self.expt.imageset.get_raw_data(0) # why is this a different access pattern? Are the data different?
-        assert len(exp_data) == 256 # Jungfrau panels
       img_sh = self.lunus_filtered_data.shape
       assert img_sh == (256,254,254)
       num_output_images = 4 # 1 + int(params.write_experimental_data)
@@ -244,48 +248,70 @@ modeim_kernel_width=15
                                 image_shape=img_sh, num_images=num_output_images,
                                 detector=det_dict, beam=beam_dict,
                                 detector_and_beam_are_dicts=True) as writer:
+        #Output 1.  Lunus pixel-assimilated image
         writer.add_image(self.lunus_filtered_data)
-        P = Profiler("shoebox planes")
+
+        #Output 2.  In-memory modify the Lunus image, with 1st-order Taylor shoeboxes
         self.modify_shoeboxes()
-        del P
         writer.add_image(self.lunus_filtered_data)
 
         if True: # params.write_experimental_data:
-            exp_data = [exp_data[pid].as_numpy_array() for pid in range(len(exp_data))]
-            self.simulation_mockup(exp_data); writer.add_image(self.lunus_filtered_data)
-            writer.add_image(exp_data)
+          #Output 3. Mockup simulation laid on top of 1st-Taylor background
+          writer.add_image(self.simulation_mockup(self.exp_data))
+
+          self.ersatz_MCMC() #hook to produce actual simulation, bypass for now
+          #Output 4. Experimental res-data
+          writer.add_image(self.exp_data)
         print("Saved output to file %s" % (filenm))
 
-  def simulation_mockup(self,experimental):
-    """Function modifies the self.lunus_filtered_data.  Provides an alternate view of the
-    background vs. experiment data.  It zeroes out the pixels from the shoeboxes of interest,
-    but then adds the experimental pixels back.  Here "experimental pixels" means res-data
-    minus planar-fit-lunus-model.
-    """
+  def ersatz_MCMC(self):
+    pass
+
+  def per_shoebox_whitelist_iterator(self, sidx):
+    """given a shoebox id, iterate through all its whitelisted pixels"""
     Z = self.refl_table
-    size = len(Z)
     SOFF = Z["spots_offset"]
     SSIZ = Z["spots_size"]
-    panel_size = 254 * 254
     slow_size = 254
+    panel_size = 254 * 254
+    for idxpx in self.spots_pixels[SOFF[sidx]:SOFF[sidx]+SSIZ[sidx]]:
+      ipanel = idxpx//panel_size; panelpx = idxpx%panel_size
+      islow = panelpx//slow_size; ifast = panelpx%slow_size
+      yield ipanel, islow, ifast
+
+  def simulation_mockup(self,experimental):
+    """Function creates a mockup simulated image consisting of:
+      background = self.lunus_filtered_data + Bragg = (experimental - smooth backgrd)
+    Provides an alternate view of the background vs. experiment data.  It zeroes out the
+    pixels from the shoeboxes of interest,  but then adds the experimental pixels back.
+    Here "experimental pixels" means res-data minus planar-fit-lunus-model.
+    Function has the more expansive purpose of analyzing the data & lunus background model
+    and storing statistics: the data center of mass in the shoebox, and the data sum, to be
+    used later for normalizing the model in each shoebox.
+    """
     mockup_ctr_of_mass = flex.vec3_double()
+    mockup_shoebox_sum = flex.double()
+    import copy
+    mockup_simulation = copy.deepcopy(self.lunus_filtered_data)
     from scitbx.matrix import col
-    for sidx in range(size): #loop through the shoeboxes
+    for sidx in range(len(self.refl_table)): #loop through the shoeboxes
       SUM_VEC = col((0.,0.))
       SUM_wt = 0.
-      for idxpx in self.spots_pixels[SOFF[sidx]:SOFF[sidx]+SSIZ[sidx]]:
-        ipanel = idxpx//panel_size; panelpx = idxpx%panel_size
-        islow = panelpx//slow_size; ifast = panelpx%slow_size
+      for ipanel, islow, ifast in self.per_shoebox_whitelist_iterator(sidx):
         model_value = ( experimental[ipanel][islow,ifast] -
                         self.lunus_filtered_data[ipanel,islow,ifast])
         SUM_VEC = SUM_VEC + float(model_value) * col((float(islow),float(ifast)))
         SUM_wt += model_value
-        self.lunus_filtered_data[ipanel,islow,ifast] = model_value
+        mockup_simulation[ipanel,islow,ifast] = experimental[ipanel][islow,ifast]
+        #mockup_simulation[ipanel,islow,ifast] = model_value
       c_o_m = SUM_VEC/SUM_wt
       # there is a half pixel offset in our understanding of position
       mockup_ctr_of_mass.append((c_o_m[1]+0.5,c_o_m[0]+0.5,0.0))
-    Z["spots_mockup_xyzcal.px"] = mockup_ctr_of_mass
-    self.simple_rmsd(calc_data="spots_mockup_xyzcal.px",plot=True)
+      mockup_shoebox_sum.append(SUM_wt)
+    self.refl_table["spots_mockup_xyzcal.px"] = mockup_ctr_of_mass
+    self.refl_table["spots_mockup_shoebox_sum"] = mockup_shoebox_sum
+    self.simple_rmsd(calc_data="spots_mockup_xyzcal.px",plot=False)
+    return mockup_simulation
 
   def modify_shoeboxes(self, verbose=False): # and printing the shoeboxes in verbose mode
     exp_data = self.expt.imageset.get_raw_data(0) # experimental data
@@ -390,8 +416,9 @@ def multiple_cases():
     M.refl_analysis(E.dials_model)
     M.simple_rmsd()
     #M.plot_pixel_histograms()
-    # compute lunus-repl image.  write res-data and lunus-repl to an HDF5 file
-    M.get_lunus_repl(E.hdf5_file)
+    M.get_lunus_repl() # compute lunus-repl image.
+    M.get_image_res_data()
+    M.write_hdf5(E.hdf5_file) # write res-data and lunus-repl to an HDF5 file; includes simulation_mockup, for now.
     #M.modify_shoeboxes()
     M.resultant_mask_to_file(E.out_file)
 
