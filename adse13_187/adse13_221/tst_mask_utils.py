@@ -235,7 +235,7 @@ modeim_kernel_width=15
     if True: # params.write_output:
       img_sh = self.lunus_filtered_data.shape
       assert img_sh == (256,254,254)
-      num_output_images = 4 # 1 + int(params.write_experimental_data)
+      num_output_images = 5 # 1 + int(params.write_experimental_data)
       print("Saving exascale output data of shape", img_sh)
       beam_dict = self.expt.beam.to_dict()
       det_dict = self.expt.detector.to_dict()
@@ -259,13 +259,16 @@ modeim_kernel_width=15
           #Output 3. Mockup simulation laid on top of 1st-Taylor background
           writer.add_image(self.simulation_mockup(self.exp_data))
 
-          self.ersatz_MCMC() #hook to produce actual simulation, bypass for now
+          writer.add_image(self.ersatz_MCMC()) #hook to produce actual simulation, bypass for now
           #Output 4. Experimental res-data
           writer.add_image(self.exp_data)
         print("Saved output to file %s" % (filenm))
 
   def ersatz_MCMC(self):
-    pass
+    from LS49.adse13_187.adse13_221.mcmc_class import MCMC_manager
+    self.MCMC = MCMC_manager()
+    self.MCMC.get_amplitudes(self.dials_model, self.refl_table)
+    return self.MCMC.job_runner() # returns simulated image as numpy array
 
   def per_shoebox_whitelist_iterator(self, sidx):
     """given a shoebox id, iterate through all its whitelisted pixels"""
@@ -328,8 +331,9 @@ modeim_kernel_width=15
       bbox = S[sidx].bbox
       islow_limits = (max(0,bbox[2]-3), min(slow_size,bbox[3]+3))
       ifast_limits = (max(0,bbox[0]-3), min(fast_size,bbox[1]+3))
-      # print out the res-data
-      for islow in range(islow_limits[0], islow_limits[1]):
+      if verbose:
+       # print out the res-data
+       for islow in range(islow_limits[0], islow_limits[1]):
         fast_count=0
         fast_sum=0
         for ifast in range(ifast_limits[0], ifast_limits[1]):
@@ -338,10 +342,10 @@ modeim_kernel_width=15
           fast_count+=1
           fast_sum+=value
         print(" =%6.0f"%(fast_sum/fast_count))
-      print()
-      # print out the trusted mask
-      flag=True
-      for islow in range(islow_limits[0], islow_limits[1]):
+       print()
+       # print out the trusted mask
+       flag=True
+       for islow in range(islow_limits[0], islow_limits[1]):
         fast_count=0
         fast_sum=0
         for ifast in range(ifast_limits[0], ifast_limits[1]):
@@ -351,9 +355,9 @@ modeim_kernel_width=15
           fast_count+=1
           fast_sum+=value
         print(" =%6.0f"%(fast_sum/fast_count))
-      print()
-      # print out the lunus-repl shoebox
-      for islow in range(islow_limits[0], islow_limits[1]):
+       print()
+       # print out the lunus-repl shoebox
+       for islow in range(islow_limits[0], islow_limits[1]):
         fast_count=0
         fast_sum=0
         for ifast in range(ifast_limits[0], ifast_limits[1]):
@@ -362,7 +366,7 @@ modeim_kernel_width=15
           fast_count+=1
           fast_sum+=value
         print(" =%6.0f"%(fast_sum/fast_count))
-      print()
+       print()
       # now create a 2nd-order fit to the data.  First implementation, no weighting.
       from LS49.adse13_187.adse13_221.smooth_fit import replacement_pixels
       FIT=replacement_pixels(self, ipanel, islow_limits, ifast_limits, shoebox=S[sidx])
@@ -373,13 +377,14 @@ modeim_kernel_width=15
         for ifast in range(ifast_limits[0], ifast_limits[1]):
           value = FIT.model_T(islow,ifast)
           self.lunus_filtered_data[ipanel,islow,ifast]=value # reset lunus array
-          print("%6.0f"%value, end="")
+          if verbose: print("%6.0f"%value, end="")
           fast_count+=1
           fast_sum+=value
-        print(" =%6.0f"%(fast_sum/fast_count))
-      print()
-      # print out the data minus background-fit shoebox
-      for islow in range(islow_limits[0], islow_limits[1]):
+        if verbose: print(" =%6.0f"%(fast_sum/fast_count))
+      if verbose: print()
+      if verbose:
+       # print out the data minus background-fit shoebox
+       for islow in range(islow_limits[0], islow_limits[1]):
         fast_count=0
         fast_sum=0
         for ifast in range(ifast_limits[0], ifast_limits[1]):
@@ -388,8 +393,8 @@ modeim_kernel_width=15
           fast_count+=1
           fast_sum+=value
         print(" =%6.0f"%(fast_sum/fast_count))
-      print("---")
-      #input()
+       print("---")
+       #input()
 
 def multiple_cases():
   def get_any_case():
