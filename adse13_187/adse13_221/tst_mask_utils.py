@@ -235,7 +235,7 @@ modeim_kernel_width=15
     if True: # params.write_output:
       img_sh = self.lunus_filtered_data.shape
       assert img_sh == (256,254,254)
-      num_output_images = 5 # 1 + int(params.write_experimental_data)
+      num_output_images = 6 # 1 + int(params.write_experimental_data)
       print("Saving exascale output data of shape", img_sh)
       beam_dict = self.expt.beam.to_dict()
       det_dict = self.expt.detector.to_dict()
@@ -256,11 +256,26 @@ modeim_kernel_width=15
         writer.add_image(self.lunus_filtered_data)
 
         if True: # params.write_experimental_data:
-          #Output 3. Mockup simulation laid on top of 1st-Taylor background
-          writer.add_image(self.simulation_mockup(self.exp_data))
+          sim_mock = self.simulation_mockup(self.exp_data)
 
-          writer.add_image(self.ersatz_MCMC()) #hook to produce actual simulation, bypass for now
-          #Output 4. Experimental res-data
+          #Output no. ersatz simulation
+          nanobragg_sim = self.ersatz_MCMC()
+          #writer.add_image(nanobragg_sim) #hook to produce actual simulation, bypass for now
+
+          #Output 3. analyze proposal and add background
+          bragg_plus_background = self.reusable_rmsd(proposal=nanobragg_sim, label="ersatz_mcmc")
+          writer.add_image(bragg_plus_background)
+
+          #Output 4. renormalize the proposal
+          renormalize_bragg_plus_background = self.reusable_rmsd(proposal=self.renormalize(
+            proposal=nanobragg_sim,proposal_label="ersatz_mcmc",ref_label="spots_mockup"),
+            label="renormalize_mcmc")
+          writer.add_image(renormalize_bragg_plus_background)
+
+          #Output 5. Mockup simulation laid on top of 1st-Taylor background
+          writer.add_image(sim_mock)
+
+          #Output 6. Experimental res-data
           writer.add_image(self.exp_data)
         print("Saved output to file %s" % (filenm))
 
@@ -315,6 +330,47 @@ modeim_kernel_width=15
     self.refl_table["spots_mockup_shoebox_sum"] = mockup_shoebox_sum
     self.simple_rmsd(calc_data="spots_mockup_xyzcal.px",plot=False)
     return mockup_simulation
+
+  def reusable_rmsd(self,proposal,label):
+    """Function analyzes proposal data consisting of proposed Bragg spots
+    Function has the more expansive purpose of analyzing the data
+    and storing statistics: the data center of mass in the shoebox, and the data sum, to be
+    used later for normalizing the model in each shoebox.
+    """
+    proposal_ctr_of_mass = flex.vec3_double()
+    proposal_shoebox_sum = flex.double()
+    import copy
+    mockup_simulation = copy.deepcopy(self.lunus_filtered_data)
+    from scitbx.matrix import col
+    for sidx in range(len(self.refl_table)): #loop through the shoeboxes
+      SUM_VEC = col((0.,0.))
+      SUM_wt = 0.
+      for ipanel, islow, ifast in self.per_shoebox_whitelist_iterator(sidx):
+        proposal_value = proposal[ipanel][islow,ifast]
+        SUM_VEC = SUM_VEC + float(proposal_value) * col((float(islow),float(ifast)))
+        SUM_wt += proposal_value
+        mockup_simulation[ipanel,islow,ifast] += proposal_value
+      c_o_m = SUM_VEC/SUM_wt
+      # there is a half pixel offset in our understanding of position
+      proposal_ctr_of_mass.append((c_o_m[1]+0.5,c_o_m[0]+0.5,0.0))
+      proposal_shoebox_sum.append(SUM_wt)
+    self.refl_table[label+"_xyzcal.px"] = proposal_ctr_of_mass
+    self.refl_table[label+"_shoebox_sum"] = proposal_shoebox_sum
+    self.simple_rmsd(calc_data=label+"_xyzcal.px",plot=True)
+    return mockup_simulation
+
+  def renormalize(self,proposal,proposal_label,ref_label):
+    """Takes one proposal and returns a new one, with each spot adjusted by a
+    separate scale factor that represents the ratio of experiment::proposal
+    """
+    import copy
+    renormalized = copy.deepcopy(proposal)
+    all_scales = self.refl_table[ref_label+"_shoebox_sum"]/self.refl_table[proposal_label+"_shoebox_sum"]
+    for sidx in range(len(self.refl_table)): #loop through the shoeboxes
+      scale_factor = all_scales[sidx]
+      for ipanel, islow, ifast in self.per_shoebox_whitelist_iterator(sidx):
+        renormalized[ipanel,islow,ifast] *= scale_factor
+    return renormalized
 
   def modify_shoeboxes(self, verbose=False): # and printing the shoeboxes in verbose mode
     exp_data = self.expt.imageset.get_raw_data(0) # experimental data
