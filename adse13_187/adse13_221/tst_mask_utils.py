@@ -235,7 +235,7 @@ modeim_kernel_width=15
     if True: # params.write_output:
       img_sh = self.lunus_filtered_data.shape
       assert img_sh == (256,254,254)
-      num_output_images = 6 # 1 + int(params.write_experimental_data)
+      num_output_images = 7 # 1 + int(params.write_experimental_data)
       print("Saving exascale output data of shape", img_sh)
       beam_dict = self.expt.beam.to_dict()
       det_dict = self.expt.detector.to_dict()
@@ -275,9 +275,66 @@ modeim_kernel_width=15
           #Output 5. Mockup simulation laid on top of 1st-Taylor background
           writer.add_image(sim_mock)
 
-          #Output 6. Experimental res-data
+          #Output 6. Figure the Z-plot
+          Z_plot=self.Z_statistics(experiment=sim_mock,model=renormalize_bragg_plus_background,
+                                   plot=False)
+          writer.add_image(Z_plot)
+
+          #Output 7. Experimental res-data
           writer.add_image(self.exp_data)
         print("Saved output to file %s" % (filenm))
+
+  def Z_statistics(self, experiment, model, plot=False):
+    P = Profiler("z-statistics")
+    Z_plot = []
+    sigma_pixel = []
+    import numpy as np
+    for x in range(256):
+      exp_panel = self.exp_data[x]
+      abs_exp_panel = abs(exp_panel)
+      abs_exp_panel_photons = abs_exp_panel/9.479 # convert to photons
+      poisson_noise_sigma = np.sqrt(abs_exp_panel_photons)
+      sigma_pixel.append(poisson_noise_sigma)
+      diff_panel_photons = (model[x] - experiment[x])/9.479
+      offset_Z = (diff_panel_photons/poisson_noise_sigma)*0.1 + 1.0
+      Z_plot.append(offset_Z)
+
+    proposal_shoebox_mean_Z = flex.double()
+    proposal_shoebox_sigma_Z = flex.double()
+    all_Z_values = flex.double()
+    sauter_eq_15_likelihood = flex.double()
+    for sidx in range(len(self.refl_table)): #loop through the shoeboxes
+      shoebox_Z_values = flex.double()
+      for ipanel, islow, ifast in self.per_shoebox_whitelist_iterator(sidx):
+        std_dev_denominator_photons = sigma_pixel[ipanel][islow,ifast]
+        diff_panel_photons = (model[ipanel][islow,ifast] - experiment[ipanel][islow,ifast])/9.479
+        Z = (diff_panel_photons/std_dev_denominator_photons)
+        shoebox_Z_values.append(Z)
+        all_Z_values.append(Z)
+        sauter_eq_15_likelihood.append( (model[ipanel][islow,ifast]/9.479) -
+          (experiment[ipanel][islow,ifast]/9.479) * math.log(model[ipanel][islow,ifast]/9.479))
+      stats = flex.mean_and_variance(shoebox_Z_values)
+      proposal_shoebox_mean_Z.append( stats.mean() )
+      proposal_shoebox_sigma_Z.append( stats.unweighted_sample_standard_deviation() )
+    print("proposal negative log likelihood %10f"%(flex.sum(sauter_eq_15_likelihood)))
+    stats = flex.mean_and_variance(all_Z_values)
+    mnz = stats.mean()
+    sgz = stats.unweighted_sample_standard_deviation()
+    print("proposal mean Z=%.2f, sigma Z=%.2f"%(mnz, sgz))
+    if plot:
+      from matplotlib import pyplot as plt
+      plt.plot(range(len(self.refl_table)),
+               proposal_shoebox_mean_Z.select(self.refl_table["spots_order"]),"r-",
+               label="mean Z (all=%.2f)"%(mnz))
+      plt.plot(range(len(self.refl_table)),
+               proposal_shoebox_sigma_Z.select(self.refl_table["spots_order"]),
+               label="std_dev Z (all=%.2f)"%(sgz))
+      plt.title("Z_distribution in each shoebox")
+      plt.xlabel("Spots ordered by increasing Bragg angle →")
+      plt.ylabel("Z-value")
+      plt.legend(loc='upper right')
+      plt.show()
+    return Z_plot
 
   def ersatz_MCMC(self):
     from LS49.adse13_187.adse13_221.mcmc_class import MCMC_manager
@@ -356,7 +413,7 @@ modeim_kernel_width=15
       proposal_shoebox_sum.append(SUM_wt)
     self.refl_table[label+"_xyzcal.px"] = proposal_ctr_of_mass
     self.refl_table[label+"_shoebox_sum"] = proposal_shoebox_sum
-    self.simple_rmsd(calc_data=label+"_xyzcal.px",plot=True)
+    self.simple_rmsd(calc_data=label+"_xyzcal.px",plot=False) # toggle for plotting
     return mockup_simulation
 
   def renormalize(self,proposal,proposal_label,ref_label):
