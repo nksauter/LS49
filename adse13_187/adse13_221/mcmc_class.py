@@ -3,6 +3,8 @@ import os
 from time import time
 from dials.array_family import flex
 from dxtbx.model.experiment_list import ExperimentListFactory
+from scipy import constants
+ENERGY_CONV = 1e10*constants.c*constants.h / constants.electron_volt
 
 class MCMC_manager:
   def get_amplitudes(self, dials_model, refl_table, test_without_mpi=True):
@@ -26,35 +28,26 @@ class MCMC_manager:
     self.gpu_channels_singleton = gpu_energy_channels (
         deviceId = 0 ) # determine device by rank id later
 
-  # hook into my new algorithm for spectrum downsampling
   # submit a mask object instead of a file
   # share the same expt & res-data as the parent process.
   # use the 0.1 second algorithm rather than the 20 second.
   # figure out how to incorporate the readout noise
 
-  def job_runner(self,i_exp=0,spectra={}):
-    from simtbx.nanoBragg import utils
-    print("Experiment %d" % i_exp, flush=True)
-
+  def job_runner(self,expt,i_exp=0,spectra={}):
     from LS49.adse13_187.case_data import retrieve_from_repo
-    experiment_file = retrieve_from_repo(i_exp)
+
     cuda = True  # False  # whether to use cuda
     ngpu_on_node = 1 # 8  # number of available GPUs
     mosaic_spread = 0.00  # degrees
     mosaic_spread_samples = 250 # XXX Fixme make this a parameter
     Ncells_abc = 130, 30, 10  # medians from best stage1
-    ev_res = 1.5  # resolution of the downsample spectrum
-    total_flux = 1e12  # total flux across channels
     beamsize_mm = 0.000886226925452758  # sqrt of beam focal area
     spot_scale = 500. # 5.16324  # median from best stage1
     oversample = 1  # oversample factor, 1,2, or 3 probable enough
     verbose = 0  # leave as 0, unles debug
     flat = True  # enfore that the camera has 0 thickness
     #<><><><><><><><>
-    os.environ["NXMX_LOCAL_DATA"]="/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5"
-    El = ExperimentListFactory.from_json_file(experiment_file,
-                                              check_format=True)
-    exper = El[0]
+    exper = expt
 
     crystal = exper.crystal
     detector = exper.detector
@@ -73,12 +66,11 @@ class MCMC_manager:
 
     beam = exper.beam
 
-    # XXX new code
     spec = exper.imageset.get_spectrum(0)
     energies_raw, weights_raw = spec.get_energies_eV().as_numpy_array(), \
                                 spec.get_weights().as_numpy_array()
-    energies, weights = utils.downsample_spectrum(energies_raw, weights_raw, method=1, total_flux=total_flux,
-                                                  ev_width=ev_res)
+    from LS49.adse13_187.adse13_221.explore_spectrum import method3
+    energies, weights, _ = method3(energies_raw, weights_raw,); weights = 5000000.*weights
 
     if flat:
         assert detector[0].get_thickness() == 0
@@ -88,7 +80,7 @@ class MCMC_manager:
       device_Id = self.gpu_channels_singleton.get_deviceID()
 
     mn_energy = (energies*weights).sum() / weights.sum()
-    mn_wave = utils.ENERGY_CONV / mn_energy
+    mn_wave = ENERGY_CONV / mn_energy
     print("\n<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>")
     print("\tBreakdown:")
     for shapetype in ["gauss_argchk"]:
@@ -108,7 +100,7 @@ class MCMC_manager:
         Famp = self.gpu_channels_singleton,
         energies=list(energies), fluxes=list(weights),
         background_wavelengths=[mn_wave], background_wavelength_weights=[1],
-        background_total_flux=total_flux,background_sample_thick_mm=0.5,
+        background_total_flux=1e12,background_sample_thick_mm=0.5,
         cuda=True,
         oversample=oversample, Ncells_abc=Ncells_abc,
         mos_dom=mosaic_spread_samples, mos_spread=mosaic_spread,
@@ -125,8 +117,8 @@ class MCMC_manager:
     print("<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n")
     return JF16M_numpy_array
 
+# use case specializations are given below:
 class case_DS1 (MCMC_manager):
-  # where to go from here:
   # calculate an rmsd on these pixels (omit background) DONE
   # try recruiting Derek's March 15 expt model to see if rmsd improves DONE
   # renormalize the proposal for each Bragg spot to be on scale with experiment DONE
@@ -341,3 +333,19 @@ class case_228 (MCMC_manager):
       print("\t\tExascale: time for bkgrd sim: %.4fs; Bragg sim: %.4fs; total: %.4fs" % (TIME_BG, TIME_BRAGG, TIME_EXA))
     print("<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>\n")
     return JF16M_numpy_array
+
+def proof_of_principle_compare_three_spectra(energies_raw, weights_raw):
+    from simtbx.nanoBragg import utils
+    energies1, weights1 = utils.downsample_spectrum(energies_raw, weights_raw, method=1, total_flux=1e12,
+                                                  ev_width=1.5)
+    energies2, weights2 = utils.downsample_spectrum(energies_raw, weights_raw, method=2, total_flux=1e12,
+                                                  ev_width=1.5)
+    from LS49.adse13_187.adse13_221.explore_spectrum import method3
+    energies, weights, _ = method3(energies_raw, weights_raw,); weights = 5000000.*weights
+
+    from matplotlib import pyplot as plt
+    plt.plot(energies1,weights1,'r-')
+    plt.plot(energies2,weights2,'b-')
+    plt.plot(energies, weights, 'g-')
+    plt.show()
+    return energies, weights

@@ -338,9 +338,11 @@ modeim_kernel_width=15
 
   def ersatz_MCMC(self):
     from LS49.adse13_187.adse13_221.mcmc_class import MCMC_manager
+    from LS49.adse13_187.adse13_221.mcmc_class import case_228 # implicit imports
+    from LS49.adse13_187.adse13_221.mcmc_class import case_DS1 # implicit imports
     self.MCMC = MCMC_manager()
     self.MCMC.get_amplitudes(self.dials_model, self.refl_table)
-    return self.MCMC.job_runner() # returns simulated image as numpy array
+    return self.MCMC.job_runner(expt=self.expt) # returns simulated image as numpy array
 
   def per_shoebox_whitelist_iterator(self, sidx):
     """given a shoebox id, iterate through all its whitelisted pixels"""
