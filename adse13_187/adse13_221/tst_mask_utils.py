@@ -405,7 +405,9 @@ modeim_kernel_width=15
       SUM_VEC = col((0.,0.))
       SUM_wt = 0.
       for ipanel, islow, ifast in self.per_shoebox_whitelist_iterator(sidx):
-        proposal_value = proposal[ipanel][islow,ifast]
+        #proposal_value = proposal[ipanel][islow,ifast]
+        proposal_value = max(0.1,proposal[ipanel][islow,ifast])
+          #workaround for the "Paley" bug. If spot is not predicted, give it some nonzero intensity
         SUM_VEC = SUM_VEC + float(proposal_value) * col((float(islow),float(ifast)))
         SUM_wt += proposal_value
         mockup_simulation[ipanel,islow,ifast] += proposal_value
