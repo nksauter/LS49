@@ -1,4 +1,4 @@
-from simtbx.nanoBragg import utils
+from __future__ import division
 from dxtbx.model.experiment_list import ExperimentListFactory
 import matplotlib.pyplot as plt
 import time
