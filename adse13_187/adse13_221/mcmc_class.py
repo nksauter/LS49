@@ -28,10 +28,10 @@ class MCMC_manager:
     self.gpu_channels_singleton = gpu_energy_channels (
         deviceId = 0 ) # determine device by rank id later
 
-  # submit a mask object instead of a file
-  # share the same expt & res-data as the parent process.
-  # use the 0.1 second algorithm rather than the 20 second.
   # figure out how to incorporate the readout noise
+  # submit a mask object instead of a file
+  # use the 0.1 second algorithm rather than the 20 second.
+  # set the variable parameters outside prior to calling job_runner(), including A matrix
 
   def job_runner(self,expt,i_exp=0,spectra={}):
     from LS49.adse13_187.case_data import retrieve_from_repo
@@ -99,8 +99,6 @@ class MCMC_manager:
         CRYSTAL=alt_crystal, DETECTOR=detector, BEAM=beam,
         Famp = self.gpu_channels_singleton,
         energies=list(energies), fluxes=list(weights),
-        background_wavelengths=[mn_wave], background_wavelength_weights=[1],
-        background_total_flux=1e12,background_sample_thick_mm=0.5,
         cuda=True,
         oversample=oversample, Ncells_abc=Ncells_abc,
         mos_dom=mosaic_spread_samples, mos_spread=mosaic_spread,

@@ -90,8 +90,8 @@ def parse_input():
 
 def multipanel_sim(
   CRYSTAL, DETECTOR, BEAM, Famp, energies, fluxes,
-  background_wavelengths, background_wavelength_weights,
-  background_total_flux, background_sample_thick_mm,
+  background_wavelengths=None, background_wavelength_weights=None,
+  background_total_flux=None, background_sample_thick_mm=None,
   density_gcm3=1, molecular_weight=18,
   cuda=False, oversample=0, Ncells_abc=(50, 50, 50),
   mos_dom=1, mos_spread=0, beamsize_mm=0.001,
