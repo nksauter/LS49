@@ -281,15 +281,24 @@ modeim_kernel_width=15
           writer.add_image(sim_mock)
 
           #Output 6. Figure the Z-plot
-          Z_plot=self.Z_statistics(experiment=sim_mock,model=renormalize_bragg_plus_background,
+          #from xfel.util import jungfrau
+          #RMS = jungfrau.get_pedestalRMS_from_jungfrau(self.expt)
+          # the shape of RMS is 256x254x254.
+          Z_plot=self.Z_statistics(experiment=sim_mock,
+                                           model=renormalize_bragg_plus_background,
+                                           #readout_noise_keV=RMS,
                                    plot=False)
           writer.add_image(Z_plot)
+          #writer.add_image(Zrplot)
 
           #Output 7. Experimental res-data
           writer.add_image(self.exp_data)
+
+          #writer.add_image(RMS)
+
         print("Saved output to file %s" % (filenm))
 
-  def Z_statistics(self, experiment, model, plot=False):
+  def Z_statistics(self, experiment, model, readout_noise_keV=None, plot=False):
     P = Profiler("z-statistics")
     Z_plot = []
     sigma_pixel = []
@@ -303,6 +312,16 @@ modeim_kernel_width=15
       diff_panel_photons = (model[x] - experiment[x])/9.479
       offset_Z = (diff_panel_photons/poisson_noise_sigma)*0.1 + 1.0
       Z_plot.append(offset_Z)
+    #Zrplot = []
+    #for x in range(256):
+    #  exp_panel = self.exp_data[x]
+    #  exp_panel_photons = exp_panel/9.479 # convert to photons
+    #  poisson_noise_variance = exp_panel_photons
+    #  readout_noise_variance = np.square(readout_noise_keV[x,:,:]/9.479)
+    #  total_noise_sigma = np.sqrt(poisson_noise_variance + readout_noise_variance)
+    #  diff_panel_photons = (model[x] - experiment[x])/9.479
+    #  offset_Z = (diff_panel_photons/total_noise_sigma)*0.1 + 1.0
+    #  Zrplot.append(offset_Z)
 
     proposal_shoebox_mean_Z = flex.double()
     proposal_shoebox_sigma_Z = flex.double()
@@ -339,7 +358,7 @@ modeim_kernel_width=15
       plt.ylabel("Z-value")
       plt.legend(loc='upper right')
       plt.show()
-    return Z_plot
+    return Z_plot #, Zrplot
 
   def ersatz_MCMC(self):
     from LS49.adse13_187.adse13_221.mcmc_class import MCMC_manager
@@ -529,7 +548,7 @@ def multiple_cases():
       class Empty: pass
       E = Empty()
       E.trusted_mask_file = "/global/cscratch1/sd/nksauter/adse13_187/bernina/trusted_Py3.mask"
-      E.expt_file = "/global/cscratch1/sd/nksauter/adse13_187/bernina/split_c/split_%04d.expt"%item
+      E.expt_file = "/global/cscratch1/sd/nksauter/adse13_187/bernina/split_cr/split_%04d.expt"%item
       E.dials_model = "/global/cscratch1/sd/nksauter/adse13_187/bernina/split2b/split_%04d.expt"%item
       E.out_file = "top_event_%04d.mask"%idx
       E.hdf5_file = "top_exa_%04d.hdf5"%idx
