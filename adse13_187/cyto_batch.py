@@ -173,14 +173,19 @@ def multipanel_sim(
       #SIM.flux = self.flux[x]
       #SIM.wavelength_A = self.wavlen[x]
     from libtbx.development.timers import Profiler
-    if mask_file is "": # select kernel based on masking or not
+    if mask_file is "": # all-pixel kernel
       P = Profiler("from gpu amplitudes cuda")
       gpu_simulation.add_energy_channel_from_gpu_amplitudes_cuda(
       x, Famp, gpu_detector)
+    elif type(mask_file) is flex.bool: # 1D bool array, flattened from ipanel, islow, ifast
+      P = Profiler("from gpu amplitudes cuda with bool mask")
+      gpu_simulation.add_energy_channel_mask_allpanel_cuda(
+      x, Famp, gpu_detector, mask_file )
     else:
+      assert type(mask_file) is str
       from LS49.adse13_187.adse13_221.mask_utils import mask_from_file
       boolean_mask = mask_from_file(mask_file)
-      P = Profiler("from gpu amplitudes cuda")
+      P = Profiler("from gpu amplitudes cuda with file mask")
       gpu_simulation.add_energy_channel_mask_allpanel_cuda(
       x, Famp, gpu_detector, boolean_mask )
     TIME_BRAGG = time()-P.start_el

@@ -61,6 +61,11 @@ class mask_manager:
              self.shoebox_mask[midx].count(True), "result", newmask.count(True))
     print (N_true,"pixels were visited in the %d shoeboxes (with borders)"%size)
     print (N_bad_pizel,"of these were bad pixels")
+    self.monolithic_mask_whole_detector_as_1D_bool = flex.bool()
+    for ipnl in range(len(self.resultant)):
+      pnl = self.resultant[ipnl]
+      self.monolithic_mask_whole_detector_as_1D_bool.extend(pnl.as_1d())
+    assert len(self.monolithic_mask_whole_detector_as_1D_bool)==256*254*254
 
   def refl_analysis(self,dials_model):
     """This function sets up some data structures (spots_*) allowing us to index into the spots
@@ -342,7 +347,9 @@ modeim_kernel_width=15
     from LS49.adse13_187.adse13_221.mcmc_class import case_DS1 # implicit imports
     self.MCMC = MCMC_manager()
     self.MCMC.get_amplitudes(self.dials_model, self.refl_table)
-    return self.MCMC.job_runner(expt=self.expt) # returns simulated image as numpy array
+    return self.MCMC.job_runner(expt=self.expt,
+      mask_array = self.monolithic_mask_whole_detector_as_1D_bool
+      ) # returns simulated image as numpy array
 
   def per_shoebox_whitelist_iterator(self, sidx):
     """given a shoebox id, iterate through all its whitelisted pixels"""

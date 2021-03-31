@@ -33,7 +33,7 @@ class MCMC_manager:
   # use the 0.1 second algorithm rather than the 20 second.
   # set the variable parameters outside prior to calling job_runner(), including A matrix
 
-  def job_runner(self,expt,i_exp=0,spectra={}):
+  def job_runner(self,expt,mask_array=None,i_exp=0,spectra={}):
     from LS49.adse13_187.case_data import retrieve_from_repo
 
     cuda = True  # False  # whether to use cuda
@@ -108,7 +108,7 @@ class MCMC_manager:
         time_panels=False, verbose=verbose,
         spot_scale_override=spot_scale,
         include_background=False,
-        mask_file=self.params.mask_file)
+        mask_file=(mask_array or self.params.mask_file))
       TIME_EXA = time()-BEG
 
       print("\t\tExascale: time for bkgrd sim: %.4fs; Bragg sim: %.4fs; total: %.4fs" % (TIME_BG, TIME_BRAGG, TIME_EXA))
