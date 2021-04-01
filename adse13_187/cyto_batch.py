@@ -1,5 +1,6 @@
 from __future__ import division, print_function
 from time import time
+from libtbx.development.timers import Profiler
 start_elapse = time()
 
 """Modified version of the cyto_sim.py script with the following added features:
@@ -118,7 +119,9 @@ def multipanel_sim(
   wavelengths = ENERGY_CONV / np.array(energies)
   nbBeam.spectrum = list(zip(wavelengths, fluxes))
 
-  nbCrystal = NBcrystal()
+  class Nodefault_NBcrystal(NBcrystal):
+    def __init__(self): self._miller_array = None
+  nbCrystal = Nodefault_NBcrystal()
   nbCrystal.dxtbx_crystal = CRYSTAL
   #nbCrystal.miller_array = None # use the gpu_channels_singleton mechanism instead
   nbCrystal.Ncells_abc = Ncells_abc
@@ -172,7 +175,6 @@ def multipanel_sim(
     #SIM.flux = background_total_flux
       #SIM.flux = self.flux[x]
       #SIM.wavelength_A = self.wavlen[x]
-    from libtbx.development.timers import Profiler
     if mask_file is "": # all-pixel kernel
       P = Profiler("from gpu amplitudes cuda")
       gpu_simulation.add_energy_channel_from_gpu_amplitudes_cuda(
