@@ -101,7 +101,7 @@ def multipanel_sim(
   spot_scale_override=None, show_params=False, time_panels=False,
   add_water = False, add_air=False, water_path_mm=0.005, air_path_mm=0,
   adc_offset=0, readout_noise=3, psf_fwhm=0, gain=1, mosaicity_random_seeds=None,
-  include_background=True, mask_file=""):
+  include_background=True, mask_file="",skip_numpy=False):
 
   from simtbx.nanoBragg.nanoBragg_beam import NBbeam
   from simtbx.nanoBragg.nanoBragg_crystal import NBcrystal
@@ -215,10 +215,12 @@ def multipanel_sim(
       TIME_BG = time()-t_bkgrd_start
     else: TIME_BG=0.
 
-    packed_numpy = gpu_detector.get_raw_pixels_cuda().as_numpy_array()
+    packed_numpy = gpu_detector.get_raw_pixels_cuda()
     gpu_detector.each_image_free_cuda()
 
-    return packed_numpy, TIME_BG, TIME_BRAGG
+    if skip_numpy:
+      return packed_numpy, TIME_BG, TIME_BRAGG
+    return packed_numpy.as_numpy_array(), TIME_BG, TIME_BRAGG
 
 def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     from simtbx.nanoBragg import utils

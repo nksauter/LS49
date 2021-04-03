@@ -105,7 +105,7 @@ class MCMC_manager:
         time_panels=False, verbose=verbose,
         spot_scale_override=spot_scale,
         include_background=False,
-        mask_file=mask_array
+        mask_file=mask_array, skip_numpy=True
       )
       Rmsd,sigZ,LLG = Zscore_callback(kernel_model=JF16M_numpy_array, plot=False)
       if macro_iteration==0:
@@ -136,7 +136,7 @@ class MCMC_manager:
       self.plot_all(macro_iteration+1,of=n_cycles)
       TIME_EXA = time()-BEG
       print("\t\tExascale: time for Bragg sim: %.4fs; total: %.4fs" % (TIME_BRAGG, TIME_EXA))
-    return JF16M_numpy_array
+    return JF16M_numpy_array.as_numpy_array()
 
   def plot_all(self,icmp,of):
     N_param = len(self.parameters)

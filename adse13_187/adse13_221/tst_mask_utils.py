@@ -363,8 +363,13 @@ modeim_kernel_width=15
     return Z_plot #, Zrplot
 
   def quick_Zscore(self, kernel_model, ref_label="spots_mockup", plot=True):
-    P = Profiler("quick z-statistics")
+    P = Profiler("C++ z-statistics")
+    self.pixel_stats.analyze(kernel_model=kernel_model,
+                             reference_shoebox_sums = self.refl_table[ref_label+"_shoebox_sum"],
+                             slow_size = 254, panel_size = 254 * 254,
+                             keV_per_photon = 9.479)
 
+    P = Profiler("quick z-statistics")
     proposal_shoebox_mean_Z = flex.double()
     proposal_shoebox_sigma_Z = flex.double()
     all_Z_values = flex.double()
@@ -429,6 +434,17 @@ modeim_kernel_width=15
     mnz = stats.mean()
     sgz = stats.unweighted_sample_standard_deviation()
     print("quick proposal mean Z=%.2f, sigma Z=%.2f"%(mnz, sgz))
+
+    c_LLG = self.pixel_stats.get_LLG()
+    c_mnz = self.pixel_stats.get_mnz()
+    c_sgz = self.pixel_stats.get_sgz()
+    c_proposal_center_of_mass = self.pixel_stats.get_proposal_center_of_mass()
+    self.refl_table["c_temp_values"] = c_proposal_center_of_mass
+    c_rmsd = self.simple_rmsd(calc_data="c_temp_values",plot=False)
+    print( c_LLG, LLG)
+    print( c_mnz, mnz)
+    print( c_sgz,sgz)
+    print( c_rmsd, rmsd)
     if plot:
       from matplotlib import pyplot as plt
       plt.plot(range(len(self.refl_table)),
@@ -461,6 +477,16 @@ modeim_kernel_width=15
           self.whitelist_lunus_filtered_data.append(self.lunus_filtered_data[ipanel,islow,ifast])
           self.whitelist_exp_data.append(float(self.exp_data[ipanel][islow,ifast]))
           self.whitelist_sim_mock.append(self.sim_mock[ipanel][islow,ifast])
+
+      from simtbx.pixel import pixel_stats
+      self.pixel_stats = pixel_stats()
+      self.pixel_stats.set_whitelist(lunus_filtered_data = self.whitelist_lunus_filtered_data,
+                                     exp_data = self.whitelist_exp_data,
+                                     sim_mock = self.whitelist_sim_mock)
+      self.pixel_stats.set_shoebox_iterator(shoebox_offset=self.refl_table["spots_offset"],
+                                            shoebox_size=self.refl_table["spots_size"],
+                                            spots_pixels=self.spots_pixels)
+
       return self.MCMC.chain_runner(expt=self.expt,
       mask_array = self.monolithic_mask_whole_detector_as_1D_bool,
       n_cycles = 500,
@@ -533,7 +559,6 @@ modeim_kernel_width=15
       SUM_VEC = col((0.,0.))
       SUM_wt = 0.
       for ipanel, islow, ifast in self.per_shoebox_whitelist_iterator(sidx):
-        #proposal_value = proposal[ipanel][islow,ifast]
         proposal_value = max(0.1,proposal[ipanel][islow,ifast])
           #workaround for the "Paley" bug. If spot is not predicted, give it some nonzero intensity
         SUM_VEC = SUM_VEC + float(proposal_value) * col((float(islow),float(ifast)))
