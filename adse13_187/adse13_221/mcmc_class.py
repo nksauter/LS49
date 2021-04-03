@@ -3,6 +3,9 @@ import os
 from time import time
 from dials.array_family import flex
 from dxtbx.model.experiment_list import ExperimentListFactory
+from LS49.adse13_187.cyto_batch import multipanel_sim
+from matplotlib import pyplot as plt
+import random, math
 from scipy import constants
 ENERGY_CONV = 1e10*constants.c*constants.h / constants.electron_volt
 
@@ -28,16 +31,178 @@ class MCMC_manager:
     self.gpu_channels_singleton = gpu_energy_channels (
         deviceId = 0 ) # determine device by rank id later
 
-  # figure out how to incorporate the readout noise
-  # submit a mask object instead of a file
-  # use the 0.1 second algorithm rather than the 20 second.
-  # set the variable parameters outside prior to calling job_runner(), including A matrix
+  def chain_runner(self,expt,mask_array=None,n_cycles = 100,
+      Zscore_callback=None, rmsd_callback=None):
+
+    # Fixed hyperparameters
+    mosaic_spread_samples = 250
+    beamsize_mm = 0.000886226925452758  # sqrt of beam focal area
+    spot_scale = 500. # 5.16324  # median from best stage1
+    oversample = 1  # oversample factor, 1,2, or 3 probable enough
+    verbose = 0  # leave as 0, unles debug
+    shapetype = "gauss_argchk"
+
+    detector = expt.detector
+    flat = True  # enfore that the camera has 0 thickness
+    if flat:
+        from dxtbx_model_ext import SimplePxMmStrategy
+        for panel in detector:
+            panel.set_px_mm_strategy(SimplePxMmStrategy())
+            panel.set_mu(0)
+            panel.set_thickness(0)
+        assert detector[0].get_thickness() == 0
+
+    beam = expt.beam
+    spec = expt.imageset.get_spectrum(0)
+    energies_raw = spec.get_energies_eV().as_numpy_array()
+    weights_raw = spec.get_weights().as_numpy_array()
+    from LS49.adse13_187.adse13_221.explore_spectrum import method3
+    energies, weights, _ = method3(energies_raw, weights_raw,); weights = 5000000.*weights
+    energies = list(energies); weights = list(weights)
+
+    device_Id = 0 # XXX probably has to be revisited for multiprocess service
+    assert self.gpu_channels_singleton is not None
+    device_Id = self.gpu_channels_singleton.get_deviceID()
+    print (device_Id,"device",shapetype)
+    Famp_is_uninitialized = ( self.gpu_channels_singleton.get_nchannels() == 0 )
+    if Famp_is_uninitialized:
+      F_P1 = self.amplitudes
+      for x in range(1):  # in this scenario, amplitudes are independent of lambda
+          self.gpu_channels_singleton.structure_factors_to_GPU_direct_cuda(
+          x, F_P1.indices(), F_P1.data())
+    assert self.gpu_channels_singleton.get_nchannels() == 1
+
+    # Variable parameters
+    mosaic_spread = 0.01  # degrees
+    Ncells_abc = 130, 30, 10  # medians from best stage1
+    alt_exper = ExperimentListFactory.from_json_file(
+      '/global/cfs/cdirs/m3562/der/braggnanimous/top8_newlam2/expers/rank0/stg1_top_0_0.expt',
+                                              check_format=False)[0]
+    alt_crystal = alt_exper.crystal
+    self.parameters = {}
+    self.parameters["cell"] = variable_cell(alt_crystal)
+    self.parameters["eta"] = variable_mosaicity(mosaic_spread)
+    self.rmsd_chain= flex.double(); self.sigz_chain=flex.double(); self.llg_chain=flex.double();
+    self.cycle_list = [key for key in self.parameters]
+    self.accept = flex.int()
+
+    for macro_iteration in range(n_cycles):
+      BEG=time()
+      turn = self.cycle_list[macro_iteration%len(self.cycle_list)]
+      if turn=="cell":
+        alt_crystal = self.parameters["cell"].get_current_crystal_model()
+
+      JF16M_numpy_array, TIME_BG, TIME_BRAGG = multipanel_sim(
+        CRYSTAL=alt_crystal, DETECTOR=detector, BEAM=beam,
+        Famp = self.gpu_channels_singleton,
+        energies=energies, fluxes=weights,
+        cuda=True,
+        oversample=oversample, Ncells_abc=Ncells_abc,
+        mos_dom=mosaic_spread_samples, mos_spread=self.parameters["eta"].proposal,
+        beamsize_mm=beamsize_mm,
+        profile=shapetype,
+        show_params=False,
+        time_panels=False, verbose=verbose,
+        spot_scale_override=spot_scale,
+        include_background=False,
+        mask_file=mask_array
+      )
+      Rmsd,sigZ,LLG = Zscore_callback(kernel_model=JF16M_numpy_array, plot=False)
+      if macro_iteration==0:
+        self.parameters["cell"].accept()
+        self.parameters["eta"].accept()
+        self.accept.append(1)
+        self.rmsd_chain.append(Rmsd); self.sigz_chain.append(sigZ); self.llg_chain.append(LLG)
+      else:
+        print ("Old NLL ",self.llg_chain[-1], "NEW LLG",LLG, "diff",self.llg_chain[-1] - LLG)
+        acceptance_prob = min (1., math.exp( (self.llg_chain[-1] - LLG)/55000. )) # normalize by number of pixels
+
+        if random.random() < acceptance_prob:
+          for key in self.parameters:
+            if key == turn:  self.parameters[key].accept()
+            else: self.parameters[key].reject()
+          self.accept.append(1)
+          self.rmsd_chain.append(Rmsd); self.sigz_chain.append(sigZ); self.llg_chain.append(LLG)
+        else:
+          for key in self.parameters: self.parameters[key].reject()
+          self.accept.append(0)
+          self.rmsd_chain.append(self.rmsd_chain[-1]);
+          self.sigz_chain.append(self.sigz_chain[-1]);
+          self.llg_chain.append(self.llg_chain[-1])
+
+      for key in self.parameters:
+        if key == self.cycle_list[(macro_iteration+1)%len(self.cycle_list)]:
+          self.parameters[key].generate_next_proposal()
+      self.plot_all(macro_iteration+1,of=n_cycles)
+      TIME_EXA = time()-BEG
+      print("\t\tExascale: time for Bragg sim: %.4fs; total: %.4fs" % (TIME_BRAGG, TIME_EXA))
+    return JF16M_numpy_array
+
+  def plot_all(self,icmp,of):
+    N_param = len(self.parameters)
+    if icmp==1:
+      self.line = list(range(N_param))
+      self.running = flex.double(); self.running.append(self.accept[0])
+      plt.ion()
+      self.fig,self.axes = fig,axes = plt.subplots(7,1,sharex=True,figsize=(7,10))
+      self.line0, = axes[0].plot(range(icmp), self.parameters["cell"].a_chain)
+      self.line1, = axes[1].plot(range(icmp), self.parameters["cell"].c_chain)
+      self.line1eta, = axes[2].plot(range(icmp), self.parameters["cell"].c_chain)
+      self.line2, = axes[3].plot(range(icmp), self.rmsd_chain)
+      self.line3, = axes[4].plot(range(icmp), self.sigz_chain)
+      self.line4, = axes[5].plot(range(icmp), self.llg_chain)
+      self.line5, = axes[6].plot(range(icmp), self.running, "r-")
+      self.line5a, = axes[6].plot(range(icmp), self.accept, "k,")
+      for npm in range(N_param):
+        self.line[npm], = axes[6].plot(range(icmp), N_param*self.parameters[self.cycle_list[npm]].running)
+      print(self.line)
+      axes[0].set_ylabel("a")
+      axes[1].set_ylabel("c")
+      axes[2].set_ylabel("eta")
+      axes[3].set_ylabel("RMSD (px)")
+      axes[4].set_ylabel("Z-score sigma")
+      axes[5].set_ylabel("LLG")
+      axes[6].set_ylabel("accept")
+      axes[0].set_ylim(78.4,79.1)
+      axes[1].set_ylim(264.5,266)
+      axes[2].set_ylim(0,0.1)
+      axes[3].set_ylim(0.45,1.00)
+      axes[4].set_ylim(2.0,6.0)
+      axes[5].set_ylim(-17052536,-16052536)
+      axes[6].set_ylim(-0.1,1.1)
+      plt.xlim(0,of+1)
+      plt.show()
+    else:
+#start here
+#1) use multivariate gaussian
+#2) add rotations
+#3) take some easy way of writing out the results & generating a report.
+#4) look over the callback for any quick way to double the speed, such as pre-generating lists
+      self.running.append(flex.sum(self.accept)/len(self.accept))
+      self.line0.set_xdata(range(icmp))
+      self.line0.set_ydata(self.parameters["cell"].a_chain)
+      self.line1.set_xdata(range(icmp))
+      self.line1.set_ydata(self.parameters["cell"].c_chain)
+      self.line1eta.set_xdata(range(icmp))
+      self.line1eta.set_ydata(self.parameters["eta"].chain)
+      self.line2.set_xdata(range(icmp))
+      self.line2.set_ydata(self.rmsd_chain)
+      self.line3.set_xdata(range(icmp))
+      self.line3.set_ydata(self.sigz_chain)
+      self.line4.set_xdata(range(icmp))
+      self.line4.set_ydata(self.llg_chain)
+      self.line5.set_xdata(range(icmp))
+      self.line5.set_ydata(self.running)
+      self.line5a.set_xdata(range(icmp))
+      self.line5a.set_ydata(self.accept)
+      for npm in range(N_param):
+        self.line[npm].set_xdata(range(icmp))
+        self.line[npm].set_ydata(N_param*self.parameters[self.cycle_list[npm]].running)
+      self.fig.canvas.draw()
+      self.fig.canvas.flush_events()
 
   def job_runner(self,expt,mask_array=None,i_exp=0,spectra={}):
-    from LS49.adse13_187.case_data import retrieve_from_repo
 
-    cuda = True  # False  # whether to use cuda
-    ngpu_on_node = 1 # 8  # number of available GPUs
     mosaic_spread = 0.00  # degrees
     mosaic_spread_samples = 250 # XXX Fixme make this a parameter
     Ncells_abc = 130, 30, 10  # medians from best stage1
@@ -130,7 +295,6 @@ class case_DS1 (MCMC_manager):
     from LS49.adse13_187.case_data import retrieve_from_repo
     experiment_file = retrieve_from_repo(i_exp)
     cuda = True  # False  # whether to use cuda
-    ngpu_on_node = 1 # 8  # number of available GPUs
     mosaic_spread = 0.00  # degrees
     mosaic_spread_samples = 250 # XXX Fixme make this a parameter
     Ncells_abc = 130, 30, 10  # medians from best stage1
@@ -227,7 +391,6 @@ class case_228 (MCMC_manager):
     from LS49.adse13_187.case_data import retrieve_from_repo
     experiment_file = retrieve_from_repo(i_exp)
     cuda = True  # False  # whether to use cuda
-    ngpu_on_node = 1 # 8  # number of available GPUs
     mosaic_spread = 0.07  # degrees
     mosaic_spread_samples = 500 # XXX Fixme make this a parameter
     Ncells_abc = 30, 30, 10  # medians from best stage1
@@ -347,3 +510,73 @@ def proof_of_principle_compare_three_spectra(energies_raw, weights_raw):
     plt.plot(energies, weights, 'g-')
     plt.show()
     return energies, weights
+
+class variable_mosaicity:
+  def __init__(self,value):
+    self.ref_value = value
+    self.accepted = flex.int()
+    self.running = flex.double()
+    self.chain= flex.double()
+    self.proposal = self.ref_value
+    CDF_sigma = 1. - math.exp(-0.5) # the CDF at the current position x=sigma
+    hyperparameter = 0.2 # allowable half width CDF range for the next proposal
+    self.target_interval = (CDF_sigma - hyperparameter, CDF_sigma + hyperparameter)
+
+  def accept(self):
+    self.chain.append(self.proposal)
+    self.accepted.append(1)
+    self.running.append(flex.sum(self.accepted)/len(self.accepted))
+    print("ACCTEPTED ",flex.sum(self.accepted),"mosaicity propoasls of ",len(self.accepted))
+
+  def reject(self):
+    self.chain.append(self.chain[-1])
+    self.accepted.append(0)
+    self.running.append(flex.sum(self.accepted)/len(self.accepted))
+
+  def generate_next_proposal(self):
+    #import numpy.random
+    #self.proposal = numpy.random.rayleigh(scale=self.chain[-1])
+    """let's go back to basics:"""
+    sigma = self.proposal # current value
+    deviate = random.random()
+    selected_targetCDF = self.target_interval[0] + deviate * (self.target_interval[1]-self.target_interval[0])
+    self.proposal = math.sqrt(-2.* sigma *sigma * math.log(1.-selected_targetCDF))
+
+    print('next mosaicity proposal %.6f'%(self.proposal))
+
+class variable_cell:
+  def __init__(self,ref_crystal):
+    self.R = ref_crystal
+    """from covariance 78.68±0.04  265.33±0.37
+       from alt cell: a=78.598, c= 265.317"""
+    self.ref_uc = self.R.get_unit_cell().parameters()
+    self.accepted = flex.int()
+    self.running = flex.double()
+    self.a_chain= flex.double()
+    self.a_proposal = self.ref_uc[0]
+
+    self.c_chain= flex.double()
+    self.c_proposal = self.ref_uc[2]
+
+    self.a_sigma = 0.04 # 0.01 # 0.04
+    self.c_sigma = 0.12 # 0.03 # 0.37
+
+  def get_current_crystal_model(self):
+    from cctbx.uctbx import unit_cell
+    self.R.set_unit_cell(unit_cell((self.a_proposal, self.a_proposal, self.c_proposal, 90., 90., 120.)))
+    return self.R
+
+  def accept(self):
+    self.a_chain.append(self.a_proposal); self.c_chain.append(self.c_proposal)
+    self.accepted.append(1)
+    self.running.append(flex.sum(self.accepted)/len(self.accepted))
+
+  def reject(self):
+    self.a_chain.append(self.a_chain[-1]); self.c_chain.append(self.c_chain[-1])
+    self.accepted.append(0)
+    self.running.append(flex.sum(self.accepted)/len(self.accepted))
+
+  def generate_next_proposal(self):
+    self.a_proposal = random.gauss(mu=self.a_chain[-1], sigma=self.a_sigma)
+    self.c_proposal = random.gauss(mu=self.c_chain[-1], sigma=self.c_sigma)
+    print('next cell a-c proposal %.6f %.6f'%(self.a_proposal, self.c_proposal))
