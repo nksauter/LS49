@@ -173,15 +173,18 @@ def multipanel_sim(
     # revisit the allocate cuda for overlap with detector, sync up please
     x = 0 # only one energy channel
     if mask_file is "": # all-pixel kernel
+      P = Profiler("%40s"%"from gpu amplitudes cuda")
       gpu_simulation.add_energy_channel_from_gpu_amplitudes_cuda(
       x, Famp, gpu_detector)
     elif type(mask_file) is flex.bool: # 1D bool array, flattened from ipanel, islow, ifast
+      P = Profiler("%40s"%"from gpu amplitudes cuda with bool mask")
       gpu_simulation.add_energy_channel_mask_allpanel_cuda(
       x, Famp, gpu_detector, mask_file )
     else:
       assert type(mask_file) is str
       from LS49.adse13_187.adse13_221.mask_utils import mask_from_file
       boolean_mask = mask_from_file(mask_file)
+      P = Profiler("%40s"%"from gpu amplitudes cuda with file mask")
       gpu_simulation.add_energy_channel_mask_allpanel_cuda(
       x, Famp, gpu_detector, boolean_mask )
     TIME_BRAGG = time()-P.start_el

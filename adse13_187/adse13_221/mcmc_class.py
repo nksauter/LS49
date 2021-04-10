@@ -139,7 +139,6 @@ class MCMC_manager:
           self.parameters[key].generate_next_proposal()
       self.plot_all(macro_iteration+1,of=n_cycles)
       TIME_EXA = time()-BEG
-      del P
       print("\t\tExascale: time for Bragg sim: %.4fs; total: %.4fs" % (TIME_BRAGG, TIME_EXA))
     exit("XXX still need to implement return values from MCMC")
     return JF16M_numpy_array.as_numpy_array()
