@@ -31,6 +31,9 @@ class MCMC_manager:
     self.gpu_channels_singleton = gpu_energy_channels (
         deviceId = 0 ) # determine device by rank id later
 
+  def set_whitelist(self,value):
+    self.relevant_whitelist_order = value
+
   def chain_runner(self,expt,mask_array=None,n_cycles = 100,
       Zscore_callback=None, rmsd_callback=None):
 
@@ -92,7 +95,7 @@ class MCMC_manager:
       if turn=="cell":
         alt_crystal = self.parameters["cell"].get_current_crystal_model()
 
-      JF16M_numpy_array, TIME_BG, TIME_BRAGG = multipanel_sim(
+      whitelist_only, TIME_BG, TIME_BRAGG = multipanel_sim(
         CRYSTAL=alt_crystal, DETECTOR=detector, BEAM=beam,
         Famp = self.gpu_channels_singleton,
         energies=energies, fluxes=weights,
@@ -105,9 +108,10 @@ class MCMC_manager:
         time_panels=False, verbose=verbose,
         spot_scale_override=spot_scale,
         include_background=False,
-        mask_file=mask_array, skip_numpy=True
+        mask_file=mask_array, skip_numpy=True,
+        relevant_whitelist_order=self.relevant_whitelist_order
       )
-      Rmsd,sigZ,LLG = Zscore_callback(kernel_model=JF16M_numpy_array, plot=False)
+      Rmsd,sigZ,LLG = Zscore_callback(kernel_model=whitelist_only, plot=False)
       if macro_iteration==0:
         self.parameters["cell"].accept()
         self.parameters["eta"].accept()
@@ -135,14 +139,16 @@ class MCMC_manager:
           self.parameters[key].generate_next_proposal()
       self.plot_all(macro_iteration+1,of=n_cycles)
       TIME_EXA = time()-BEG
+      del P
       print("\t\tExascale: time for Bragg sim: %.4fs; total: %.4fs" % (TIME_BRAGG, TIME_EXA))
+    exit("XXX still need to implement return values from MCMC")
     return JF16M_numpy_array.as_numpy_array()
 
   def plot_all(self,icmp,of):
     N_param = len(self.parameters)
     if icmp==1:
       self.line = list(range(N_param))
-      self.running = flex.double(); self.running.append(self.accept[0])
+      #self.running = flex.double(); self.running.append(self.accept[0])
       plt.ion()
       self.fig,self.axes = fig,axes = plt.subplots(7,1,sharex=True,figsize=(7,10))
       self.line0, = axes[0].plot(range(icmp), self.parameters["cell"].a_chain)
@@ -151,7 +157,7 @@ class MCMC_manager:
       self.line2, = axes[3].plot(range(icmp), self.rmsd_chain)
       self.line3, = axes[4].plot(range(icmp), self.sigz_chain)
       self.line4, = axes[5].plot(range(icmp), self.llg_chain)
-      self.line5, = axes[6].plot(range(icmp), self.running, "r-")
+      #self.line5, = axes[6].plot(range(icmp), self.running, "r-")
       self.line5a, = axes[6].plot(range(icmp), self.accept, "k,")
       for npm in range(N_param):
         self.line[npm], = axes[6].plot(range(icmp), N_param*self.parameters[self.cycle_list[npm]].running)
@@ -172,13 +178,13 @@ class MCMC_manager:
       axes[6].set_ylim(-0.1,1.1)
       plt.xlim(0,of+1)
       plt.show()
-    else:
+    elif icmp%10==0:
 #start here
 #1) use multivariate gaussian
 #2) add rotations
 #3) take some easy way of writing out the results & generating a report.
 #4) look over the callback for any quick way to double the speed, such as pre-generating lists
-      self.running.append(flex.sum(self.accept)/len(self.accept))
+      #self.running.append(flex.sum(self.accept)/len(self.accept))
       self.line0.set_xdata(range(icmp))
       self.line0.set_ydata(self.parameters["cell"].a_chain)
       self.line1.set_xdata(range(icmp))
@@ -191,8 +197,8 @@ class MCMC_manager:
       self.line3.set_ydata(self.sigz_chain)
       self.line4.set_xdata(range(icmp))
       self.line4.set_ydata(self.llg_chain)
-      self.line5.set_xdata(range(icmp))
-      self.line5.set_ydata(self.running)
+      #self.line5.set_xdata(range(icmp))
+      #self.line5.set_ydata(self.running)
       self.line5a.set_xdata(range(icmp))
       self.line5a.set_ydata(self.accept)
       for npm in range(N_param):
@@ -200,6 +206,7 @@ class MCMC_manager:
         self.line[npm].set_ydata(N_param*self.parameters[self.cycle_list[npm]].running)
       self.fig.canvas.draw()
       self.fig.canvas.flush_events()
+      if icmp==of-1: input()
 
   def job_runner(self,expt,mask_array=None,i_exp=0,spectra={}):
 

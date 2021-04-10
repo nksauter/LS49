@@ -101,7 +101,7 @@ def multipanel_sim(
   spot_scale_override=None, show_params=False, time_panels=False,
   add_water = False, add_air=False, water_path_mm=0.005, air_path_mm=0,
   adc_offset=0, readout_noise=3, psf_fwhm=0, gain=1, mosaicity_random_seeds=None,
-  include_background=True, mask_file="",skip_numpy=False):
+  include_background=True, mask_file="",skip_numpy=False,relevant_whitelist_order=None):
 
   from simtbx.nanoBragg.nanoBragg_beam import NBbeam
   from simtbx.nanoBragg.nanoBragg_crystal import NBcrystal
@@ -172,27 +172,19 @@ def multipanel_sim(
 
     # revisit the allocate cuda for overlap with detector, sync up please
     x = 0 # only one energy channel
-    #SIM.flux = background_total_flux
-      #SIM.flux = self.flux[x]
-      #SIM.wavelength_A = self.wavlen[x]
     if mask_file is "": # all-pixel kernel
-      P = Profiler("from gpu amplitudes cuda")
       gpu_simulation.add_energy_channel_from_gpu_amplitudes_cuda(
       x, Famp, gpu_detector)
     elif type(mask_file) is flex.bool: # 1D bool array, flattened from ipanel, islow, ifast
-      P = Profiler("from gpu amplitudes cuda with bool mask")
       gpu_simulation.add_energy_channel_mask_allpanel_cuda(
       x, Famp, gpu_detector, mask_file )
     else:
       assert type(mask_file) is str
       from LS49.adse13_187.adse13_221.mask_utils import mask_from_file
       boolean_mask = mask_from_file(mask_file)
-      P = Profiler("from gpu amplitudes cuda with file mask")
       gpu_simulation.add_energy_channel_mask_allpanel_cuda(
       x, Famp, gpu_detector, boolean_mask )
     TIME_BRAGG = time()-P.start_el
-    del P
-#now in position to implement the detector panel loop
 
     per_image_scale_factor = 1./len(energies)
     gpu_detector.scale_in_place_cuda(per_image_scale_factor) # apply scale directly on GPU
@@ -215,11 +207,11 @@ def multipanel_sim(
       TIME_BG = time()-t_bkgrd_start
     else: TIME_BG=0.
 
-    packed_numpy = gpu_detector.get_raw_pixels_cuda()
+    whitelist_only = gpu_detector.get_whitelist_raw_pixels_cuda(relevant_whitelist_order)
     gpu_detector.each_image_free_cuda()
 
     if skip_numpy:
-      return packed_numpy, TIME_BG, TIME_BRAGG
+      return whitelist_only, TIME_BG, TIME_BRAGG
     return packed_numpy.as_numpy_array(), TIME_BG, TIME_BRAGG
 
 def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):

@@ -301,7 +301,6 @@ modeim_kernel_width=15
         print("Saved output to file %s" % (filenm))
 
   def Z_statistics(self, experiment, model, readout_noise_keV=None, plot=False):
-    P = Profiler("z-statistics")
     Z_plot = []
     sigma_pixel = []
     import numpy as np
@@ -363,88 +362,16 @@ modeim_kernel_width=15
     return Z_plot #, Zrplot
 
   def quick_Zscore(self, kernel_model, ref_label="spots_mockup", plot=True):
-    P = Profiler("C++ z-statistics")
-    self.pixel_stats.analyze(kernel_model=kernel_model,
-                             reference_shoebox_sums = self.refl_table[ref_label+"_shoebox_sum"],
-                             slow_size = 254, panel_size = 254 * 254,
-                             keV_per_photon = 9.479)
+    # do NOT assume the model data represent the full detector image: ipanel x islow x ifast,
+    # instead they are the 1D preselected active pixels from the full image, in specified order
+    self.pixel_stats.analyze3(kernel_model,self.refl_table[ref_label+"_shoebox_sum"],254, 254 * 254,9.479)
 
-    P = Profiler("quick z-statistics")
-    proposal_shoebox_mean_Z = flex.double()
-    proposal_shoebox_sigma_Z = flex.double()
-    all_Z_values = flex.double()
-    sauter_eq_15_likelihood = flex.double()
-    proposal_ctr_of_mass = flex.vec3_double()
-    from scitbx.matrix import col
-    whiteidx = -1
-    whitelist_kernel_model = []
-    for sidx in range(len(self.refl_table)): #loop through the shoeboxes
-
-      #first pass through shoebox, add all shoebox pixels to get proposal sum
-      proposal_shoebox_sum = 0.
-      for ipanel, islow, ifast in self.per_shoebox_whitelist_iterator(sidx):
-        proposal_value = max(0.1,kernel_model[ipanel,islow,ifast])
-        whitelist_kernel_model.append(proposal_value)
-        proposal_shoebox_sum += proposal_value
-      #proposal_shoebox_sum = max(0.1,proposal_shoebox_sum) # Dan Paley: avoid "zero"
-      refrence_shoebox_sum = self.refl_table[ref_label+"_shoebox_sum"][sidx]
-      scale_factor = refrence_shoebox_sum / proposal_shoebox_sum
-
-      #second pass through shoebox, determine center of mass, Z-statistics
-      shoebox_Z_values = flex.double()
-      SUM_VEC = col((0.,0.))
-      SUM_wt = 0.
-      for ipanel, islow, ifast in self.per_shoebox_whitelist_iterator(sidx):
-        whiteidx += 1
-        #renormalized_proposal = kernel_model[ipanel,islow,ifast] * scale_factor
-        renormalized_proposal = whitelist_kernel_model[whiteidx] * scale_factor
-        SUM_VEC = SUM_VEC + float(renormalized_proposal) * col((float(islow),float(ifast)))
-        SUM_wt += renormalized_proposal
-        renormalize_bragg_plus_background = (
-          #self.lunus_filtered_data[ipanel,islow,ifast] + renormalized_proposal)
-          self.whitelist_lunus_filtered_data[whiteidx] + renormalized_proposal)
-
-        #experimental_pixel = self.exp_data[ipanel][islow,ifast]
-        experimental_pixel = self.whitelist_exp_data[whiteidx]
-        abs_exp_pixel = abs(experimental_pixel)
-        abs_exp_pixel_photons = abs_exp_pixel/9.479 # convert to photons
-        poisson_noise_sigma = math.sqrt(abs_exp_pixel_photons)
-        std_dev_denominator_photons = poisson_noise_sigma
-        renormalize_bragg_plus_background_photons = renormalize_bragg_plus_background/9.479
-        #mock_model_photons = self.sim_mock[ipanel][islow,ifast]/9.479
-        mock_model_photons = self.whitelist_sim_mock[whiteidx]/9.479
-        diff_pixel_photons = renormalize_bragg_plus_background_photons - mock_model_photons
-        Z = (diff_pixel_photons/std_dev_denominator_photons)
-        shoebox_Z_values.append(Z)
-        all_Z_values.append(Z)
-        sauter_eq_15_likelihood.append( renormalize_bragg_plus_background_photons -
-          mock_model_photons * math.log(renormalize_bragg_plus_background_photons))
-      stats = flex.mean_and_variance(shoebox_Z_values)
-      proposal_shoebox_mean_Z.append( stats.mean() )
-      proposal_shoebox_sigma_Z.append( stats.unweighted_sample_standard_deviation() )
-      c_o_m = SUM_VEC/SUM_wt
-      # there is a half pixel offset in our understanding of position
-      proposal_ctr_of_mass.append((c_o_m[1]+0.5,c_o_m[0]+0.5,0.0))
-
-    self.refl_table["temp_values"] = proposal_ctr_of_mass
-    rmsd = self.simple_rmsd(calc_data="temp_values",plot=False)
-    LLG = flex.sum(sauter_eq_15_likelihood)
-    print("quick proposal negative log likelihood %10f"%(LLG))
-    stats = flex.mean_and_variance(all_Z_values)
-    mnz = stats.mean()
-    sgz = stats.unweighted_sample_standard_deviation()
-    print("quick proposal mean Z=%.2f, sigma Z=%.2f"%(mnz, sgz))
-
-    c_LLG = self.pixel_stats.get_LLG()
-    c_mnz = self.pixel_stats.get_mnz()
-    c_sgz = self.pixel_stats.get_sgz()
-    c_proposal_center_of_mass = self.pixel_stats.get_proposal_center_of_mass()
-    self.refl_table["c_temp_values"] = c_proposal_center_of_mass
-    c_rmsd = self.simple_rmsd(calc_data="c_temp_values",plot=False)
-    print( c_LLG, LLG)
-    print( c_mnz, mnz)
-    print( c_sgz,sgz)
-    print( c_rmsd, rmsd)
+    LLG = self.pixel_stats.get_LLG()
+    mnz = self.pixel_stats.get_mnz()
+    sgz = self.pixel_stats.get_sgz()
+    proposal_center_of_mass = self.pixel_stats.get_proposal_center_of_mass()
+    self.refl_table["c_temp_values"] = proposal_center_of_mass
+    rmsd = self.simple_rmsd(calc_data="c_temp_values",plot=False)
     if plot:
       from matplotlib import pyplot as plt
       plt.plot(range(len(self.refl_table)),
@@ -466,6 +393,14 @@ modeim_kernel_width=15
     from LS49.adse13_187.adse13_221.mcmc_class import case_DS1 # implicit imports
     self.MCMC = MCMC_manager()
     self.MCMC.get_amplitudes(self.dials_model, self.refl_table)
+
+    relevant_whitelist_order = flex.size_t()
+    for sidx in range(len(self.refl_table["spots_offset"])):#loop through the shoeboxes
+      for pidx in range(self.refl_table["spots_offset"][sidx],
+                        self.refl_table["spots_offset"][sidx]+self.refl_table["spots_size"][sidx]):
+        relevant_whitelist_order.append(self.spots_pixels[pidx])
+    self.MCMC.set_whitelist(relevant_whitelist_order)
+
     #modality = "job"
     modality = "chain"
     if modality == "chain":
@@ -489,9 +424,8 @@ modeim_kernel_width=15
 
       return self.MCMC.chain_runner(expt=self.expt,
       mask_array = self.monolithic_mask_whole_detector_as_1D_bool,
-      n_cycles = 500,
+      n_cycles = 1000,
       Zscore_callback=self.quick_Zscore,
-      # XXX rmsd_callback=self.reusable_rmsd,
       ) # returns simulated image as numpy array
     else:
       return self.MCMC.job_runner(expt=self.expt,
