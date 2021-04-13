@@ -210,11 +210,15 @@ def multipanel_sim(
       TIME_BG = time()-t_bkgrd_start
     else: TIME_BG=0.
 
-    whitelist_only = gpu_detector.get_whitelist_raw_pixels_cuda(relevant_whitelist_order)
-    gpu_detector.each_image_free_cuda()
-
     if skip_numpy:
+      P = Profiler("%40s"%"get short whitelist values")
+      whitelist_only = gpu_detector.get_whitelist_raw_pixels_cuda(relevant_whitelist_order)
+      P = Profiler("%40s"%"each image free cuda")
+      gpu_detector.each_image_free_cuda()
       return whitelist_only, TIME_BG, TIME_BRAGG
+
+    packed_numpy = gpu_detector.get_raw_pixels_cuda()
+    gpu_detector.each_image_free_cuda()
     return packed_numpy.as_numpy_array(), TIME_BG, TIME_BRAGG
 
 def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
