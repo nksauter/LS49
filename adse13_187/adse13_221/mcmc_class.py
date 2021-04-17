@@ -82,8 +82,10 @@ class MCMC_manager:
       '/global/cfs/cdirs/m3562/der/braggnanimous/top8_newlam2/expers/rank0/stg1_top_0_0.expt',
                                               check_format=False)[0]
     alt_crystal = alt_exper.crystal
+    from LS49.adse13_187.adse13_221.parameters import variable_cell, variable_mosaicity, covariant_cell
     self.parameters = {}
-    self.parameters["cell"] = variable_cell(alt_crystal)
+    #self.parameters["cell"] = variable_cell(alt_crystal)
+    self.parameters["cell"] = covariant_cell.from_covariance(alt_crystal)
     self.parameters["eta"] = variable_mosaicity(mosaic_spread)
     self.rmsd_chain= flex.double(); self.sigz_chain=flex.double(); self.llg_chain=flex.double();
     self.cycle_list = [key for key in self.parameters]
@@ -517,72 +519,3 @@ def proof_of_principle_compare_three_spectra(energies_raw, weights_raw):
     plt.show()
     return energies, weights
 
-class variable_mosaicity:
-  def __init__(self,value):
-    self.ref_value = value
-    self.accepted = flex.int()
-    self.running = flex.double()
-    self.chain= flex.double()
-    self.proposal = self.ref_value
-    CDF_sigma = 1. - math.exp(-0.5) # the CDF at the current position x=sigma
-    hyperparameter = 0.2 # allowable half width CDF range for the next proposal
-    self.target_interval = (CDF_sigma - hyperparameter, CDF_sigma + hyperparameter)
-
-  def accept(self):
-    self.chain.append(self.proposal)
-    self.accepted.append(1)
-    self.running.append(flex.sum(self.accepted)/len(self.accepted))
-    print("ACCTEPTED ",flex.sum(self.accepted),"mosaicity propoasls of ",len(self.accepted))
-
-  def reject(self):
-    self.chain.append(self.chain[-1])
-    self.accepted.append(0)
-    self.running.append(flex.sum(self.accepted)/len(self.accepted))
-
-  def generate_next_proposal(self):
-    #import numpy.random
-    #self.proposal = numpy.random.rayleigh(scale=self.chain[-1])
-    """let's go back to basics:"""
-    sigma = self.proposal # current value
-    deviate = random.random()
-    selected_targetCDF = self.target_interval[0] + deviate * (self.target_interval[1]-self.target_interval[0])
-    self.proposal = math.sqrt(-2.* sigma *sigma * math.log(1.-selected_targetCDF))
-
-    print('next mosaicity proposal %.6f'%(self.proposal))
-
-class variable_cell:
-  def __init__(self,ref_crystal):
-    self.R = ref_crystal
-    """from covariance 78.68±0.04  265.33±0.37
-       from alt cell: a=78.598, c= 265.317"""
-    self.ref_uc = self.R.get_unit_cell().parameters()
-    self.accepted = flex.int()
-    self.running = flex.double()
-    self.a_chain= flex.double()
-    self.a_proposal = self.ref_uc[0]
-
-    self.c_chain= flex.double()
-    self.c_proposal = self.ref_uc[2]
-
-    self.a_sigma = 0.04 # 0.01 # 0.04
-    self.c_sigma = 0.12 # 0.03 # 0.37
-
-  def get_current_crystal_model(self):
-    from cctbx.uctbx import unit_cell
-    self.R.set_unit_cell(unit_cell((self.a_proposal, self.a_proposal, self.c_proposal, 90., 90., 120.)))
-    return self.R
-
-  def accept(self):
-    self.a_chain.append(self.a_proposal); self.c_chain.append(self.c_proposal)
-    self.accepted.append(1)
-    self.running.append(flex.sum(self.accepted)/len(self.accepted))
-
-  def reject(self):
-    self.a_chain.append(self.a_chain[-1]); self.c_chain.append(self.c_chain[-1])
-    self.accepted.append(0)
-    self.running.append(flex.sum(self.accepted)/len(self.accepted))
-
-  def generate_next_proposal(self):
-    self.a_proposal = random.gauss(mu=self.a_chain[-1], sigma=self.a_sigma)
-    self.c_proposal = random.gauss(mu=self.c_chain[-1], sigma=self.c_sigma)
-    print('next cell a-c proposal %.6f %.6f'%(self.a_proposal, self.c_proposal))
