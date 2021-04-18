@@ -14,8 +14,8 @@ class variable_mosaicity:
     self.chain= flex.double()
     self.proposal = self.ref_value
     CDF_sigma = 1. - math.exp(-0.5) # the CDF at the current position x=sigma
-    hyperparameter = 0.2 # allowable half width CDF range for the next proposal
-    self.target_interval = (CDF_sigma - hyperparameter, CDF_sigma + hyperparameter)
+    self.hyperparameter = 0.2 # allowable half width CDF range for the next proposal
+    self.target_interval = (CDF_sigma - self.hyperparameter, CDF_sigma + self.hyperparameter)
 
   def accept(self):
     self.chain.append(self.proposal)
@@ -32,10 +32,17 @@ class variable_mosaicity:
     #import numpy.random
     #self.proposal = numpy.random.rayleigh(scale=self.chain[-1])
     """let's go back to basics:"""
-    sigma = self.proposal # current value
+    last = sigma = float(self.proposal) # current value
     deviate = random.random()
     selected_targetCDF = self.target_interval[0] + deviate * (self.target_interval[1]-self.target_interval[0])
-    self.proposal = math.sqrt(-2.* sigma *sigma * math.log(1.-selected_targetCDF))
+    proposal = self.proposal = math.sqrt(-2.* sigma *sigma * math.log(1.-selected_targetCDF))
+    # gives a random Rayleigh deviate in the target interval around present value "sigma"
+
+    # Rayleigh PDF is (x/ss)*exp(-xx/(2ss))
+    prob_proposal_given_last = (proposal/(last*last))*math.exp(-1.*proposal*proposal/(2*last*last))
+    prob_last_given_proposal = (last/(proposal*proposal))*math.exp(-1.*last*last/(2*proposal*proposal))
+    self.transition_probability_ratio = prob_last_given_proposal/prob_proposal_given_last
+    # q(X|Y)/q(Y|X), Y=proposal, X=last value
 
     print('next mosaicity proposal %.6f'%(self.proposal))
 
@@ -62,6 +69,7 @@ class variable_cell:
 
     self.a_sigma = 0.04 # 0.01 # 0.04
     self.c_sigma = 0.37 # 0.03 # 0.37
+    self.transition_probability_ratio = 1.0 # q(X|Y)/q(Y|X), Y=proposal, X=last value
 
   def get_current_crystal_model(self):
     from cctbx.uctbx import unit_cell
@@ -107,7 +115,7 @@ class covariant_cell (variable_cell):
     new_instance = cls(ref_crystal)
     new_instance.cluster_mean = empcov.location_
     new_instance.cluster_covariance = empcov.covariance_
-    new_instance.hyperparameter = 0.25
+    new_instance.hyperparameter = 0.5
     return new_instance
 
   def generate_next_proposal(self):

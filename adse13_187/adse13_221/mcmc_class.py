@@ -121,7 +121,12 @@ class MCMC_manager:
         self.rmsd_chain.append(Rmsd); self.sigz_chain.append(sigZ); self.llg_chain.append(LLG)
       else:
         print ("Old NLL ",self.llg_chain[-1], "NEW LLG",LLG, "diff",self.llg_chain[-1] - LLG)
-        acceptance_prob = min (1., math.exp( (self.llg_chain[-1] - LLG)/55000. )) # normalize by number of pixels
+        this_cycle_key = self.cycle_list[(macro_iteration)%len(self.cycle_list)]
+        acceptance_prob = min (
+          1.,
+          math.exp( (self.llg_chain[-1] - LLG)/55000. ) # normalize by number of pixels # XXX FIXME denominator
+          * self.parameters[this_cycle_key].transition_probability_ratio # q(X|Y)/q(Y|X), Y=proposal, X=last value
+        )
 
         if random.random() < acceptance_prob:
           for key in self.parameters:
