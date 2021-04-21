@@ -1,0 +1,7 @@
+Artifacts for testing the code.
+
+1. tst_lunus.py, a driver to test lunus_wrap.py.  Get lunus-assimilation background + strong spot mask
+
+Full command line:
+srun -n1 -c10 libtbx.python lunus_wrap.py trusted_mask=<mask> refl=<strong spots> expt=<imageset/detector> output.label=<token> output.index=0
+
