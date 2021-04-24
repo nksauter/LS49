@@ -182,7 +182,7 @@ class basic_run_manager(mask_manager):
       plt.show()
     return Z_plot
 
-  def ersatz_MCMC(self):
+  def ersatz_MCMC(self, variable_params):
     from LS49.adse13_187.adse13_221.case_run import case_job_runner
     class ersatz(MCMC_manager, case_job_runner): pass
     self.MCMC = ersatz()
@@ -195,7 +195,7 @@ class basic_run_manager(mask_manager):
     self.MCMC.set_whitelist(relevant_whitelist_order)
 
     modality = "job"
-    return self.MCMC.job_runner(expt=self.expt, alt_expt=self.dials_model,
+    return self.MCMC.job_runner(expt=self.expt, alt_expt=self.dials_model, params=variable_params,
       mask_array = self.monolithic_mask_whole_detector_as_1D_bool
       ) # returns simulated image as numpy array
 
@@ -372,6 +372,16 @@ def generate_phil_scope():
     cryst = ""
       .type = path
       .help = The dials refine model, specifically containing an updated dxtbx.crystal model
+    model
+      .help = Namespace to pass variable model parameters to the nanoBragg simulation
+      {
+      mosaic_spread = 0.01
+        .type = float(value_min = 0)
+        .help = half-width mosaic rotation in degrees, assuming isotropic model
+      Nabc = (50,50,50)
+        .type = ints(size=3, value_min=2)
+        .help = domain size along the a,b, and c axes expressed in unit cells
+      }
   """
   return parse(master_phil, process_includes=True)
 phil_scope = generate_phil_scope()
@@ -403,7 +413,7 @@ def run(params):
     M.get_image_res_data()
     M.modify_shoeboxes() # new
     M.view["sim_mock"] = M.simulation_mockup(M.view["exp_data"]) # new
-    nanobragg_sim = M.ersatz_MCMC() # initial Bragg simulation
+    nanobragg_sim = M.ersatz_MCMC(params.model) # initial Bragg simulation
     M.view["bragg_plus_background"] = M.reusable_rmsd(proposal=nanobragg_sim, label="ersatz_mcmc")
     M.view["renormalize_bragg_plus_background"] = M.reusable_rmsd(proposal=M.renormalize(
             proposal=nanobragg_sim,proposal_label="ersatz_mcmc",ref_label="spots_mockup"),

@@ -3,7 +3,7 @@ from LS49.adse13_187.cyto_batch import multipanel_sim
 from time import time
 
 class case_job_runner:
-  def job_runner(self,expt,alt_expt,mask_array=None,i_exp=0,spectra={}):
+  def job_runner(self,expt,alt_expt,params,mask_array=None,i_exp=0,spectra={}):
 
     # Fixed hyperparameters
     mosaic_spread_samples = 250
@@ -50,8 +50,8 @@ class case_job_runner:
       assert self.gpu_channels_singleton.get_nchannels() == 1
 
       # Variable parameters
-      mosaic_spread = 0.0 # degrees
-      Ncells_abc = 130, 30, 10  # medians from best stage1
+      mosaic_spread = params.mosaic_spread
+      Ncells_abc = params.Nabc
 
       from LS49.adse13_187.cyto_batch import multipanel_sim
       JF16M_numpy_array, TIME_BG, TIME_BRAGG = multipanel_sim(

@@ -13,4 +13,4 @@ trusted_mask=*.mask \
 cryst=<path to dials experiment with refined crystal model>.expt \
 refl=<path to reindexed and curated strong spots>.refl \
 expt=<path to imageset with detector and beam>.expt \
-output.label=ru output.index=0
+output.label=ru output.index=0 model.mosaic_spread=0.0 model.Nabc=130,30,10
