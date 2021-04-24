@@ -5,3 +5,12 @@ Artifacts for testing the code.
 Full command line:
 srun -n1 -c10 libtbx.python lunus_wrap.py trusted_mask=<mask> refl=<strong spots> expt=<imageset/detector> output.label=<token> output.index=0
 
+2. runner.sh, a driver to test basic_runner.py.  Make a rudimentary nanoBragg simulation based on a dxtbx crystal model and compare with experiment.
+
+Full command line:
+srun -n1 -c10 libtbx.python basic_runner.py \
+trusted_mask=*.mask \
+cryst=<path to dials experiment with refined crystal model>.expt \
+refl=<path to reindexed and curated strong spots>.refl \
+expt=<path to imageset with detector and beam>.expt \
+output.label=ru output.index=0
