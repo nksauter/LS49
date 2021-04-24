@@ -139,7 +139,7 @@ modeim_kernel_width=15
           if self.view[key] is not None:
             writer.add_image(self.view[key])
 
-def parse_input():
+def generate_phil_scope():
   from iotbx.phil import parse
   master_phil="""
     output {
@@ -165,7 +165,10 @@ def parse_input():
       .type = path
       .help = The dials experiment file containing imageset, detector and beam
   """
-  phil_scope = parse(master_phil)
+  return parse(master_phil)
+phil_scope = generate_phil_scope()
+
+def parse_input():
   # The script usage
   import libtbx.load_env # implicit import
   help_message = """1) Use LUNUS assimilation filter to model the background image

@@ -4,11 +4,11 @@ from scitbx.array_family import flex
 import scitbx.lbfgs
 
 def is_valid(value): return value>-1.0
-def replacement_pixels(self, ipanel, islow_limits, ifast_limits, shoebox):
+def replacement_pixels(lunus_filtered_data, ipanel, islow_limits, ifast_limits, shoebox):
   """main idea: LUNUS marks invalid model pixels as -1.0.  If so, try to find an equal number of valid
   pixels from around the edges of the box, prior to fitting the 2nd-order Taylor function.
   """
-  A = all_lunus = self.lunus_filtered_data[ipanel, islow_limits[0]:islow_limits[1], ifast_limits[0]:ifast_limits[1]]
+  A = all_lunus = lunus_filtered_data[ipanel, islow_limits[0]:islow_limits[1], ifast_limits[0]:ifast_limits[1]]
   target_box_size = (islow_limits[1]-islow_limits[0])*(ifast_limits[1]-ifast_limits[0])
   #print (-1.0 in all_lunus,"Target=%d"%(A.size))
   minslow=islow_limits[0]
@@ -23,7 +23,7 @@ def replacement_pixels(self, ipanel, islow_limits, ifast_limits, shoebox):
   FIT = fit_background_one_spot(boxsize = target_box_size, peakslow=peakslow, peakfast=peakfast, gain=9.5)
   for islow in range(islow_limits[0], islow_limits[1]):
     for ifast in range(ifast_limits[0], ifast_limits[1]):
-      value = self.lunus_filtered_data[ipanel,islow,ifast]
+      value = lunus_filtered_data[ipanel,islow,ifast]
       if is_valid(value): FIT.addpixel(islow,ifast,value)
 
   actual_basis_size = len(FIT.SP) # np.count_nonzero(B==True)
@@ -35,26 +35,26 @@ def replacement_pixels(self, ipanel, islow_limits, ifast_limits, shoebox):
       if minslow > 0: minslow -= 1
       else: continue
       for ifast in range(minfast,maxfast):
-        if is_valid(self.lunus_filtered_data[ipanel, minslow, ifast]):
-          FIT.addpixel(minslow,ifast,value=self.lunus_filtered_data[ipanel, minslow, ifast])
+        if is_valid(lunus_filtered_data[ipanel, minslow, ifast]):
+          FIT.addpixel(minslow,ifast,value=lunus_filtered_data[ipanel, minslow, ifast])
           #print("Accepted cycle",cyclic_choice,ipanel, minslow, ifast)
           actual_basis_size += 1
           if actual_basis_size==target_box_size: break
     elif cyclic_choice == 1:
-      if maxfast + 1 < self.lunus_filtered_data.shape[2]: maxfast += 1
+      if maxfast + 1 < lunus_filtered_data.shape[2]: maxfast += 1
       else: continue
       for islow in range(minslow,maxslow):
-        if is_valid(self.lunus_filtered_data[ipanel, islow, maxfast - 1]):
-          FIT.addpixel(islow,maxfast-1,value=self.lunus_filtered_data[ipanel, islow, maxfast-1])
+        if is_valid(lunus_filtered_data[ipanel, islow, maxfast - 1]):
+          FIT.addpixel(islow,maxfast-1,value=lunus_filtered_data[ipanel, islow, maxfast-1])
           #print("Accepted cycle",cyclic_choice,ipanel, islow, maxfast -1)
           actual_basis_size += 1
           if actual_basis_size==target_box_size: break
     elif cyclic_choice == 2:
-      if maxslow + 1 < self.lunus_filtered_data.shape[1]: maxslow += 1
+      if maxslow + 1 < lunus_filtered_data.shape[1]: maxslow += 1
       else: continue
       for ifast in range(maxfast-1,minfast-1,-1):
-        if is_valid(self.lunus_filtered_data[ipanel, maxslow - 1, ifast]):
-          FIT.addpixel(maxslow-1,ifast,value=self.lunus_filtered_data[ipanel, maxslow-1, ifast])
+        if is_valid(lunus_filtered_data[ipanel, maxslow - 1, ifast]):
+          FIT.addpixel(maxslow-1,ifast,value=lunus_filtered_data[ipanel, maxslow-1, ifast])
           #print("Accepted cycle",cyclic_choice,ipanel, maxslow - 1, ifast)
           actual_basis_size += 1
           if actual_basis_size==target_box_size: break
@@ -62,8 +62,8 @@ def replacement_pixels(self, ipanel, islow_limits, ifast_limits, shoebox):
       if minfast > 0: minfast -= 1
       else: continue
       for islow in range(maxslow-1,minslow-1,-1):
-        if is_valid(self.lunus_filtered_data[ipanel, islow, minfast]):
-          FIT.addpixel(islow,minfast,value=self.lunus_filtered_data[ipanel, islow, minfast])
+        if is_valid(lunus_filtered_data[ipanel, islow, minfast]):
+          FIT.addpixel(islow,minfast,value=lunus_filtered_data[ipanel, islow, minfast])
           #print("Accepted cycle",cyclic_choice,ipanel, islow, minfast)
           actual_basis_size += 1
           if actual_basis_size==target_box_size: break

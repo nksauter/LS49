@@ -362,9 +362,10 @@ modeim_kernel_width=15
     return Z_plot #, Zrplot
 
   def quick_Zscore(self, kernel_model, ref_label="spots_mockup", plot=True):
+    keV_per_photon = ENERGY_CONV/1000./self.expt.beam.get_wavelength()
     # do NOT assume the model data represent the full detector image: ipanel x islow x ifast,
     # instead they are the 1D preselected active pixels from the full image, in specified order
-    self.pixel_stats.analyze3(kernel_model,self.refl_table[ref_label+"_shoebox_sum"],254, 254 * 254,9.479)
+    self.pixel_stats.analyze3(kernel_model,self.refl_table[ref_label+"_shoebox_sum"],254, 254 * 254, keV_per_photon)
 
     LLG = self.pixel_stats.get_LLG()
     mnz = self.pixel_stats.get_mnz()
@@ -573,7 +574,7 @@ modeim_kernel_width=15
        print()
       # now create a 2nd-order fit to the data.  First implementation, no weighting.
       from LS49.adse13_187.adse13_221.smooth_fit import replacement_pixels
-      FIT=replacement_pixels(self, ipanel, islow_limits, ifast_limits, shoebox=S[sidx])
+      FIT=replacement_pixels(self.lunus_filtered_data, ipanel, islow_limits, ifast_limits, shoebox=S[sidx])
       # print out the fit shoebox
       for islow in range(islow_limits[0], islow_limits[1]):
         fast_count=0
