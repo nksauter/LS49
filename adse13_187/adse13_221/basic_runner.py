@@ -137,9 +137,10 @@ class basic_run_manager(mask_manager):
     import numpy as np
     for x in range(256):
       exp_panel = self.view["exp_data"][x]
-      abs_exp_panel = abs(exp_panel)
+      abs_exp_panel = np.abs(exp_panel)
       abs_exp_panel_photons = abs_exp_panel/keV_per_photon # convert to photons
       poisson_noise_sigma = np.sqrt(abs_exp_panel_photons)
+      poisson_noise_sigma = np.where(poisson_noise_sigma==0., 1., poisson_noise_sigma)
       sigma_pixel.append(poisson_noise_sigma)
       diff_panel_photons = (model[x] - experiment[x])/keV_per_photon
       offset_Z = (diff_panel_photons/poisson_noise_sigma)*0.1 + 1.0
