@@ -31,6 +31,7 @@ class case_job_runner:
     weights_raw = spec.get_weights().as_numpy_array()
     from LS49.adse13_187.adse13_221.explore_spectrum import method3
     energies, weights, _ = method3(energies_raw, weights_raw,); weights = 5000000.*weights
+    energies = list(energies); weights = list(weights)
 
     device_Id = 0
     if self.gpu_channels_singleton is not None:
@@ -50,14 +51,14 @@ class case_job_runner:
       assert self.gpu_channels_singleton.get_nchannels() == 1
 
       # Variable parameters
-      mosaic_spread = params.mosaic_spread
+      mosaic_spread = params.mosaic_spread.value
       Ncells_abc = params.Nabc
 
       from LS49.adse13_187.cyto_batch import multipanel_sim
       JF16M_numpy_array, TIME_BG, TIME_BRAGG = multipanel_sim(
         CRYSTAL=alt_crystal, DETECTOR=detector, BEAM=beam,
         Famp = self.gpu_channels_singleton,
-        energies=list(energies), fluxes=list(weights),
+        energies=energies, fluxes=weights,
         cuda=True,
         oversample=oversample, Ncells_abc=Ncells_abc,
         mos_dom=mosaic_spread_samples, mos_spread=mosaic_spread,

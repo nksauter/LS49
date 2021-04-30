@@ -95,7 +95,7 @@ def multipanel_sim(
   background_total_flux=None, background_sample_thick_mm=None,
   density_gcm3=1, molecular_weight=18,
   cuda=False, oversample=0, Ncells_abc=(50, 50, 50),
-  mos_dom=1, mos_spread=0, beamsize_mm=0.001,
+  mos_dom=1, mos_spread=0, mos_aniso=(0,0,0,0,0,0,0,0,0), beamsize_mm=0.001,
   crystal_size_mm=0.01,
   verbose=0, default_F=0, interpolate=0, profile="gauss",
   spot_scale_override=None, show_params=False, time_panels=False,
@@ -130,6 +130,7 @@ def multipanel_sim(
   nbCrystal.xtal_shape = profile
   nbCrystal.n_mos_domains = mos_dom
   nbCrystal.mos_spread_deg = mos_spread
+  nbCrystal.mos_aniso = mos_aniso
 
   pid = 0 # remove the loop, use C++ iteration over detector panels
   use_exascale_api = True

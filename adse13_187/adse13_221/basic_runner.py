@@ -376,9 +376,11 @@ def generate_phil_scope():
     model
       .help = Namespace to pass variable model parameters to the nanoBragg simulation
       {
-      mosaic_spread = 0.01
+      mosaic_spread {
+        value = 0.01
         .type = float(value_min = 0)
         .help = half-width mosaic rotation in degrees, assuming isotropic model
+      }
       Nabc = (50,50,50)
         .type = ints(size=3, value_min=2)
         .help = domain size along the a,b, and c axes expressed in unit cells

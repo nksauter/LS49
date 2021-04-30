@@ -1,10 +1,13 @@
 from __future__ import division
 from LS49.adse13_187.cyto_batch import multipanel_sim
 from time import time
-import random
+import random, math
+from scitbx.array_family import flex
+from matplotlib import pyplot as plt
+import copy
 
 class case_chain_runner:
-  def chain_runner(self,expt,mask_array=None,n_cycles = 100,
+  def chain_runner(self,expt,alt_expt,params,mask_array=None,n_cycles = 100,
       Zscore_callback=None, rmsd_callback=None):
 
     # Fixed hyperparameters
@@ -24,6 +27,8 @@ class case_chain_runner:
             panel.set_mu(0)
             panel.set_thickness(0)
         assert detector[0].get_thickness() == 0
+
+    alt_crystal = copy.deepcopy(alt_expt.crystal) # avoid perturbing the original dials cell
 
     beam = expt.beam
     spec = expt.imageset.get_spectrum(0)
@@ -46,20 +51,20 @@ class case_chain_runner:
     assert self.gpu_channels_singleton.get_nchannels() == 1
 
     # Variable parameters
-    mosaic_spread = 0.01  # degrees
-    Ncells_abc = 130, 30, 10  # medians from best stage1
-    alt_exper = ExperimentListFactory.from_json_file(
-      '/global/cfs/cdirs/m3562/der/braggnanimous/top8_newlam2/expers/rank0/stg1_top_0_0.expt',
-                                              check_format=False)[0]
-    alt_crystal = alt_exper.crystal
-    from LS49.adse13_187.adse13_221.parameters import variable_cell, variable_mosaicity, covariant_cell
+    mosaic_spread = params.mosaic_spread.value
+    Ncells_abc = params.Nabc
+
+    from LS49.adse13_187.adse13_221.parameters import variable_mosaicity, covariant_cell
     self.parameters = {}
-    #self.parameters["cell"] = variable_cell(alt_crystal)
-    self.parameters["cell"] = covariant_cell.from_covariance(alt_crystal)
-    #self.parameters["eta"] = variable_mosaicity(mosaic_spread)
-    self.parameters["etaa"] = variable_mosaicity(mosaic_spread)
-    self.parameters["etab"] = variable_mosaicity(mosaic_spread)
-    self.parameters["etac"] = variable_mosaicity(mosaic_spread)
+    self.parameters["cell"] = covariant_cell.from_covariance(alt_crystal, params.cell)
+    self.parameters["etaa"] = variable_mosaicity(mosaic_spread, label="η a", params = params.mosaic_spread)
+    self.parameters["etab"] = variable_mosaicity(mosaic_spread, label="η b", params = params.mosaic_spread)
+    self.parameters["etac"] = variable_mosaicity(mosaic_spread, label="η c", params = params.mosaic_spread)
+    # XXX TO DO list (Nick/Dan discuss)
+    # 1) change the variable mosaicity model to use updated aniso Derek model (Nick)
+    # 2) add rotx/roty/rotz.  Covariant excursion values from Sauter 2014 paper: rotz 0.02° rotx 0.03° roty 0.03°
+    # 3) refine ncells a b c
+
     self.rmsd_chain= flex.double(); self.sigz_chain=flex.double(); self.llg_chain=flex.double();
     self.cycle_list = [key for key in self.parameters]
     self.accept = flex.int()
@@ -98,10 +103,9 @@ class case_chain_runner:
         this_cycle_key = self.cycle_list[(macro_iteration)%len(self.cycle_list)]
         acceptance_prob = min (
           1.,
-          math.exp( (self.llg_chain[-1] - LLG)/55000. ) # normalize by number of pixels # XXX FIXME denominator
+          math.exp( (self.llg_chain[-1] - LLG)/len(whitelist_only) ) # normalize by no. of pixels
           * self.parameters[this_cycle_key].transition_probability_ratio # q(X|Y)/q(Y|X), Y=proposal, X=last value
         )
-
         if random.random() < acceptance_prob:
           for key in self.parameters:
             if key == turn:  self.parameters[key].accept()
@@ -121,9 +125,64 @@ class case_chain_runner:
       self.plot_all(macro_iteration+1,of=n_cycles)
       TIME_EXA = time()-BEG
       print("\t\tExascale: time for Bragg sim: %.4fs; total: %.4fs" % (TIME_BRAGG, TIME_EXA))
-    print ("Mean RMSD %.2f"%(flex.mean(self.rmsd_chain[len(self.rmsd_chain)//2:])))
-    print ("Mean sigz %.2f"%(flex.mean(self.sigz_chain[len(self.sigz_chain)//2:])))
-    print ("Mean -LLG %.2f"%(flex.mean(self.llg_chain[len(self.llg_chain)//2:])))
-    exit("XXX still need to implement return values from MCMC")
-    return JF16M_numpy_array.as_numpy_array()
+    print ("MCMC <RMSD> %.2f"%(flex.mean(self.rmsd_chain[len(self.rmsd_chain)//2:])))
+    print ("MCMC <sigz> %.2f"%(flex.mean(self.sigz_chain[len(self.sigz_chain)//2:])))
+    print ("MCMC <-LLG> %.2f"%(flex.mean(self.llg_chain[len(self.llg_chain)//2:])))
+
+  def plot_all(self,icmp,of):
+    N_param = len(self.parameters)
+    if icmp==1:
+      self.lines = {}
+      self.line = list(range(N_param))
+      ax_ct_1 = 4
+      for key in self.parameters: ax_ct_1 += self.parameters[key].display_n
+      plt.ion()
+      self.fig,self.axes = fig,axes = plt.subplots(ax_ct_1,1,sharex=True,figsize=(7,10))
+      self.line2, = axes[0].plot(range(icmp), self.rmsd_chain)
+      self.line3, = axes[1].plot(range(icmp), self.sigz_chain)
+      self.line4, = axes[2].plot(range(icmp), self.llg_chain)
+      self.line5a, = axes[3].plot(range(icmp), self.accept, "k,")
+      for npm in range(N_param):
+        self.line[npm], = axes[3].plot(range(icmp), N_param*self.parameters[self.cycle_list[npm]].running)
+      print("LINE",self.line)
+      axes[0].set_ylabel("RMSD (px)")
+      axes[1].set_ylabel("Z-score\nsigma")
+      axes[2].set_ylabel("LLG")
+      axes[3].set_ylabel("accept")
+      axes[0].set_ylim(0.45,1.00)
+      axes[1].set_ylim(1.0,6.0)
+      axes[2].set_ylim(-17052536,-16052536) #clearly needs to be customized for each run
+      axes[3].set_ylim(-0.1,1.1)
+
+      axes_idx = 3
+      for key in self.parameters:
+        for label in self.parameters[key].display_labels:
+          axes_idx += 1
+          self.lines[key+label] = (axes[axes_idx].plot(range(icmp), self.parameters[key].chain[label]))[0]
+          axes[axes_idx].set_ylabel(label)
+          axes[axes_idx].set_ylim(self.parameters[key].display_ranges[label])
+      plt.xlim(0,of+1)
+      plt.tight_layout()
+      plt.show()
+    elif icmp%10==0:
+      for key in self.parameters:
+        for label in self.parameters[key].display_labels:
+          self.lines[key+label].set_xdata(range(icmp))
+          self.lines[key+label].set_ydata(self.parameters[key].chain[label])
+
+      self.line2.set_xdata(range(icmp))
+      self.line2.set_ydata(self.rmsd_chain)
+      self.line3.set_xdata(range(icmp))
+      self.line3.set_ydata(self.sigz_chain)
+      self.line4.set_xdata(range(icmp))
+      self.line4.set_ydata(self.llg_chain)
+      self.line5a.set_xdata(range(icmp))
+      self.line5a.set_ydata(self.accept)
+      for npm in range(N_param):
+        self.line[npm].set_xdata(range(icmp))
+        self.line[npm].set_ydata(N_param*self.parameters[self.cycle_list[npm]].running)
+
+      self.fig.canvas.draw()
+      self.fig.canvas.flush_events()
+      if icmp==of-1: input()
 
