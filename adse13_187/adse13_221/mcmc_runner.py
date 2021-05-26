@@ -122,6 +122,19 @@ def generate_phil_scope():
           .help = The allowable range of proposal values as a multiplier of current value.
           .help = If the current value is 1.0, a hyperparameter of 0.2 would give an allowable range of 0.8-1.2.
       }
+      rot {
+        refine = False
+          .type = bool
+        hyperparameter = 0.04
+          .type = float(value_min=0.001, value_max=0.9)
+          .help = The allowable range of proposal values as a multiplier of current value.
+        sigmas = (0.03,0.03,0.01)
+        .type = floats(size=3, value_min=0)
+        .help = Starting allowable range in degrees for rotx,roty,rotz
+        value = (0.00,0.00,0.00)
+        .type = floats(size=3)
+        .help = Starting allowable range in degrees for rotx,roty,rotz
+      }
     }
   """
   return parse(master_phil, process_includes=True)

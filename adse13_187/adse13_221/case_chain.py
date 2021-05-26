@@ -54,26 +54,32 @@ class case_chain_runner:
     mosaic_spread = params.mosaic_spread.value
     Ncells_abc = params.Nabc
 
-    from LS49.adse13_187.adse13_221.parameters import variable_mosaicity, covariant_cell
+    from LS49.adse13_187.adse13_221.parameters import variable_mosaicity, covariant_cell, covariant_rot
     self.parameters = {}
     self.parameters["cell"] = covariant_cell.from_covariance(alt_crystal, params.cell)
     self.parameters["etaa"] = variable_mosaicity(mosaic_spread, label="η a", params = params.mosaic_spread)
     self.parameters["etab"] = variable_mosaicity(mosaic_spread, label="η b", params = params.mosaic_spread)
     self.parameters["etac"] = variable_mosaicity(mosaic_spread, label="η c", params = params.mosaic_spread)
+    self.parameters2 = {}
+    if params.rot.refine:
+      self.parameters2["rot"] = covariant_rot(alt_crystal, params.rot)
+    self.ref_params={};self.ref_params.update(self.parameters); self.ref_params.update(self.parameters2)
     # XXX TO DO list (Nick/Dan discuss)
     # 1) change the variable mosaicity model to use updated aniso Derek model (Nick)
     # 2) add rotx/roty/rotz.  Covariant excursion values from Sauter 2014 paper: rotz 0.02° rotx 0.03° roty 0.03°
     # 3) refine ncells a b c
 
     self.rmsd_chain= flex.double(); self.sigz_chain=flex.double(); self.llg_chain=flex.double();
-    self.cycle_list = [key for key in self.parameters]
+    self.cycle_list = [key for key in self.ref_params]
     self.accept = flex.int()
 
     for macro_iteration in range(n_cycles):
       BEG=time()
       turn = self.cycle_list[macro_iteration%len(self.cycle_list)]
       if turn=="cell":
-        alt_crystal = self.parameters["cell"].get_current_crystal_model()
+        alt_crystal = self.parameters["cell"].get_current_crystal_model(alt_crystal)
+      elif turn=="rot":
+        alt_crystal = self.parameters2["rot"].get_current_crystal_model(alt_crystal)
 
       whitelist_only, TIME_BG, TIME_BRAGG = multipanel_sim(
         CRYSTAL=alt_crystal, DETECTOR=detector, BEAM=beam,
@@ -94,8 +100,8 @@ class case_chain_runner:
       )
       Rmsd,sigZ,LLG = Zscore_callback(kernel_model=whitelist_only, plot=False)
       if macro_iteration==0:
-        for key in self.parameters:
-          self.parameters[key].accept()
+        for key in self.ref_params:
+          self.ref_params[key].accept()
         self.accept.append(1)
         self.rmsd_chain.append(Rmsd); self.sigz_chain.append(sigZ); self.llg_chain.append(LLG)
       else:
@@ -104,24 +110,24 @@ class case_chain_runner:
         acceptance_prob = min (
           1.,
           math.exp( (self.llg_chain[-1] - LLG)/len(whitelist_only) ) # normalize by no. of pixels
-          * self.parameters[this_cycle_key].transition_probability_ratio # q(X|Y)/q(Y|X), Y=proposal, X=last value
+          * self.ref_params[this_cycle_key].transition_probability_ratio # q(X|Y)/q(Y|X), Y=proposal, X=last value
         )
         if random.random() < acceptance_prob:
-          for key in self.parameters:
-            if key == turn:  self.parameters[key].accept()
-            else: self.parameters[key].reject()
+          for key in self.ref_params:
+            if key == turn:  self.ref_params[key].accept()
+            else: self.ref_params[key].reject()
           self.accept.append(1)
           self.rmsd_chain.append(Rmsd); self.sigz_chain.append(sigZ); self.llg_chain.append(LLG)
         else:
-          for key in self.parameters: self.parameters[key].reject()
+          for key in self.ref_params: self.ref_params[key].reject()
           self.accept.append(0)
           self.rmsd_chain.append(self.rmsd_chain[-1]);
           self.sigz_chain.append(self.sigz_chain[-1]);
           self.llg_chain.append(self.llg_chain[-1])
 
-      for key in self.parameters:
+      for key in self.ref_params:
         if key == self.cycle_list[(macro_iteration+1)%len(self.cycle_list)]:
-          self.parameters[key].generate_next_proposal()
+          self.ref_params[key].generate_next_proposal()
       self.plot_all(macro_iteration+1,of=n_cycles)
       TIME_EXA = time()-BEG
       print("\t\tExascale: time for Bragg sim: %.4fs; total: %.4fs" % (TIME_BRAGG, TIME_EXA))
@@ -163,6 +169,21 @@ class case_chain_runner:
           axes[axes_idx].set_ylim(self.parameters[key].display_ranges[label])
       plt.xlim(0,of+1)
       plt.tight_layout()
+      if len(self.parameters2)>0:
+        self.lines2 = {}
+        ax_ct_2 = 0
+        for key in self.parameters2: ax_ct_2 += self.parameters2[key].display_n
+
+        self.fig2,self.axes2 = plt.subplots(ax_ct_2,1,sharex=True,figsize=(7,10))
+
+        axes_idx = -1
+        for key in self.parameters2:
+          for label in self.parameters2[key].display_labels:
+            axes_idx += 1
+            self.lines2[key+label] = (self.axes2[axes_idx].plot(range(icmp), self.parameters2[key].chain[label]))[0]
+            self.axes2[axes_idx].set_ylabel(self.parameters2[key].formatt%label)
+            self.axes2[axes_idx].set_ylim(self.parameters2[key].display_ranges[label])
+      plt.xlim(0,of+1)
       plt.show()
     elif icmp%10==0:
       for key in self.parameters:
@@ -181,6 +202,12 @@ class case_chain_runner:
       for npm in range(N_param):
         self.line[npm].set_xdata(range(icmp))
         self.line[npm].set_ydata(N_param*self.parameters[self.cycle_list[npm]].running)
+
+      if len(self.parameters2)>0:
+        for key in self.parameters2:
+          for label in self.parameters2[key].display_labels:
+            self.lines2[key+label].set_xdata(range(icmp))
+            self.lines2[key+label].set_ydata(self.parameters2[key].chain[label])
 
       self.fig.canvas.draw()
       self.fig.canvas.flush_events()

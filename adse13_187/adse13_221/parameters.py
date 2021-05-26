@@ -1,10 +1,10 @@
 from __future__ import division
 from dials.array_family import flex
 import random, math, numpy as np
-from scitbx.matrix import col
+from scitbx.matrix import col,sqr
 from scipy import constants
 ENERGY_CONV = 1e10*constants.c*constants.h / constants.electron_volt
-import pickle
+import pickle, copy
 
 class variable_mosaicity:
   def __init__(self,value,label,params):
@@ -108,14 +108,14 @@ class covariant_cell:
       ["%s %.6f"%(L, self.proposal_vec[ipv]) for ipv,L in enumerate(self.display_labels)])
     )
 
-  def get_current_crystal_model(self):
+  def get_current_crystal_model(self, old_crystal_model):
     from cctbx.uctbx import unit_cell
     if self.system == "Hexagonal":
-      self.R.set_unit_cell(unit_cell((self.proposal_vec[0], self.proposal_vec[0], self.proposal_vec[1], 90., 90., 120.)))
+      old_crystal_model.set_unit_cell(unit_cell((self.proposal_vec[0], self.proposal_vec[0], self.proposal_vec[1], 90., 90., 120.)))
     elif self.system == "Orthorhombic":
-      self.R.set_unit_cell(unit_cell((self.proposal_vec[0], self.proposal_vec[1], self.proposal_vec[2], 90., 90., 90.)))
+      old_crystal_model.set_unit_cell(unit_cell((self.proposal_vec[0], self.proposal_vec[1], self.proposal_vec[2], 90., 90., 90.)))
     else: raise NotImplementedError(self.system)
-    return self.R
+    return old_crystal_model
 
   def accept(self):
     for idr in range(self.display_n):
@@ -138,6 +138,71 @@ class covariant_cell:
       messages.append("""cell %s.  initial %8.2fÅ, final %8.2f±%4.2fÅ"""%(
         self.display_labels[idr],
         self.ref_uc[self.ki[self.display_labels[idr]]],
+        stats.mean(), stats.unweighted_sample_standard_deviation(),
+      ))
+    print ("\n".join(messages))
+
+class covariant_rot:
+  def __init__(self,ref_crystal, params):
+    self.R = copy.deepcopy(ref_crystal) # hold on to a copy of the reference crystal for future
+    self.ref_U = sqr(self.R.get_U())
+    self.accepted = flex.int()
+    self.running = flex.double()
+    self.transition_probability_ratio = 1.0 # q(X|Y)/q(Y|X), Y=proposal, X=last value
+    self.params = params
+    self.ki = dict(x=0,y=1,z=2)
+
+    self.cluster_covariance = np.array([[params.sigmas[0]**2, 0., 0.],
+                                        [0., params.sigmas[1]**2, 0.],
+                                        [0., 0., params.sigmas[2]**2]])
+    self.hyperparameter = params.hyperparameter
+    self.display_n = 3
+    self.display_labels = ["x","y","z"]
+    self.formatt = "rot %s(°)"
+    self.chain = dict([(L,flex.double()) for L in self.display_labels])
+    self.display_ranges = {}
+    for idr in range(self.display_n):
+      diag_elem = math.sqrt(self.cluster_covariance[idr,idr])
+      self.display_ranges[self.display_labels[idr]] = [
+        -2.*diag_elem, +2*diag_elem]
+    self.proposal_vec = col(params.value)
+
+  def generate_next_proposal(self):
+    MV_vec = col(np.random.multivariate_normal(mean=[0.]*self.display_n, cov=self.cluster_covariance))
+    self.proposal_vec = col([self.chain[label][-1] for label in self.display_labels]) + self.hyperparameter * MV_vec
+    print(
+    "next rotational proposal %s"%" ".join(
+      ["%s %8.5f"%(L, self.proposal_vec[ipv]) for ipv,L in enumerate(self.display_labels)])
+    )
+
+  def get_current_crystal_model(self, old_crystal_model):
+    Rx = col((1.,0.,0.)).axis_and_angle_as_r3_rotation_matrix(angle=self.proposal_vec[0], deg=True)
+    Ry = col((0.,1.,0.)).axis_and_angle_as_r3_rotation_matrix(angle=self.proposal_vec[1], deg=True)
+    Rz = col((0.,0.,1.)).axis_and_angle_as_r3_rotation_matrix(angle=self.proposal_vec[2], deg=True)
+    newU = Rz * (Ry * (Rx * self.ref_U))
+    old_crystal_model.set_U(newU)
+    return old_crystal_model
+
+  def accept(self):
+    for idr in range(self.display_n):
+      self.chain[self.display_labels[idr]].append(self.proposal_vec[idr])
+    self.accepted.append(1)
+    self.running.append(flex.sum(self.accepted)/len(self.accepted))
+
+  def reject(self):
+    for idr in range(self.display_n):
+      self.chain[self.display_labels[idr]].append(self.chain[self.display_labels[idr]][-1])
+    self.accepted.append(0)
+    self.running.append(flex.sum(self.accepted)/len(self.accepted))
+
+  def __del__(self):
+    last_half = int(len(self.chain[self.display_labels[0]])//2)
+    if last_half<50: return
+    messages = []
+    for idr in range(self.display_n):
+      stats = flex.mean_and_variance(self.chain[self.display_labels[idr]][last_half:])
+      messages.append("""rot %s.  initial 0°, final %8.4f±%6.4f°"""%(
+        self.display_labels[idr],
         stats.mean(), stats.unweighted_sample_standard_deviation(),
       ))
     print ("\n".join(messages))
