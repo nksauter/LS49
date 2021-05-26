@@ -18,6 +18,7 @@ class variable_mosaicity:
     self.target_interval = (CDF_sigma - self.hyperparameter, CDF_sigma + self.hyperparameter)
     self.display_n = 1
     self.display_labels = [label]
+    self.formatt = "%s(°)"
     self.label = label
     self.display_ranges = {label:[0, 0.1]} # range in degrees
 
@@ -52,8 +53,8 @@ class variable_mosaicity:
     last_half = int(len(self.chain[self.label])//2)
     if last_half<50: return
     stats = flex.mean_and_variance(self.chain[self.label][last_half:])
-    print ("""mosaicity %s. initial %f°, final %f±%f°
-"""%(self.label,self.ref_value,stats.mean(), stats.unweighted_sample_standard_deviation(),
+    print ("""mosaicity %s. initial %f°, final %f±%f°"""%(
+    self.label,self.ref_value,stats.mean(), stats.unweighted_sample_standard_deviation(),
      ))
 
 class covariant_cell:
@@ -86,6 +87,7 @@ class covariant_cell:
     new_instance.hyperparameter = params.hyperparameter
     new_instance.display_n = len(cov["features"])
     new_instance.display_labels = cov["features"]
+    new_instance.formatt = "%s(Å)"
     if new_instance.system == "Hexagonal":
       assert cov["features"]==['a','c']
     elif new_instance.system == "Orthorhombic":

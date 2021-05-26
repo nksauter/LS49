@@ -159,7 +159,7 @@ class case_chain_runner:
         for label in self.parameters[key].display_labels:
           axes_idx += 1
           self.lines[key+label] = (axes[axes_idx].plot(range(icmp), self.parameters[key].chain[label]))[0]
-          axes[axes_idx].set_ylabel(label)
+          axes[axes_idx].set_ylabel(self.parameters[key].formatt%label)
           axes[axes_idx].set_ylim(self.parameters[key].display_ranges[label])
       plt.xlim(0,of+1)
       plt.tight_layout()
