@@ -136,7 +136,7 @@ def multipanel_sim(
   use_exascale_api = True
   if use_exascale_api:
 
-    S = SimData()
+    S = SimData(default_crystal=False)
     S.detector = DETECTOR
     S.beam = nbBeam
     S.crystal = nbCrystal
@@ -177,7 +177,22 @@ def multipanel_sim(
       P = Profiler("%40s"%"from gpu amplitudes cuda")
       gpu_simulation.add_energy_channel_from_gpu_amplitudes_cuda(
       x, Famp, gpu_detector)
-    elif type(mask_file) is flex.bool: # 1D bool array, flattened from ipanel, islow, ifast
+    elif type(mask_file) is flex.bool:
+      import textwrap
+      raise TypeError(textwrap.dedent("""
+
+         flex.bool mask file should not be used anymore. Instead precalculate
+         the active pixel list in the calling code:
+
+         if mask_array is not None:
+           active_pixels = flex.int()
+           for i, x in enumerate(mask_array):
+             if x: active_pixels.append(i)
+           mask_array = active_pixels
+      """))
+    elif type(mask_file) is flex.int:
+      # 1D bool array, flattened from ipanel, islow, ifast; OR the derived
+      # precalculated active_pixel_list
       P = Profiler("%40s"%"from gpu amplitudes cuda with bool mask")
       gpu_simulation.add_energy_channel_mask_allpanel_cuda(
       x, Famp, gpu_detector, mask_file )
