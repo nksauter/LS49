@@ -136,7 +136,7 @@ def multipanel_sim(
   use_exascale_api = True
   if use_exascale_api:
 
-    S = SimData(default_crystal=False)
+    S = SimData()
     S.detector = DETECTOR
     S.beam = nbBeam
     S.crystal = nbCrystal
