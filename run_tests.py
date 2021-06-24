@@ -52,6 +52,9 @@ if OPT.enable_cuda:
     "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
     "mask_file=/global/cscratch1/sd/nksauter/adse13_187/13_221/event_648.mask",
    ],
+   ["$D/adse13_187/tst_whitelist.py", "N_total=1", "mosaic_spread_samples=50",
+    "test_without_mpi=True", "log.outdir=mp5"
+   ],
    "$D/adse13_196/tst_gpu_channels.py",
    "$D/adse13_196/revapi/tst_step5_batch_single_process_GPU.py",
   ] + tst_list_parallel + [
