@@ -1,6 +1,7 @@
 from __future__ import division
 from LS49.adse13_187.cyto_batch import multipanel_sim
 from time import time
+from scitbx.array_family import flex
 
 class case_job_runner:
   def job_runner(self,expt,alt_expt,params,mask_array=None,i_exp=0,spectra={}):
@@ -12,6 +13,13 @@ class case_job_runner:
     oversample = 1  # factor 1,2, or 3 probably enough
     verbose = 0  # leave as 0, unless debug
     shapetype = "gauss_argchk"
+
+    if mask_array is not None:
+      assert type(mask_array) is flex.bool # type check intending to convert active-pixel-bools to whitelist-ints
+      active_pixels = flex.int()
+      for i, x in enumerate(mask_array):
+        if x: active_pixels.append(i)
+      mask_array = active_pixels
 
     detector = expt.detector
     flat = True  # enforce that the camera has 0 thickness

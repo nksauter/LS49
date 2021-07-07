@@ -178,7 +178,14 @@ def multipanel_sim(
     elif type(mask_file) is flex.bool: # 1D bool array, flattened from ipanel, islow, ifast
       P = Profiler("%40s"%"from gpu amplitudes cuda with bool mask")
       gpu_simulation.add_energy_channel_mask_allpanel_cuda(
-      x, Famp, gpu_detector, mask_file )
+        channel_number = x, gpu_amplitudes = Famp, gpu_detector = gpu_detector,
+        pixel_active_mask_bools = mask_file )
+    elif type(mask_file) is flex.int:
+      # precalculated active_pixel_list
+      P = Profiler("%40s"%"from gpu amplitudes cuda w/int whitelist")
+      gpu_simulation.add_energy_channel_mask_allpanel_cuda(
+        channel_number = x, gpu_amplitudes = Famp, gpu_detector = gpu_detector,
+        pixel_active_list_ints = mask_file )
     else:
       assert type(mask_file) is str
       from LS49.adse13_187.adse13_221.mask_utils import mask_from_file

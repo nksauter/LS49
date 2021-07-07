@@ -10,6 +10,13 @@ class case_chain_runner:
   def chain_runner(self,expt,alt_expt,params,mask_array=None,n_cycles = 100,
       Zscore_callback=None, rmsd_callback=None):
 
+    if mask_array is not None:
+      assert type(mask_array) is flex.bool # type check intending to convert active-pixel-bools to whitelist-ints
+      active_pixels = flex.int()
+      for i, x in enumerate(mask_array):
+        if x: active_pixels.append(i)
+    mask_array = active_pixels
+
     # Fixed hyperparameters
     mosaic_spread_samples = 250
     beamsize_mm = 0.000886226925452758 # sqrt beam focal area
