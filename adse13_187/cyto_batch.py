@@ -119,9 +119,7 @@ def multipanel_sim(
   wavelengths = ENERGY_CONV / np.array(energies)
   nbBeam.spectrum = list(zip(wavelengths, fluxes))
 
-  class Nodefault_NBcrystal(NBcrystal):
-    def __init__(self): self._miller_array = None
-  nbCrystal = Nodefault_NBcrystal()
+  nbCrystal = NBcrystal(use_default_crystal = False)
   nbCrystal.dxtbx_crystal = CRYSTAL
   #nbCrystal.miller_array = None # use the gpu_channels_singleton mechanism instead
   nbCrystal.Ncells_abc = Ncells_abc
@@ -136,7 +134,7 @@ def multipanel_sim(
   use_exascale_api = True
   if use_exascale_api:
 
-    S = SimData()
+    S = SimData(use_default_crystal = False)
     S.detector = DETECTOR
     S.beam = nbBeam
     S.crystal = nbCrystal
