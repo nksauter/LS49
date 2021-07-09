@@ -381,9 +381,18 @@ def generate_phil_scope():
         .type = float(value_min = 0)
         .help = half-width mosaic rotation in degrees, assuming isotropic model
       }
-      Nabc = (50,50,50)
-        .type = ints(size=3, value_min=2)
-        .help = domain size along the a,b, and c axes expressed in unit cells
+      Nabc {
+        refine = True
+          .type = bool
+        value = (50,50,50)
+          .type = ints(size=3, value_min=2)
+          .help = domain size along the a,b, and c axes expressed in unit cells
+        sigmas = (10,10,10)
+          .type = floats(size=3, value_min=0)
+        hyperparameter = 0.2
+          .type = float(value_min=0.001, value_max=0.9)
+          .help = The allowable range of proposal values as a multiplier of current value.
+      }
       }
   """
   return parse(master_phil, process_includes=True)

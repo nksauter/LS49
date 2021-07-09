@@ -48,6 +48,7 @@ class variable_mosaicity:
     # q(X|Y)/q(Y|X), Y=proposal, X=last value
 
     print('next mosaicity proposal %.6f'%(self.proposal))
+    self.proposal_vec = [self.proposal] # to provide a uniform interface
 
   def __del__(self):
     last_half = int(len(self.chain[self.label])//2)
@@ -142,7 +143,7 @@ class covariant_cell:
       ))
     print ("\n".join(messages))
 
-class covariant_rot:
+class covariant_rot(covariant_cell):
   def __init__(self,ref_crystal, params):
     self.R = copy.deepcopy(ref_crystal) # hold on to a copy of the reference crystal for future
     self.ref_U = sqr(self.R.get_U())
@@ -183,18 +184,6 @@ class covariant_rot:
     old_crystal_model.set_U(newU)
     return old_crystal_model
 
-  def accept(self):
-    for idr in range(self.display_n):
-      self.chain[self.display_labels[idr]].append(self.proposal_vec[idr])
-    self.accepted.append(1)
-    self.running.append(flex.sum(self.accepted)/len(self.accepted))
-
-  def reject(self):
-    for idr in range(self.display_n):
-      self.chain[self.display_labels[idr]].append(self.chain[self.display_labels[idr]][-1])
-    self.accepted.append(0)
-    self.running.append(flex.sum(self.accepted)/len(self.accepted))
-
   def __del__(self):
     last_half = int(len(self.chain[self.display_labels[0]])//2)
     if last_half<50: return
@@ -203,6 +192,59 @@ class covariant_rot:
       stats = flex.mean_and_variance(self.chain[self.display_labels[idr]][last_half:])
       messages.append("""rot %s.  initial 0°, final %8.4f±%6.4f°"""%(
         self.display_labels[idr],
+        stats.mean(), stats.unweighted_sample_standard_deviation(),
+      ))
+    print ("\n".join(messages))
+
+class covariant_ncells(covariant_cell):
+  def __init__(self, params):
+    self.R = copy.deepcopy(params.value) # hold on to a copy of the reference crystal for future
+    self.accepted = flex.int()
+    self.running = flex.double()
+    self.transition_probability_ratio = 1.0 # q(X|Y)/q(Y|X), Y=proposal, X=last value
+    self.params = params
+    self.ki = dict(a=0,b=1,c=2)
+    self.cluster_covariance = np.array([[params.sigmas[0]**2, 0., 0.],
+                                        [0., params.sigmas[1]**2, 0.],
+                                        [0., 0., params.sigmas[2]**2]])
+    self.hyperparameter = params.hyperparameter
+    self.display_n = 3
+    self.display_labels = ["a","b","c"]
+    self.formatt = "ncells %s"
+    self.chain = dict([(L,flex.double()) for L in self.display_labels])
+    self.display_ranges = {}
+    for idr in range(self.display_n):
+      diag_elem = math.sqrt(self.cluster_covariance[idr,idr])
+      self.display_ranges[self.display_labels[idr]] = [
+        0,+100*diag_elem]
+    self.proposal_vec = col(params.value)
+
+  def generate_next_proposal(self):
+    MV_vec = col(np.random.multivariate_normal(mean=[0.]*self.display_n, cov=self.cluster_covariance))
+    print ("THE MC vector",MV_vec)
+    print ("The excursion",self.hyperparameter * MV_vec)
+    self.proposal_vec = col([self.chain[label][-1] for label in self.display_labels]) + self.hyperparameter * MV_vec
+    self.proposal_vec = col(
+     (
+       abs(self.proposal_vec[0]),abs(self.proposal_vec[1]),abs(self.proposal_vec[2])))
+    print(
+    "next ncells proposal %s"%" ".join(
+      ["%s %d"%(L, self.proposal_vec[ipv]) for ipv,L in enumerate(self.display_labels)])
+    )
+
+  def get_current_model(self):
+    current = (int(self.proposal_vec[0]), int(self.proposal_vec[1]), int(self.proposal_vec[2]))
+    print("CELLS CURRENT",current)
+    return current
+
+  def __del__(self):
+    last_half = int(len(self.chain[self.display_labels[0]])//2)
+    if last_half<50: return
+    messages = []
+    for idr in range(self.display_n):
+      stats = flex.mean_and_variance(self.chain[self.display_labels[idr]][last_half:])
+      messages.append("""ncells %s.  initial %3d, final %5.1f±%.1f"""%(
+        self.display_labels[idr],self.R[idr],
         stats.mean(), stats.unweighted_sample_standard_deviation(),
       ))
     print ("\n".join(messages))

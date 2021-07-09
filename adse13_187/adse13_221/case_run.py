@@ -60,7 +60,7 @@ class case_job_runner:
 
       # Variable parameters
       mosaic_spread = params.mosaic_spread.value
-      Ncells_abc = params.Nabc
+      Ncells_abc = params.Nabc.value
 
       from LS49.adse13_187.cyto_batch import multipanel_sim
       JF16M_numpy_array, TIME_BG, TIME_BRAGG = multipanel_sim(

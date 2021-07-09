@@ -59,9 +59,10 @@ class case_chain_runner:
 
     # Variable parameters
     mosaic_spread = params.mosaic_spread.value
-    Ncells_abc = params.Nabc
+    Ncells_abc = params.Nabc.value
 
-    from LS49.adse13_187.adse13_221.parameters import variable_mosaicity, covariant_cell, covariant_rot
+    from LS49.adse13_187.adse13_221.parameters import variable_mosaicity
+    from LS49.adse13_187.adse13_221.parameters import covariant_cell, covariant_rot, covariant_ncells
     self.parameters = {}
     self.parameters["cell"] = covariant_cell.from_covariance(alt_crystal, params.cell)
     self.parameters["etaa"] = variable_mosaicity(mosaic_spread, label="η a", params = params.mosaic_spread)
@@ -70,6 +71,8 @@ class case_chain_runner:
     self.parameters2 = {}
     if params.rot.refine:
       self.parameters2["rot"] = covariant_rot(alt_crystal, params.rot)
+    if params.Nabc.refine:
+      self.parameters2["ncells"] = covariant_ncells(params.Nabc)
     self.ref_params={};self.ref_params.update(self.parameters); self.ref_params.update(self.parameters2)
     # XXX TO DO list (Nick/Dan discuss)
     # 1) change the variable mosaicity model to use updated aniso Derek model (Nick)
@@ -87,6 +90,8 @@ class case_chain_runner:
         alt_crystal = self.parameters["cell"].get_current_crystal_model(alt_crystal)
       elif turn=="rot":
         alt_crystal = self.parameters2["rot"].get_current_crystal_model(alt_crystal)
+      elif turn=="ncells":
+        Ncells_abc = self.parameters2["ncells"].get_current_model()
 
       whitelist_only, TIME_BG, TIME_BRAGG = multipanel_sim(
         CRYSTAL=alt_crystal, DETECTOR=detector, BEAM=beam,
