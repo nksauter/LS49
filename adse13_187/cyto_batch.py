@@ -119,7 +119,7 @@ def multipanel_sim(
   wavelengths = ENERGY_CONV / np.array(energies)
   nbBeam.spectrum = list(zip(wavelengths, fluxes))
 
-  nbCrystal = NBcrystal(use_default_crystal = False)
+  nbCrystal = NBcrystal(False)
   nbCrystal.dxtbx_crystal = CRYSTAL
   #nbCrystal.miller_array = None # use the gpu_channels_singleton mechanism instead
   nbCrystal.Ncells_abc = Ncells_abc
@@ -195,7 +195,7 @@ def multipanel_sim(
       x, Famp, gpu_detector, boolean_mask )
     TIME_BRAGG = time()-P.start_el
 
-    per_image_scale_factor = 1./len(energies)
+    per_image_scale_factor = 1.
     gpu_detector.scale_in_place_cuda(per_image_scale_factor) # apply scale directly on GPU
 
     if include_background:
