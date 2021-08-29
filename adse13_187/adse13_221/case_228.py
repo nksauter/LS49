@@ -90,8 +90,7 @@ class case_228:
       mosaic_spread = 0.07 # degrees
       Ncells_abc = 30, 30, 10
 
-      from LS49.adse13_187.cyto_batch import multipanel_sim
-      JF16M_numpy_array, TIME_BG, TIME_BRAGG = multipanel_sim(
+      JF16M_numpy_array, TIME_BG, TIME_BRAGG, _ = multipanel_sim(
         CRYSTAL=crystal, DETECTOR=detector, BEAM=beam,
         Famp = self.gpu_channels_singleton,
         energies=list(energies), fluxes=list(weights),

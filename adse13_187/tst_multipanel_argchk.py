@@ -92,7 +92,7 @@ def tst_one_monkeypatch(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params)
           x, F_P1.indices(), F_P1.data())
       assert gpu_channels_singleton.get_nchannels() == 1
 
-      JF16M_numpy_array, TIME_BG, TIME_BRAGG = multipanel_sim(
+      JF16M_numpy_array, TIME_BG, TIME_BRAGG, _ = multipanel_sim(
         CRYSTAL=crystal, DETECTOR=detector, BEAM=beam,
         Famp = gpu_channels_singleton,
         energies=list(energies), fluxes=list(weights),

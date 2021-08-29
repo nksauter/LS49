@@ -113,8 +113,7 @@ class case_DS1 (MCMC_manager):
           x, F_P1.indices(), F_P1.data())
       assert self.gpu_channels_singleton.get_nchannels() == 1
 
-      from LS49.adse13_187.cyto_batch import multipanel_sim
-      JF16M_numpy_array, TIME_BG, TIME_BRAGG = multipanel_sim(
+      JF16M_numpy_array, TIME_BG, TIME_BRAGG, _ = multipanel_sim(
         CRYSTAL=alt_crystal, DETECTOR=detector, BEAM=beam,
         Famp = self.gpu_channels_singleton,
         energies=list(energies), fluxes=list(weights),
@@ -225,8 +224,7 @@ class case_228 (MCMC_manager):
           x, F_P1.indices(), F_P1.data())
       assert self.gpu_channels_singleton.get_nchannels() == 1
 
-      from LS49.adse13_187.cyto_batch import multipanel_sim
-      JF16M_numpy_array, TIME_BG, TIME_BRAGG = multipanel_sim(
+      JF16M_numpy_array, TIME_BG, TIME_BRAGG, _ = multipanel_sim(
         CRYSTAL=crystal, DETECTOR=detector, BEAM=beam,
         Famp = self.gpu_channels_singleton,
         energies=list(energies), fluxes=list(weights),

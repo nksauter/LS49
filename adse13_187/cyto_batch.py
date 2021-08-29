@@ -68,6 +68,11 @@ def parse_input():
     mosaic_spread_samples = 500
       .type = int
       .help = granularity of mosaic rotation, double it to find number of umats
+    mosaic_method = double_random double_uniform*
+      .type = choice
+      .help = algorithm for calculating an isotropic distribution of mosaic umats
+      .help = double_random, uses rnd number generator for both angle and axis of rotation (legacy)
+      .help = double_uniform uses uniform distribution of angle and axis, but matches them with rnd sequence
     mask_file = ""
       .type = path
       .help = for the exascale api only, specifying this path chooses the debranched-maskall kernel
@@ -95,7 +100,8 @@ def multipanel_sim(
   background_total_flux=None, background_sample_thick_mm=None,
   density_gcm3=1, molecular_weight=18,
   cuda=False, oversample=0, Ncells_abc=(50, 50, 50),
-  mos_dom=1, mos_spread=0, mos_aniso=(0,0,0,0,0,0,0,0,0), beamsize_mm=0.001,
+  mos_dom=1, mos_spread=0, mosaic_method="double_uniform",
+  mos_aniso=None, beamsize_mm=0.001,
   crystal_size_mm=0.01,
   verbose=0, default_F=0, interpolate=0, profile="gauss",
   spot_scale_override=None, show_params=False, time_panels=False,
@@ -128,7 +134,7 @@ def multipanel_sim(
   nbCrystal.xtal_shape = profile
   nbCrystal.n_mos_domains = mos_dom
   nbCrystal.mos_spread_deg = mos_spread
-  nbCrystal.mos_aniso = mos_aniso
+  nbCrystal.anisotropic_mos_spread_deg = mos_aniso
 
   pid = 0 # remove the loop, use C++ iteration over detector panels
   use_exascale_api = True
@@ -147,6 +153,7 @@ def multipanel_sim(
     S.gain = gain
     S.psf_fwhm = psf_fwhm
     S.include_noise = False
+    S.Umats_method = dict(double_random=0, double_uniform=5)[mosaic_method]
 
     if mosaicity_random_seeds is not None:
       S.mosaic_seeds = mosaicity_random_seeds
@@ -221,11 +228,11 @@ def multipanel_sim(
       whitelist_only = gpu_detector.get_whitelist_raw_pixels_cuda(relevant_whitelist_order)
       P = Profiler("%40s"%"each image free cuda")
       gpu_detector.each_image_free_cuda()
-      return whitelist_only, TIME_BG, TIME_BRAGG
+      return whitelist_only, TIME_BG, TIME_BRAGG, S.exascale_mos_blocks or None
 
     packed_numpy = gpu_detector.get_raw_pixels_cuda()
     gpu_detector.each_image_free_cuda()
-    return packed_numpy.as_numpy_array(), TIME_BG, TIME_BRAGG
+    return packed_numpy.as_numpy_array(), TIME_BG, TIME_BRAGG, S.exascale_mos_blocks or None
 
 def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
     from simtbx.nanoBragg import utils
@@ -309,7 +316,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
           x, F_P1.indices(), F_P1.data())
       assert gpu_channels_singleton.get_nchannels() == 1
 
-      JF16M_numpy_array, TIME_BG, TIME_BRAGG = multipanel_sim(
+      JF16M_numpy_array, TIME_BG, TIME_BRAGG, _ = multipanel_sim(
         CRYSTAL=crystal, DETECTOR=detector, BEAM=beam,
         Famp = gpu_channels_singleton,
         energies=list(energies), fluxes=list(weights),
@@ -318,6 +325,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
         cuda=True,
         oversample=oversample, Ncells_abc=Ncells_abc,
         mos_dom=mosaic_spread_samples, mos_spread=mosaic_spread,
+        mosaic_method=params.mosaic_method,
         beamsize_mm=beamsize_mm,show_params=show_params,
         time_panels=time_panels, verbose=verbose,
         spot_scale_override=spot_scale,

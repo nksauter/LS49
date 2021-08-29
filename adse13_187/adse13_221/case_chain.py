@@ -5,6 +5,9 @@ import random, math
 from scitbx.array_family import flex
 from matplotlib import pyplot as plt
 import copy
+from scitbx.matrix import sqr, col
+cube_diag = math.sqrt(1./3) # 0.57735
+unit_vectors = [(1,0,0), (0,1,0), (0,0,1), (cube_diag, cube_diag, cube_diag)]
 
 class case_chain_runner:
   def chain_runner(self,expt,alt_expt,params,mask_array=None,n_cycles = 100,
@@ -93,14 +96,16 @@ class case_chain_runner:
       elif turn=="ncells":
         Ncells_abc = self.parameters2["ncells"].get_current_model()
 
-      whitelist_only, TIME_BG, TIME_BRAGG = multipanel_sim(
+      whitelist_only, TIME_BG, TIME_BRAGG, self.exascale_mos_blocks = multipanel_sim(
         CRYSTAL=alt_crystal, DETECTOR=detector, BEAM=beam,
         Famp = self.gpu_channels_singleton,
         energies=energies, fluxes=weights,
         cuda=True,
         oversample=oversample, Ncells_abc=Ncells_abc,
         mos_dom=mosaic_spread_samples, mos_spread=self.parameters["etaa"].proposal,
-        mos_aniso=(self.parameters["etaa"].proposal,0,0,0,self.parameters["etab"].proposal,0,0,0,self.parameters["etac"].proposal),
+        mos_aniso=(self.parameters["etaa"].proposal,
+                   self.parameters["etab"].proposal,
+                   self.parameters["etac"].proposal),
         beamsize_mm=beamsize_mm,
         profile=shapetype,
         show_params=False,
@@ -142,7 +147,7 @@ class case_chain_runner:
           self.ref_params[key].generate_next_proposal()
       self.plot_all(macro_iteration+1,of=n_cycles)
       TIME_EXA = time()-BEG
-      print("\t\tExascale: time for Bragg sim: %.4fs; total: %.4fs" % (TIME_BRAGG, TIME_EXA))
+      print("\t\tExascale: time for Bragg sim: %.4fs; total: %.4fs\n" % (TIME_BRAGG, TIME_EXA))
     print ("MCMC <RMSD> %.2f"%(flex.mean(self.rmsd_chain[len(self.rmsd_chain)//2:])))
     print ("MCMC <sigz> %.2f"%(flex.mean(self.sigz_chain[len(self.sigz_chain)//2:])))
     print ("MCMC <-LLG> %.2f"%(flex.mean(self.llg_chain[len(self.llg_chain)//2:])))
@@ -196,8 +201,31 @@ class case_chain_runner:
             self.axes2[axes_idx].set_ylabel(self.parameters2[key].formatt%label)
             self.axes2[axes_idx].set_ylim(self.parameters2[key].display_ranges[label])
       plt.xlim(0,of+1)
+      if True: #mosaic plot
+        self.lines3 = {}
+        self.fig3,self.axes3 = plt.subplots(1,4,sharey=True,figsize=(15,7))
+        self.axes3[0].set_ylabel("unit projection")
+        for icol, RLP in enumerate(unit_vectors):
+          RLP = col(RLP)
+          axis = self.axes3[icol]
+          unit = RLP.normalize()
+          seed = col(unit_vectors[(icol+2)%(len(unit_vectors))])
+          perm2 = unit.cross(seed)
+          perm3 = unit.cross(perm2)
+          a2 = flex.double(); a3 = flex.double()
+          for u in self.exascale_mos_blocks:
+            U = sqr(u)
+            newvec = U * unit
+            a2.append(newvec.dot(perm2)); a3.append(newvec.dot(perm3))
+          self.lines3[icol] = axis.plot (a2,a3,'r,')[0]
+          axis.set_aspect("equal")
+          axis_str = "(%5.3f,%5.3f,%5.3f)"%(RLP.elems) if icol==3 else "(%.0f,%.0f,%.0f)"%(RLP.elems)
+          axis.set_title("Transformation of unit vector\n%s"%(axis_str))
+          axis.set_xlabel("unit projection")
+          axis.set_xlim(-0.0005,0.0005)
+          axis.set_ylim(-0.0005,0.0005)
       plt.show()
-    elif icmp%10==0:
+    elif icmp%50==0:
       for key in self.parameters:
         for label in self.parameters[key].display_labels:
           self.lines[key+label].set_xdata(range(icmp))
@@ -220,6 +248,21 @@ class case_chain_runner:
           for label in self.parameters2[key].display_labels:
             self.lines2[key+label].set_xdata(range(icmp))
             self.lines2[key+label].set_ydata(self.parameters2[key].chain[label])
+      if True: #mosaic plot
+        for icol, RLP in enumerate(unit_vectors):
+          RLP = col(RLP)
+          axis = self.axes3[icol]
+          unit = RLP.normalize()
+          seed = col(unit_vectors[(icol+2)%(len(unit_vectors))])
+          perm2 = unit.cross(seed)
+          perm3 = unit.cross(perm2)
+          a2 = flex.double(); a3 = flex.double()
+          for u in self.exascale_mos_blocks:
+            U = sqr(u)
+            newvec = U * unit
+            a2.append(newvec.dot(perm2)); a3.append(newvec.dot(perm3))
+          self.lines3[icol].set_xdata(a2)
+          self.lines3[icol].set_ydata(a3)
 
       self.fig.canvas.draw()
       self.fig.canvas.flush_events()

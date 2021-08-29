@@ -33,6 +33,7 @@ if OPT.enable_cuda:
    # these three tests, break portability after realizing that the spectral dispersion curve
    # comes directly from the nexus master and the expt must be read with check_format=True
    ["$D/adse13_187/cyto_batch.py", "N_total=1", "test_pixel_congruency=True",
+    "mosaic_method=double_random",
     "mosaic_spread_samples=50", "write_output=False", "test_without_mpi=True",
     "log.outdir=mp1",
     "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
@@ -42,6 +43,7 @@ if OPT.enable_cuda:
     "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
    ],
    ["$D/adse13_187/tst_write_file_action.py", "N_total=1",
+    "mosaic_method=double_random",
     "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp3",
     "write_output=False",
     "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
