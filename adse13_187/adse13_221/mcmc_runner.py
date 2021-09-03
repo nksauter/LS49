@@ -76,7 +76,7 @@ class mcmc_run_manager(basic_run_manager):
 
     C = self.impl_MCMC.chain_runner(expt=self.expt, alt_expt=self.dials_model, params=params.model,
       mask_array = self.monolithic_mask_whole_detector_as_1D_bool,
-      n_cycles = params.mcmc.cycles,
+      n_cycles = params.mcmc.cycles, s_cycles = params.simplex.cycles,
       Zscore_callback=self.quick_Zscore,
       ) # do not return yet; simulated image as numpy array
 
@@ -105,6 +105,11 @@ def generate_phil_scope():
       cycles = 1000
         .type = int (value_min=10)
         .help = total number of cycles allowed for Monte Carlo
+    }
+    simplex {
+      cycles = 0
+        .type = int (value_min=0)
+        .help = maximum simplex cycles to iterate prior to mcmc
     }
     model {
       cell {

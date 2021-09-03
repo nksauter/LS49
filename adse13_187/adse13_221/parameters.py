@@ -11,6 +11,7 @@ class variable_mosaicity:
     self.ref_value = value
     self.accepted = flex.int()
     self.running = flex.double()
+    self.transition_probability_ratio = 1.0 # q(X|Y)/q(Y|X), Y=proposal, X=last value
     self.chain = {label:flex.double()}
     self.proposal = self.ref_value
     CDF_sigma = 1. - math.exp(-0.5) # the CDF at the current position x=sigma
@@ -26,7 +27,6 @@ class variable_mosaicity:
     self.chain[self.label].append(self.proposal)
     self.accepted.append(1)
     self.running.append(flex.sum(self.accepted)/len(self.accepted))
-    print("ACCEPTED ",flex.sum(self.accepted),"mosaicity propoasls of ",len(self.accepted))
 
   def reject(self):
     self.chain[self.label].append(self.chain[self.label][-1])
@@ -50,7 +50,16 @@ class variable_mosaicity:
     print('next mosaicity proposal %.6f'%(self.proposal))
     self.proposal_vec = [self.proposal] # to provide a uniform interface
 
-  def __del__(self):
+  def set_proposal_from_simplex(self,values):
+    self.proposal_vec = values
+    self.proposal = values[0]
+
+  def generate_simplex_interval(self):
+    interval_vec = col([self.chain[label][-1] for label in self.display_labels]) + col(
+      [self.hyperparameter * self.chain[self.display_labels[il]][-1] for il in range(len(self.chain))])
+    return interval_vec
+
+  def show(self):
     last_half = int(len(self.chain[self.label])//2)
     if last_half<50: return
     stats = flex.mean_and_variance(self.chain[self.label][last_half:])
@@ -109,6 +118,14 @@ class covariant_cell:
       ["%s %.6f"%(L, self.proposal_vec[ipv]) for ipv,L in enumerate(self.display_labels)])
     )
 
+  def set_proposal_from_simplex(self,values):
+    self.proposal_vec = values
+
+  def generate_simplex_interval(self):
+    interval_vec = col([self.chain[label][-1] for label in self.display_labels]) + self.hyperparameter * col(
+      [math.sqrt(self.cluster_covariance[il,il]) for il in range(len(self.proposal_vec))])
+    return interval_vec
+
   def get_current_crystal_model(self, old_crystal_model):
     from cctbx.uctbx import unit_cell
     if self.system == "Hexagonal":
@@ -130,7 +147,7 @@ class covariant_cell:
     self.accepted.append(0)
     self.running.append(flex.sum(self.accepted)/len(self.accepted))
 
-  def __del__(self):
+  def show(self):
     last_half = int(len(self.chain[self.display_labels[0]])//2)
     if last_half<50: return
     messages = []
@@ -184,7 +201,7 @@ class covariant_rot(covariant_cell):
     old_crystal_model.set_U(newU)
     return old_crystal_model
 
-  def __del__(self):
+  def show(self):
     last_half = int(len(self.chain[self.display_labels[0]])//2)
     if last_half<50: return
     messages = []
@@ -237,7 +254,7 @@ class covariant_ncells(covariant_cell):
     print("CELLS CURRENT",current)
     return current
 
-  def __del__(self):
+  def show(self):
     last_half = int(len(self.chain[self.display_labels[0]])//2)
     if last_half<50: return
     messages = []

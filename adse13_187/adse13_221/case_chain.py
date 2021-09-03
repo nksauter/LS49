@@ -10,7 +10,7 @@ cube_diag = math.sqrt(1./3) # 0.57735
 unit_vectors = [(1,0,0), (0,1,0), (0,0,1), (cube_diag, cube_diag, cube_diag)]
 
 class case_chain_runner:
-  def chain_runner(self,expt,alt_expt,params,mask_array=None,n_cycles = 100,
+  def chain_runner(self,expt,alt_expt,params,mask_array=None,n_cycles = 100, s_cycles=0,
       Zscore_callback=None, rmsd_callback=None):
 
     if mask_array is not None:
@@ -86,7 +86,48 @@ class case_chain_runner:
     self.cycle_list = [key for key in self.ref_params]
     self.accept = flex.int()
 
-    for macro_iteration in range(n_cycles):
+    self.beginning_iteration = 0
+    if s_cycles > 0:
+      from LS49.adse13_187.adse13_221.simplex_method import simplex_detail
+      # initialize prior to simplex
+      whitelist_only, TIME_BG, TIME_BRAGG, self.exascale_mos_blocks = multipanel_sim(
+        CRYSTAL=alt_crystal, DETECTOR=detector, BEAM=beam,
+        Famp = self.gpu_channels_singleton,
+        energies=energies, fluxes=weights,
+        cuda=True,
+        oversample=oversample, Ncells_abc=Ncells_abc,
+        mos_dom=mosaic_spread_samples, mos_spread=self.parameters["etaa"].proposal,
+        mos_aniso=(self.parameters["etaa"].proposal,
+                   self.parameters["etab"].proposal,
+                   self.parameters["etac"].proposal),
+        beamsize_mm=beamsize_mm,
+        profile=shapetype,
+        show_params=False,
+        time_panels=False, verbose=verbose,
+        spot_scale_override=spot_scale,
+        include_background=False,
+        mask_file=mask_array, skip_numpy=True,
+        relevant_whitelist_order=self.relevant_whitelist_order
+      )
+      Rmsd,sigZ,LLG = Zscore_callback(kernel_model=whitelist_only, plot=False)
+      self.accept.append(1)
+      self.rmsd_chain.append(Rmsd); self.sigz_chain.append(sigZ); self.llg_chain.append(LLG)
+
+      PP = dict(detector=detector, beam=beam,
+        energies=energies, weights=weights,
+        oversample=oversample,
+        mosaic_spread_samples=mosaic_spread_samples,
+        beamsize_mm=beamsize_mm,
+        shapetype=shapetype,
+        verbose=verbose,
+        spot_scale=spot_scale,
+        mask_array=mask_array, Z=Zscore_callback)
+
+      MIN = simplex_detail(alt_crystal, Ncells_abc, host_runner = self,
+             PP = PP, n_cycles=n_cycles, s_cycles=s_cycles)
+      self.beginning_iteration = MIN.iteration+1
+
+    for macro_iteration in range(self.beginning_iteration, n_cycles):
       BEG=time()
       turn = self.cycle_list[macro_iteration%len(self.cycle_list)]
       if turn=="cell":
@@ -116,7 +157,7 @@ class case_chain_runner:
         relevant_whitelist_order=self.relevant_whitelist_order
       )
       Rmsd,sigZ,LLG = Zscore_callback(kernel_model=whitelist_only, plot=False)
-      if macro_iteration==0:
+      if macro_iteration==self.beginning_iteration:
         for key in self.ref_params:
           self.ref_params[key].accept()
         self.accept.append(1)
@@ -151,6 +192,7 @@ class case_chain_runner:
     print ("MCMC <RMSD> %.2f"%(flex.mean(self.rmsd_chain[len(self.rmsd_chain)//2:])))
     print ("MCMC <sigz> %.2f"%(flex.mean(self.sigz_chain[len(self.sigz_chain)//2:])))
     print ("MCMC <-LLG> %.2f"%(flex.mean(self.llg_chain[len(self.llg_chain)//2:])))
+    for key in self.ref_params: self.ref_params[key].show()
 
   def plot_all(self,icmp,of):
     N_param = len(self.parameters)
@@ -166,7 +208,7 @@ class case_chain_runner:
       self.line4, = axes[2].plot(range(icmp), self.llg_chain)
       self.line5a, = axes[3].plot(range(icmp), self.accept, "k,")
       for npm in range(N_param):
-        self.line[npm], = axes[3].plot(range(icmp), N_param*self.parameters[self.cycle_list[npm]].running)
+        self.line[npm], = axes[3].plot(range(self.beginning_iteration, icmp), N_param*self.parameters[self.cycle_list[npm]].running)
       print("LINE",self.line)
       axes[0].set_ylabel("RMSD (px)")
       axes[1].set_ylabel("Z-score\nsigma")
