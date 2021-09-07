@@ -146,8 +146,8 @@ class basic_run_manager(mask_manager):
       offset_Z = (diff_panel_photons/poisson_noise_sigma)*0.1 + 1.0
       Z_plot.append(offset_Z)
 
-    proposal_shoebox_mean_Z = flex.double()
-    proposal_shoebox_sigma_Z = flex.double()
+    self.proposal_shoebox_mean_Z = flex.double()
+    self.proposal_shoebox_sigma_Z = flex.double()
     all_Z_values = flex.double()
     sauter_eq_15_likelihood = flex.double()
     for sidx in range(len(self.refl_table)): #loop through the shoeboxes
@@ -161,27 +161,30 @@ class basic_run_manager(mask_manager):
         sauter_eq_15_likelihood.append( (model[ipanel][islow,ifast]/keV_per_photon) -
           (experiment[ipanel][islow,ifast]/keV_per_photon) * math.log(model[ipanel][islow,ifast]/keV_per_photon))
       stats = flex.mean_and_variance(shoebox_Z_values)
-      proposal_shoebox_mean_Z.append( stats.mean() )
-      proposal_shoebox_sigma_Z.append( stats.unweighted_sample_standard_deviation() )
+      self.proposal_shoebox_mean_Z.append( stats.mean() )
+      self.proposal_shoebox_sigma_Z.append( stats.unweighted_sample_standard_deviation() )
     print("proposal negative log likelihood %10f"%(flex.sum(sauter_eq_15_likelihood)))
     stats = flex.mean_and_variance(all_Z_values)
-    mnz = stats.mean()
-    sgz = stats.unweighted_sample_standard_deviation()
-    print("proposal mean Z=%.2f, sigma Z=%.2f"%(mnz, sgz))
+    self.mnz = stats.mean()
+    self.sgz = stats.unweighted_sample_standard_deviation()
+    print("proposal mean Z=%.2f, sigma Z=%.2f"%(self.mnz, self.sgz))
     if plot:
+      self.plot_Z()
+    return Z_plot
+
+  def plot_Z(self):
       from matplotlib import pyplot as plt
       plt.plot(range(len(self.refl_table)),
-               proposal_shoebox_mean_Z.select(self.refl_table["spots_order"]),"r-",
-               label="mean Z (all=%.2f)"%(mnz))
+               self.proposal_shoebox_mean_Z.select(self.refl_table["spots_order"]),"r-",
+               label="mean Z (all=%.2f)"%(self.mnz))
       plt.plot(range(len(self.refl_table)),
-               proposal_shoebox_sigma_Z.select(self.refl_table["spots_order"]),
-               label="std_dev Z (all=%.2f)"%(sgz))
+               self.proposal_shoebox_sigma_Z.select(self.refl_table["spots_order"]),
+               label="std_dev Z (all=%.2f)"%(self.sgz))
       plt.title("Z_distribution in each shoebox")
       plt.xlabel("Spots ordered by increasing Bragg angle →")
       plt.ylabel("Z-value")
       plt.legend(loc='upper right')
       plt.show()
-    return Z_plot
 
   def ersatz_MCMC(self, variable_params):
     from LS49.adse13_187.adse13_221.case_run import case_job_runner
@@ -245,7 +248,7 @@ class basic_run_manager(mask_manager):
     self.simple_rmsd(calc_data="spots_mockup_xyzcal.px",plot=False)
     return mockup_simulation
 
-  def reusable_rmsd(self,proposal,label):
+  def reusable_rmsd(self,proposal,label,plot=False):
     """Function analyzes proposal data consisting of proposed Bragg spots
     Function has the more expansive purpose of analyzing the data
     and storing statistics: the data center of mass in the shoebox, and the data sum, to be
@@ -270,7 +273,7 @@ class basic_run_manager(mask_manager):
       proposal_shoebox_sum.append(SUM_wt)
     self.refl_table[label+"_xyzcal.px"] = proposal_ctr_of_mass
     self.refl_table[label+"_shoebox_sum"] = proposal_shoebox_sum
-    self.simple_rmsd(calc_data=label+"_xyzcal.px",plot=False) # toggle for plotting
+    self.simple_rmsd(calc_data=label+"_xyzcal.px",plot=plot) # toggle for plotting
     return mockup_simulation
 
   def renormalize(self,proposal,proposal_label,ref_label):

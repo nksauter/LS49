@@ -182,17 +182,25 @@ class case_chain_runner:
           self.rmsd_chain.append(self.rmsd_chain[-1]);
           self.sigz_chain.append(self.sigz_chain[-1]);
           self.llg_chain.append(self.llg_chain[-1])
+      P = Profiler("%40s"%"key maintenance")
 
       for key in self.ref_params:
         if key == self.cycle_list[(macro_iteration+1)%len(self.cycle_list)]:
           self.ref_params[key].generate_next_proposal()
+      P = Profiler("%40s"%"plot all")
       self.plot_all(macro_iteration+1,of=n_cycles)
+      del P
       TIME_EXA = time()-BEG
       print("\t\tExascale: time for Bragg sim: %.4fs; total: %.4fs\n" % (TIME_BRAGG, TIME_EXA))
     print ("MCMC <RMSD> %.2f"%(flex.mean(self.rmsd_chain[len(self.rmsd_chain)//2:])))
     print ("MCMC <sigz> %.2f"%(flex.mean(self.sigz_chain[len(self.sigz_chain)//2:])))
     print ("MCMC <-LLG> %.2f"%(flex.mean(self.llg_chain[len(self.llg_chain)//2:])))
     for key in self.ref_params: self.ref_params[key].show()
+    plt.close(self.fig)
+    plt.close(self.fig2)
+    plt.close(self.fig3)
+    plt.ioff()
+    print(flush=True)
 
   def plot_all(self,icmp,of):
     N_param = len(self.parameters)

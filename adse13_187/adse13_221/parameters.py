@@ -50,6 +50,12 @@ class variable_mosaicity:
     print('next mosaicity proposal %.6f'%(self.proposal))
     self.proposal_vec = [self.proposal] # to provide a uniform interface
 
+  def get_stationary_model(self):
+    last_half = int(len(self.chain[self.label])//2)
+    if last_half<50: return
+    stats = flex.mean_and_variance(self.chain[self.label][last_half:])
+    return stats.mean()
+
   def set_proposal_from_simplex(self,values):
     self.proposal_vec = values
     self.proposal = values[0]
@@ -135,6 +141,22 @@ class covariant_cell:
     else: raise NotImplementedError(self.system)
     return old_crystal_model
 
+  def get_stationary_crystal_model(self, old_crystal_model):
+    new_crystal_model = copy.deepcopy(old_crystal_model)
+    last_half = int(len(self.chain[self.display_labels[0]])//2)
+    if last_half<50: return
+    values = []
+    for idr in range(self.display_n):
+      stats = flex.mean_and_variance(self.chain[self.display_labels[idr]][last_half:])
+      values.append( stats.mean() )
+    from cctbx.uctbx import unit_cell
+    if self.system == "Hexagonal":
+      new_crystal_model.set_unit_cell(unit_cell((values[0], values[0], values[1], 90., 90., 120.)))
+    elif self.system == "Orthorhombic":
+      new_crystal_model.set_unit_cell(unit_cell((values[0], values[1], values[2], 90., 90., 90.)))
+    else: raise NotImplementedError(self.system)
+    return new_crystal_model
+
   def accept(self):
     for idr in range(self.display_n):
       self.chain[self.display_labels[idr]].append(self.proposal_vec[idr])
@@ -201,6 +223,21 @@ class covariant_rot(covariant_cell):
     old_crystal_model.set_U(newU)
     return old_crystal_model
 
+  def get_stationary_crystal_model(self, old_crystal_model):
+    new_crystal_model = copy.deepcopy(old_crystal_model)
+    last_half = int(len(self.chain[self.display_labels[0]])//2)
+    if last_half<50: return
+    values = []
+    for idr in range(self.display_n):
+      stats = flex.mean_and_variance(self.chain[self.display_labels[idr]][last_half:])
+      values.append( stats.mean() )
+    Rx = col((1.,0.,0.)).axis_and_angle_as_r3_rotation_matrix(angle=values[0], deg=True)
+    Ry = col((0.,1.,0.)).axis_and_angle_as_r3_rotation_matrix(angle=values[1], deg=True)
+    Rz = col((0.,0.,1.)).axis_and_angle_as_r3_rotation_matrix(angle=values[2], deg=True)
+    newU = Rz * (Ry * (Rx * self.ref_U))
+    new_crystal_model.set_U(newU)
+    return new_crystal_model
+
   def show(self):
     last_half = int(len(self.chain[self.display_labels[0]])//2)
     if last_half<50: return
@@ -253,6 +290,15 @@ class covariant_ncells(covariant_cell):
     current = (int(self.proposal_vec[0]), int(self.proposal_vec[1]), int(self.proposal_vec[2]))
     print("CELLS CURRENT",current)
     return current
+
+  def get_stationary_model(self):
+    last_half = int(len(self.chain[self.display_labels[0]])//2)
+    if last_half<50: return
+    values = []
+    for idr in range(self.display_n):
+      stats = flex.mean_and_variance(self.chain[self.display_labels[idr]][last_half:])
+      values.append( stats.mean() )
+    return values
 
   def show(self):
     last_half = int(len(self.chain[self.display_labels[0]])//2)

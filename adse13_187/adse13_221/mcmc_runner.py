@@ -1,8 +1,8 @@
 from __future__ import division
-import os
+import os, pickle
 from dials.array_family import flex
-from matplotlib import pyplot as plt
 from scipy import constants
+import copy
 ENERGY_CONV = 1e10*constants.c*constants.h / constants.electron_volt
 
 from LS49.adse13_187.adse13_221.basic_runner import basic_run_manager
@@ -23,20 +23,6 @@ class mcmc_run_manager(basic_run_manager):
     proposal_center_of_mass = self.pixel_stats.get_proposal_center_of_mass()
     self.refl_table["c_temp_values"] = proposal_center_of_mass
     rmsd = self.simple_rmsd(calc_data="c_temp_values",plot=False)
-
-    if plot:
-      from matplotlib import pyplot as plt
-      plt.plot(range(len(self.refl_table)),
-               proposal_shoebox_mean_Z.select(self.refl_table["spots_order"]),"r-",
-               label="mean Z (all=%.2f)"%(mnz))
-      plt.plot(range(len(self.refl_table)),
-               proposal_shoebox_sigma_Z.select(self.refl_table["spots_order"]),
-               label="std_dev Z (all=%.2f)"%(sgz))
-      plt.title("Z_distribution in each shoebox")
-      plt.xlabel("Spots ordered by increasing Bragg angle →")
-      plt.ylabel("Z-value")
-      plt.legend(loc='upper right')
-      plt.show()
     return rmsd, sgz, LLG
 
   def ersatz_MCMC(self, params):
@@ -80,22 +66,49 @@ class mcmc_run_manager(basic_run_manager):
       Zscore_callback=self.quick_Zscore,
       ) # do not return yet; simulated image as numpy array
 
-    # Finished with chain modality, returning to job modality.  Need some bridge code
-    # Here it would be good to
-    # 1) create a copy of self.dials_model, containing the updated crystal parameters from the MCMC simulation C
-    # 2) write this expt out to a file
-    # 3) use it in the "job" below, instead of self.dials_model
-    # 4) pickle up C.parameters for offline analysis
+    if params.mcmc.modality == "chain":
+      # 1) create copy of self.dials_model, to contain updated crystal parameters from the MCMC simulation C
+      bridge_model = copy.deepcopy(self.dials_model)
 
-    modality = "job"
+      # cell lengths a,c
+      STM = self.impl_MCMC.parameters["cell"].get_stationary_crystal_model(self.dials_model.crystal)
+          #print(STM.get_unit_cell())
+          #print(self.dials_model.crystal.get_unit_cell())
+      # orientation, perturbations away from dials model
+      STM2 = self.impl_MCMC.parameters2["rot"].get_stationary_crystal_model(STM)
+      bridge_model.crystal = STM2
+          #STM2.show()
+          #self.dials_model.crystal.show()
+
+      # Ncells abc
+      params.model.Nabc.value = self.impl_MCMC.parameters2["ncells"].get_stationary_model()
+
+      # Eta abc
+      mos_aniso = [self.impl_MCMC.parameters[ang].get_stationary_model() for ang in ["etaa","etab","etac"]]
+
+      # 2) write this expt out to a file
+      bridge_model.Nabc = params.model.Nabc.value
+      bridge_model.mos_aniso = mos_aniso # FIXME later these properties will be part of child-class crystal model
+      basename = "%s_%05d."%(params.output.label, params.output.index)
+      outfile = os.path.join(params.output.output_dir,basename+"pickle")
+      with open(outfile,"wb") as F: pickle.dump(bridge_model, F)
+
+      # 3) pickle up C.parameters for offline analysis (FIXME not yet implemented)
 
     class ersatz(MCMC_manager, case_job_runner): pass
     self.MCMC = ersatz()
     self.MCMC.get_amplitudes(self.dials_model, self.refl_table)
     self.MCMC.set_whitelist(relevant_whitelist_order)
-    return self.MCMC.job_runner(expt=self.expt, alt_expt=self.dials_model, params=params.model,
-      mask_array = self.monolithic_mask_whole_detector_as_1D_bool
+
+    if params.mcmc.modality == "job":
+      return self.MCMC.job_runner(expt=self.expt, alt_expt=self.dials_model, params=params.model,
+      mask_array = self.monolithic_mask_whole_detector_as_1D_bool,
       ) # returns simulated image as numpy array
+    else:
+      assert params.mcmc.modality == "chain"
+      return self.MCMC.job_runner(expt=self.expt, alt_expt=bridge_model, params=params.model,
+      mask_array = self.monolithic_mask_whole_detector_as_1D_bool,
+      mos_aniso = mos_aniso) # returns simulated image as numpy array
 
 def generate_phil_scope():
   from iotbx.phil import parse
@@ -105,6 +118,10 @@ def generate_phil_scope():
       cycles = 1000
         .type = int (value_min=10)
         .help = total number of cycles allowed for Monte Carlo
+      modality = *chain job
+        .type = choice
+        .help = expert only. Chain means finalize the MCMC results, publish expt, output pickle, write
+        .help = hdf5, or job means do the analysis for the input crystal model, not the MCMC results.
     }
     simplex {
       cycles = 0
@@ -164,7 +181,7 @@ def run(params):
     basename = "%s_%05d."%(params.output.label, params.output.index)
     M = mcmc_run_manager.from_files(params.trusted_mask, params.refl, params.expt)
     M.get_trusted_and_refl_mask()
-    M.refl_analysis(params.cryst) # new
+    M.refl_analysis(params.cryst) # new, sets M.dials_model from params.cryst
     M.simple_rmsd() # new
     #M.plot_pixel_histograms() # new
     M.get_lunus_repl()
@@ -175,10 +192,10 @@ def run(params):
     M.view["bragg_plus_background"] = M.reusable_rmsd(proposal=nanobragg_sim, label="ersatz_mcmc")
     M.view["renormalize_bragg_plus_background"] = M.reusable_rmsd(proposal=M.renormalize(
             proposal=nanobragg_sim,proposal_label="ersatz_mcmc",ref_label="spots_mockup"),
-            label="renormalize_mcmc")
+            label="renormalize_mcmc",plot=True)
     M.view["Z_plot"] = M.Z_statistics(experiment=M.view["sim_mock"],
                                            model=M.view["renormalize_bragg_plus_background"],
-                                   plot=False)
+                                   plot=True)
     M.write_hdf5(os.path.join(params.output.output_dir,basename+"hdf5"))
     M.resultant_mask_to_file(os.path.join(params.output.output_dir,basename+"mask"))
 
