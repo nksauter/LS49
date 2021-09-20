@@ -6,6 +6,10 @@ from matplotlib import pyplot as plt
 import math
 from scipy import constants
 ENERGY_CONV = 1e10*constants.c*constants.h / constants.electron_volt
+REFL_BORDER = 3
+SLOW_SIZE = 254
+FAST_SIZE = 254
+PANEL_SIZE = SLOW_SIZE * FAST_SIZE
 
 class MCMC_manager:
   def get_amplitudes(self, dials_model, refl_table, test_without_mpi=True):
@@ -31,6 +35,34 @@ class MCMC_manager:
 
 from LS49.adse13_187.adse13_221.lunus_wrap import mask_manager
 class basic_run_manager(mask_manager):
+
+  def remove_overlaps(self):
+    refl = self.refl_table
+    pixels_irefls = dict()
+    irefls_noduplicates = flex.bool(refl.size(), True)
+    for i_refl in range(refl.size()):
+      pixels = []
+      bbox = refl[i_refl]['bbox']
+      panel = refl[i_refl]['panel']
+      slow_min = max(0, bbox[2]-REFL_BORDER)
+      slow_max = min(SLOW_SIZE, bbox[3]+REFL_BORDER)
+      fast_min = max(0, bbox[0]-REFL_BORDER)
+      fast_max = min(FAST_SIZE, bbox[1]+REFL_BORDER)
+
+      for i_slow in range(slow_min, slow_max):
+        for i_fast in range(fast_min, fast_max):
+          px = panel*PANEL_SIZE + i_slow*SLOW_SIZE + i_fast
+          pixels.append(px)
+
+      for px in pixels:
+        if px in pixels_irefls: #pixel in multiple shoeboxes
+          pixels_irefls[px].append(i_refl)
+          for i in pixels_irefls[px]:
+            irefls_noduplicates[i] = False
+        else:
+          pixels_irefls[px] = [i_refl]
+
+    self.refl_table = refl.select(irefls_noduplicates)
 
   def refl_analysis(self,dials_model):
     """This function sets up some data structures (spots_*) allowing us to index into the spots

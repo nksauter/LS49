@@ -180,6 +180,7 @@ run where Stage 1 parameters are fit.
 def run(params):
     basename = "%s_%05d."%(params.output.label, params.output.index)
     M = mcmc_run_manager.from_files(params.trusted_mask, params.refl, params.expt)
+    M.remove_overlaps()
     M.get_trusted_and_refl_mask()
     M.refl_analysis(params.cryst) # new, sets M.dials_model from params.cryst
     M.simple_rmsd() # new
