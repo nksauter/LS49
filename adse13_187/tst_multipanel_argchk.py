@@ -117,7 +117,7 @@ def tst_one_monkeypatch(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params)
       ratio))
 
     # assertion on elapsed time:
-    assert ratio > 1.1,"ratio is %.3f, experiment %d"%(ratio,i_exp)
+    assert ratio > 1.0,"ratio is %.3f, experiment %d"%(ratio,i_exp)
 
     # assertion on equality:
     abs_diff = np.abs(jf16m_numpy_array["gauss"] - \

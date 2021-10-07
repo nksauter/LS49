@@ -52,7 +52,7 @@ if OPT.enable_cuda:
    ["$D/adse13_187/tst_write_file_action.py", "N_total=1", "write_output=True", "write_experimental_data=True",
     "mosaic_spread_samples=62", "test_without_mpi=True", "log.outdir=mp4",
     "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
-    "mask_file=/global/cscratch1/sd/nksauter/adse13_187/13_221/event_648.mask",
+    "mask_file=/global/cfs/cdirs/m3562/nks/adse13_187/13_221/event_648.mask",
    ],
    "$D/adse13_196/tst_gpu_channels.py",
    "$D/adse13_196/revapi/tst_step5_batch_single_process_GPU.py",
