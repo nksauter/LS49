@@ -13,6 +13,7 @@ class case_chain_runner:
   def chain_runner(self,expt,alt_expt,params,mask_array=None,n_cycles = 100, s_cycles=0,
       Zscore_callback=None, rmsd_callback=None):
 
+    self.model_plot_enable = params.plot
     if mask_array is not None:
       assert type(mask_array) is flex.bool # type check intending to convert active-pixel-bools to whitelist-ints
       active_pixels = flex.int()
@@ -196,13 +197,15 @@ class case_chain_runner:
     print ("MCMC <sigz> %.2f"%(flex.mean(self.sigz_chain[len(self.sigz_chain)//2:])))
     print ("MCMC <-LLG> %.2f"%(flex.mean(self.llg_chain[len(self.llg_chain)//2:])))
     for key in self.ref_params: self.ref_params[key].show()
-    plt.close(self.fig)
-    plt.close(self.fig2)
-    plt.close(self.fig3)
-    plt.ioff()
+    if self.model_plot_enable:
+      plt.close(self.fig)
+      plt.close(self.fig2)
+      plt.close(self.fig3)
+      plt.ioff()
     print(flush=True)
 
   def plot_all(self,icmp,of):
+    if not self.model_plot_enable: return
     N_param = len(self.parameters)
     if icmp==1:
       self.lines = {}
