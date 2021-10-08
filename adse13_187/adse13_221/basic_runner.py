@@ -75,7 +75,7 @@ class basic_run_manager(mask_manager):
     print (N_visited,"pixels were visited in the %d shoeboxes (with borders)"%len(order))
     print (N_bad,"of these were bad pixels, leaving %d in target"%(len(self.spots_pixels)))
 
-  def simple_rmsd(self,calc_data="xyzcal.px",plot=False):
+  def simple_rmsd(self,calc_data="xyzcal.px",plot=False,legend=""):
     """Function does a rudimentary plot of model vs. experimental spot position, and optionally
     a plot of deviation vs. Bragg angle.
     """
@@ -92,7 +92,7 @@ class basic_run_manager(mask_manager):
       sqdevs.append(sqdev)
       #print("%20s %6.2fpx"%(Z["miller_index"][sidx], dev))
     rmsd = math.sqrt(flex.mean(sqdevs))
-    print ("The rmsd is %6.2f px"%rmsd)
+    print (legend+"The rmsd is %6.3f px"%rmsd,"on %d shoeboxes"%(len(sqdevs)), flush=True)
     if plot:
       from matplotlib import pyplot as plt
       plt.plot(range(len(devs)),devs)
@@ -131,7 +131,7 @@ class basic_run_manager(mask_manager):
     plt.ylim((-10,100))
     plt.show()
 
-  def Z_statistics(self, experiment, model, plot=False):
+  def Z_statistics(self, experiment, model, plot=False, legend=""):
     keV_per_photon = ENERGY_CONV/1000./self.expt.beam.get_wavelength()
     Z_plot = []
     sigma_pixel = []
@@ -168,7 +168,7 @@ class basic_run_manager(mask_manager):
     stats = flex.mean_and_variance(all_Z_values)
     self.mnz = stats.mean()
     self.sgz = stats.unweighted_sample_standard_deviation()
-    print("proposal mean Z=%.2f, sigma Z=%.2f"%(self.mnz, self.sgz))
+    print(legend+"proposal mean Z=%.2f, sigma Z=%.2f"%(self.mnz, self.sgz),"on %d shoeboxes"%(len(all_Z_values)))
     if plot:
       self.plot_Z()
     return Z_plot
@@ -216,7 +216,7 @@ class basic_run_manager(mask_manager):
       islow = panelpx//slow_size; ifast = panelpx%slow_size
       yield ipanel, islow, ifast
 
-  def simulation_mockup(self,experimental):
+  def simulation_mockup(self,experimental,plot=False,legend=""):
     """Function creates a mockup simulated image consisting of:
       background = self.lunus_filtered_data + Bragg = (experimental - smooth backgrd)
     Provides an alternate view of the background vs. experiment data.  It zeroes out the
@@ -246,10 +246,10 @@ class basic_run_manager(mask_manager):
       mockup_shoebox_sum.append(SUM_wt)
     self.refl_table["spots_mockup_xyzcal.px"] = mockup_ctr_of_mass
     self.refl_table["spots_mockup_shoebox_sum"] = mockup_shoebox_sum
-    self.simple_rmsd(calc_data="spots_mockup_xyzcal.px",plot=False)
+    self.simple_rmsd(calc_data="spots_mockup_xyzcal.px",plot=False,legend=legend)
     return mockup_simulation
 
-  def reusable_rmsd(self,proposal,label,plot=False):
+  def reusable_rmsd(self,proposal,label,output_refl=None,plot=False,legend=""):
     """Function analyzes proposal data consisting of proposed Bragg spots
     Function has the more expansive purpose of analyzing the data
     and storing statistics: the data center of mass in the shoebox, and the data sum, to be
@@ -274,7 +274,7 @@ class basic_run_manager(mask_manager):
       proposal_shoebox_sum.append(SUM_wt)
     self.refl_table[label+"_xyzcal.px"] = proposal_ctr_of_mass
     self.refl_table[label+"_shoebox_sum"] = proposal_shoebox_sum
-    self.simple_rmsd(calc_data=label+"_xyzcal.px",plot=plot) # toggle for plotting
+    self.simple_rmsd(calc_data=label+"_xyzcal.px",plot=plot,legend=legend) # toggle for plotting
     return mockup_simulation
 
   def renormalize(self,proposal,proposal_label,ref_label):
@@ -423,17 +423,21 @@ def run(params):
     M = basic_run_manager.from_files(params.trusted_mask, params.refl, params.expt)
     M.get_trusted_and_refl_mask()
     M.refl_analysis(params.cryst) # new
-    M.simple_rmsd() # new
+    M.simple_rmsd(plot=params.model.plot,
+                  legend="Basic run stat result: %d "%params.output.index) # new Plot 1
     #M.plot_pixel_histograms() # new
     M.get_lunus_repl()
     M.get_image_res_data()
     M.modify_shoeboxes() # new
-    M.view["sim_mock"] = M.simulation_mockup(M.view["exp_data"]) # new
+    M.view["sim_mock"] = M.simulation_mockup(M.view["exp_data"],plot=params.model.plot,
+                  legend="Baseline control: %d "%params.output.index) # new Plot 2
     nanobragg_sim = M.ersatz_MCMC(params.model) # initial Bragg simulation
-    M.view["bragg_plus_background"] = M.reusable_rmsd(proposal=nanobragg_sim, label="ersatz_mcmc")
+    M.view["bragg_plus_background"] = M.reusable_rmsd(proposal=nanobragg_sim, label="ersatz_mcmc",plot=params.model.plot,
+                  legend="Unnormalized simulation: %d "%params.output.index) # Plot 3
     M.view["renormalize_bragg_plus_background"] = M.reusable_rmsd(proposal=M.renormalize(
             proposal=nanobragg_sim,proposal_label="ersatz_mcmc",ref_label="spots_mockup"),
-            label="renormalize_mcmc")
+            label="renormalize_mcmc",plot=params.model.plot,output_refl="%s_%05d."%("renormalize_mcmc", params.output.index),
+                  legend="Renormalized simulation: %d "%params.output.index)# Plot 4
     M.view["Z_plot"] = M.Z_statistics(experiment=M.view["sim_mock"],
                                            model=M.view["renormalize_bragg_plus_background"],
                                    plot=False)

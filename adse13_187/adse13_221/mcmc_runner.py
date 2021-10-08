@@ -157,6 +157,9 @@ def generate_phil_scope():
         .type = floats(size=3)
         .help = Starting allowable range in degrees for rotx,roty,rotz
       }
+      plot = True
+        .type = bool
+        .help = all plots enabled or not
     }
   """
   return parse(master_phil, process_includes=True)
@@ -182,7 +185,7 @@ def run(params):
     M = mcmc_run_manager.from_files(params.trusted_mask, params.refl, params.expt)
     M.get_trusted_and_refl_mask()
     M.refl_analysis(params.cryst) # new, sets M.dials_model from params.cryst
-    M.simple_rmsd() # new
+    M.simple_rmsd(legend="Preliminary stat result: ") # new
     #M.plot_pixel_histograms() # new
     M.get_lunus_repl()
     M.get_image_res_data()
@@ -192,10 +195,11 @@ def run(params):
     M.view["bragg_plus_background"] = M.reusable_rmsd(proposal=nanobragg_sim, label="ersatz_mcmc")
     M.view["renormalize_bragg_plus_background"] = M.reusable_rmsd(proposal=M.renormalize(
             proposal=nanobragg_sim,proposal_label="ersatz_mcmc",ref_label="spots_mockup"),
-            label="renormalize_mcmc",plot=True)
+            label="renormalize_mcmc",plot=params.model.plot,legend="MCMC stat result: ")
     M.view["Z_plot"] = M.Z_statistics(experiment=M.view["sim_mock"],
                                            model=M.view["renormalize_bragg_plus_background"],
-                                   plot=True)
+                                           plot=params.model.plot,
+                                           legend="MCMC stat result: ")
     M.write_hdf5(os.path.join(params.output.output_dir,basename+"hdf5"))
     M.resultant_mask_to_file(os.path.join(params.output.output_dir,basename+"mask"))
 
