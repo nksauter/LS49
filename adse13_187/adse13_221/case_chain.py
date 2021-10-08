@@ -6,6 +6,7 @@ from scitbx.array_family import flex
 from matplotlib import pyplot as plt
 import copy
 from scitbx.matrix import sqr, col
+from libtbx.development.timers import Profiler
 cube_diag = math.sqrt(1./3) # 0.57735
 unit_vectors = [(1,0,0), (0,1,0), (0,0,1), (cube_diag, cube_diag, cube_diag)]
 
@@ -129,6 +130,7 @@ class case_chain_runner:
       self.beginning_iteration = MIN.iteration+1
 
     for macro_iteration in range(self.beginning_iteration, n_cycles):
+      P = Profiler("%40s"%"current model")
       BEG=time()
       turn = self.cycle_list[macro_iteration%len(self.cycle_list)]
       if turn=="cell":
@@ -138,6 +140,7 @@ class case_chain_runner:
       elif turn=="ncells":
         Ncells_abc = self.parameters2["ncells"].get_current_model()
 
+      del P
       whitelist_only, TIME_BG, TIME_BRAGG, self.exascale_mos_blocks = multipanel_sim(
         CRYSTAL=alt_crystal, DETECTOR=detector, BEAM=beam,
         Famp = self.gpu_channels_singleton,
@@ -157,7 +160,9 @@ class case_chain_runner:
         mask_file=mask_array, skip_numpy=True,
         relevant_whitelist_order=self.relevant_whitelist_order
       )
+      P = Profiler("%40s"%"Zscore_callback")
       Rmsd,sigZ,LLG = Zscore_callback(kernel_model=whitelist_only, plot=False)
+      P = Profiler("%40s"%"post multipanel sim")
       if macro_iteration==self.beginning_iteration:
         for key in self.ref_params:
           self.ref_params[key].accept()

@@ -8,6 +8,8 @@ class mask_manager:
   def __init__(self,trusted_mask,refl_table,expt):
     self.trusted_mask = trusted_mask
     self.refl_table = refl_table
+    import copy
+    self.reserve_refl_table = copy.deepcopy(self.refl_table)
     self.expt = expt
     self.view = application_slots
     self.n_panels = len(self.expt.detector)
@@ -59,11 +61,14 @@ class mask_manager:
     assert len(self.monolithic_mask_whole_detector_as_1D_bool)==self.n_panels*254*254
 
   def resultant_mask_to_file(self,file_name):
+    return
     all_done = tuple(self.resultant)
     with open(file_name,"wb") as M:
       pickle.dump(all_done,M)
 
   def get_lunus_repl(self):
+    from libtbx.development.timers import Profiler
+    P = Profiler("all lunus")
     # first get the lunus image
     from lunus.command_line.filter_peaks import get_image_params
     from lunus import LunusDIFFIMAGE
@@ -101,7 +106,9 @@ modeim_kernel_width=15
     for pidx in range(len(image_params)):
         deck_and_extras = deck+image_params[pidx]
         A.LunusSetparamsim(pidx,deck_and_extras)
+    Q = Profiler("LunusModeim only")
     A.LunusModeim()
+    del Q
 
     # Get the processed image
     lunus_filtered_data = flex.double()

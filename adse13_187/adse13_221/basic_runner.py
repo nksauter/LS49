@@ -275,6 +275,21 @@ class basic_run_manager(mask_manager):
     self.refl_table[label+"_xyzcal.px"] = proposal_ctr_of_mass
     self.refl_table[label+"_shoebox_sum"] = proposal_shoebox_sum
     self.simple_rmsd(calc_data=label+"_xyzcal.px",plot=plot,legend=legend) # toggle for plotting
+    if output_refl is not None: # sole purpose of this is to get updated calc column for detector_residuals plot
+      # manage the output
+      refl = copy.deepcopy(self.refl_table) # the output will be a based on a deep copy of the working refls
+      accepted_keys = list(self.reserve_refl_table) # however, only keep those keys recorded in the reserve list (based on dials)
+      for key in refl:
+        if key not in accepted_keys: del refl[key]
+      # transfer the labeled calc spots back to the generic xyzcal column, in pixels and mm:
+      for nidx in range(len(self.refl_table[label+"_xyzcal.px"])):
+        refl["xyzcal.px"][nidx] = self.refl_table[label+"_xyzcal.px"][nidx]
+        # XXX Fixme HARDCODED PX to MM conversion
+        PX_TO_MM = 0.0750002
+        refl["xyzcal.mm"][nidx] = (PX_TO_MM*self.refl_table[label+"_xyzcal.px"][nidx][0],
+                                   PX_TO_MM*self.refl_table[label+"_xyzcal.px"][nidx][1],0.0)
+      refl.as_file(output_refl+"refl")
+
     return mockup_simulation
 
   def renormalize(self,proposal,proposal_label,ref_label):
@@ -438,10 +453,12 @@ def run(params):
             proposal=nanobragg_sim,proposal_label="ersatz_mcmc",ref_label="spots_mockup"),
             label="renormalize_mcmc",plot=params.model.plot,output_refl="%s_%05d."%("renormalize_mcmc", params.output.index),
                   legend="Renormalized simulation: %d "%params.output.index)# Plot 4
+    return
     M.view["Z_plot"] = M.Z_statistics(experiment=M.view["sim_mock"],
                                            model=M.view["renormalize_bragg_plus_background"],
                                    plot=False)
-    M.write_hdf5(os.path.join(params.output.output_dir,basename+"hdf5"))
+    if params.output.enable:
+      M.write_hdf5(os.path.join(params.output.output_dir,basename+"hdf5"))
     M.resultant_mask_to_file(os.path.join(params.output.output_dir,basename+"mask"))
 
 if __name__ == "__main__":

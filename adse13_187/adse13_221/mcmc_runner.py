@@ -186,12 +186,16 @@ def run(params):
     M.get_trusted_and_refl_mask()
     M.refl_analysis(params.cryst) # new, sets M.dials_model from params.cryst
     M.simple_rmsd(legend="Preliminary stat result: ") # new
+    return
     #M.plot_pixel_histograms() # new
     M.get_lunus_repl()
     M.get_image_res_data()
     M.modify_shoeboxes() # new
     M.view["sim_mock"] = M.simulation_mockup(M.view["exp_data"]) # new
+    # works without bugs up to here at least
     nanobragg_sim = M.ersatz_MCMC(params = params) # final Bragg simulation after MCMC run
+    # writes pickle file; also hits internal error & double free-error for image 55
+    return
     M.view["bragg_plus_background"] = M.reusable_rmsd(proposal=nanobragg_sim, label="ersatz_mcmc")
     M.view["renormalize_bragg_plus_background"] = M.reusable_rmsd(proposal=M.renormalize(
             proposal=nanobragg_sim,proposal_label="ersatz_mcmc",ref_label="spots_mockup"),

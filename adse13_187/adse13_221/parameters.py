@@ -91,7 +91,10 @@ class covariant_cell:
   @classmethod
   def from_covariance(cls, ref_crystal, params):
     with open(params.covariance,"rb") as M:
-      cov = pickle.load(M)
+      # OLD (sklearn form) cov = pickle.load(M)
+      from uc_metrics.tests.convert_api2 import convert_from_plain_python_to_sklearn_form
+      temp = pickle.load(M)
+      cov = convert_from_plain_python_to_sklearn_form(temp)
       empcov = cov["populations"].fit_components[0]
       # have the location (a,c) and covariance matrix.
       # want to calculate P(Y|X) and P(X|Y).  Maybe score() gives log-likelihood, if it permits n-sample==1
