@@ -23,8 +23,9 @@ class MCMC_manager:
          )
 
     from simtbx.gpu import gpu_energy_channels
+    recommend_device = int(os.environ.get("CCTBX_RECOMMEND_DEVICE", 0))
     self.gpu_channels_singleton = gpu_energy_channels (
-        deviceId = 0 ) # determine device by rank id later
+        deviceId = recommend_device )
 
   def set_whitelist(self,value):
     self.relevant_whitelist_order = value
