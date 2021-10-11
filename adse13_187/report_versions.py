@@ -67,8 +67,9 @@ outdir="."
 logging.other_ranks_level="high"
 """
 
-# DiffBragg stage 2, report version 4 dated Oct 6, 2021
+# DiffBragg stage 1, report version 4 dated Oct 6, 2021
 # improved radial offset, improved correlation between delta R and delta Psi
+import os
 ds1_params_v4="""
 ucell_edge_perc=15
 ucell_ang_abs=1
@@ -80,7 +81,8 @@ downsamp_spec {
 roi {
   fit_tilt=True
   fit_tilt_using_weights = False
-  hotpixel_mask = /global/cscratch1/sd/nksauter/adse13_187/bleededge/work/hopper_help_files/newmask_withbad.pkl
+  # supply mask file on command line
+  hotpixel_mask = %(HOTPIXEL_MASK)s
   reject_edge_reflections = False
   pad_shoebox_for_background_estimation=10
 }
@@ -90,7 +92,7 @@ refiner {
 }
 simulator {
   oversample=4
-  structure_factors.mtz_name = /global/cscratch1/sd/nksauter/adse13_187/bleededge/work/hopper_help_files/100shuff.mtz
+  structure_factors.mtz_name = %(STRUCTURE_FACTORS_MTZ_NAME)s
   structure_factors.mtz_column = "F(+),F(-)"
   beam.size_mm = 0.001
   detector.force_zero_thickness = True
@@ -128,5 +130,5 @@ centers {
 fix.detz_shift=True
 outdir="."
 logging.other_ranks_level="high"
-"""
+"""%(os.environ)
 

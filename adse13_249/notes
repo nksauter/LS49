@@ -1,0 +1,8 @@
+84150: IBLOCKS=4 16 nodes, 64 ranks, 3 hrs (no help)
+84007: IBLOCKS=4 16 nodes, 64 ranks, 2 hrs (fails)
+84291: IBLOCKS=8 16 nodes, 64 ranks, 3 hrs (succeeds in 1h47m)
+90637: IBLOCKS=8 32 nodes,128 ranks, (succeeds in 0h54m) 
+Now recompile with LUNUS on main branch, no cuda
+
+88429: no cuda.  32 nodes, 128 ranks, 4 hours (succeeds in 3h07m)
+

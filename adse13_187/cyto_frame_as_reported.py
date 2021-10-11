@@ -146,6 +146,19 @@ def run_batch_job(test_without_mpi=False):
     sys.stdout = io.TextIOWrapper(open(log_path,'ab', 0), write_through=True)
     sys.stderr = io.TextIOWrapper(open(error_path,'ab', 0), write_through=True)
 
+    # ON LOGGING,
+    # with this change, I would hope you no longer need to edit out the MAIN_LOGGER lines
+    import logging
+    dblogger = logging.getLogger("main")
+    # we can change 'main' to e.g. 'diffBragg.main', but I would
+    # need to edit hopper_utils.py to reflect that, just a one-line fix
+    handler = logging.StreamHandler(stream=sys.stdout)
+    # handler.setLevel(logging.DEBUG) # not needed
+    dblogger.setLevel(logging.DEBUG)
+    # to write less output, increase the logging level, these are just pointers to numbers,
+    # logging.INFO will write less output, logging.CRITICAL will mostly silience diffBragg
+    dblogger.addHandler(handler) # Now, in the hopper_utils library, logging shoud use this stream
+
   print(rank, time(), "finished with the rank logger, now delgate parcels")
   os.environ["CCTBX_RECOMMEND_DEVICE"] = "%d"%(rank % int(os.environ.get("CCTBX_DEVICE_PER_NODE",1)))
   print("rank", rank, "device", os.environ["CCTBX_RECOMMEND_DEVICE"])
