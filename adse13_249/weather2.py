@@ -33,6 +33,9 @@ phil_scope = parse('''
   show_plot = True
     .type = bool
     .help = flag to indicate if plot should be displayed on screen
+  show_finish = False
+    .type = bool
+    .help = flag to show completion of each task
   pickle_plot = False
     .type = bool
     .help = If True, will pickle matplotlib session so that it can be opened later for analysis/viewing \
@@ -59,6 +62,8 @@ def run(params):
   root = params.input_path
   allrank=[]
   alltime=[]
+  allfinrank=[]
+  allfintime=[]
   for filename in os.listdir(root):
     if os.path.splitext(filename)[1] != '.log': continue
     if 'rank' not in filename: continue
@@ -71,10 +76,17 @@ def run(params):
           stime = float(tokens[4])
           allrank.append(rank)
           alltime.append(stime)
+        if line.startswith('idx------finis'):
+          tokens = line.strip().split()
+          stime = float(tokens[4])
+          allfinrank.append(rank)
+          allfintime.append(stime)
 
   begin = min(alltime)
   alltime = [ix -begin for ix in alltime]
+  allfintime = [ix -begin for ix in allfintime]
 
+  if params.show_finish: plt.plot(allfintime, allfinrank, "rx")
   plt.plot(alltime, allrank, "g.")
   plt.title("Starting times for %d events in %s"%(len(alltime),root))
   plt.xlabel("Time (s)")
