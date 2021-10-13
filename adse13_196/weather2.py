@@ -222,4 +222,4 @@ if __name__ == '__main__':
   if not params.show_plot:
     import matplotlib
     matplotlib.use("pdf")
-run(params)
+  run(params)
