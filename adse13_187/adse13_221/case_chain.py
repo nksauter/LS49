@@ -25,6 +25,19 @@ class case_chain_runner:
         if x: active_pixels.append(i)
     mask_array = active_pixels
 
+    whitelist_size = len(self.relevant_whitelist_order)
+    whitelist_unique = len(set(list(self.relevant_whitelist_order)))
+    mask_array_size = len(mask_array)
+    assert whitelist_unique == mask_array_size
+    assert type(mask_array) is flex.int
+    if whitelist_size == whitelist_unique:
+      print ("shoebox inventory disjoint %d with total pixels"%params.output.index, whitelist_size)
+    else: # bugfix to accommodate overlapping shoeboxes
+      print ("shoebox inventory overlapping %d with total pixels"%params.output.index, whitelist_size,
+             "of which only %d are unique"%whitelist_unique,
+             "\nTherefore, reassigning the mask_array to reflect an expanded and disjoint set")
+      mask_array = self.relevant_whitelist_order.as_int()
+
     # Fixed hyperparameters
     mosaic_spread_samples = 250
     beamsize_mm = 0.000886226925452758 # sqrt beam focal area

@@ -185,7 +185,6 @@ def run(params):
     M = mcmc_run_manager.from_files(params.trusted_mask, params.refl, params.expt)
     M.get_trusted_and_refl_mask()
     M.refl_analysis(params.cryst) # new, sets M.dials_model from params.cryst
-    return
     M.simple_rmsd(legend="Basic run stat result: %d "%params.output.index) # new Plot 1
     #M.plot_pixel_histograms() # new
     M.get_lunus_repl()
@@ -195,8 +194,6 @@ def run(params):
                   legend="Baseline control: %d "%params.output.index) # new Plot 2
     # works without bugs up to here at least
     nanobragg_sim = M.ersatz_MCMC(params = params) # final Bragg simulation after MCMC run
-    # writes pickle file; also hits internal error & double free-error for image 55
-    return
     M.view["bragg_plus_background"] = M.reusable_rmsd(proposal=nanobragg_sim, label="ersatz_mcmc",plot=params.model.plot,
                   legend="Unnormalized simulation: %d "%params.output.index) # Plot 3
     M.view["renormalize_bragg_plus_background"] = M.reusable_rmsd(proposal=M.renormalize(

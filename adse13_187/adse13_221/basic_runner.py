@@ -453,7 +453,6 @@ def run(params):
             proposal=nanobragg_sim,proposal_label="ersatz_mcmc",ref_label="spots_mockup"),
             label="renormalize_mcmc",plot=params.model.plot,output_refl="%s_%05d."%("renormalize_mcmc", params.output.index),
                   legend="Renormalized simulation: %d "%params.output.index)# Plot 4
-    return
     M.view["Z_plot"] = M.Z_statistics(experiment=M.view["sim_mock"],
                                            model=M.view["renormalize_bragg_plus_background"],
                                           legend="Index %d "%(params.output.index),

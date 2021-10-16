@@ -226,6 +226,11 @@ def multipanel_sim(
     if skip_numpy:
       P = Profiler("%40s"%"get short whitelist values")
       whitelist_only = gpu_detector.get_whitelist_raw_pixels_cuda(relevant_whitelist_order)
+      # whitelist_only, flex_double pixel values
+      # relevant_whitelist_order, flex.size_t detector addresses
+      assert len(whitelist_only) == len(relevant_whitelist_order) # guard against shoebox overlap bug
+      # when shoeboxes overlap, the overlapped pixels should be simulated once for each parent shoebox
+
       P = Profiler("%40s"%"each image free cuda")
       gpu_detector.each_image_free_cuda()
       return whitelist_only, TIME_BG, TIME_BRAGG, S.exascale_mos_blocks or None
