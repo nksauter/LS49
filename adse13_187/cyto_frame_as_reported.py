@@ -87,7 +87,7 @@ def run_single_job(test_without_mpi=True):
   import datetime
   start_comp = time()
 
-  parcels = list(range(1725,params.N_total))
+  parcels = list(range(int(os.environ.get("N_START"),0),params.N_total))
 
   print(time(), "delegate parcels")
   os.environ["CCTBX_RECOMMEND_DEVICE"] = "0"
@@ -101,6 +101,8 @@ def run_single_job(test_without_mpi=True):
     # server process (does all the work)
       cache_time = time()
       print("idx------start-------->",idx,time(),flush=True)
+      #from LS49.adse13_187.cyto_frame_early_draft import tsDEPt_one
+      #tsDEPt_one(idx,frame_params=params)
       thin_ds1(idx,frame_params=params)
       print("idx------finis-------->",idx,
             time(),"elapsed %.3fs"%(time()-cache_time),flush=True)
@@ -190,6 +192,8 @@ def run_batch_job(test_without_mpi=False):
         break
       cache_time = time()
       print("idx------start-------->",idx,"rank",rank,time())
+      #from LS49.adse13_187.cyto_frame_early_draft import tsDEPt_one
+      #tsDEPt_one(idx,frame_params=params)
       thin_ds1(idx,frame_params=params)
       print("idx------finis-------->",idx,
             "rank",rank,time(),"elapsed %.3fs"%(time()-cache_time))
