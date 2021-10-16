@@ -185,25 +185,28 @@ def run(params):
     M = mcmc_run_manager.from_files(params.trusted_mask, params.refl, params.expt)
     M.get_trusted_and_refl_mask()
     M.refl_analysis(params.cryst) # new, sets M.dials_model from params.cryst
-    M.simple_rmsd(legend="Preliminary stat result: ") # new
     return
+    M.simple_rmsd(legend="Basic run stat result: %d "%params.output.index) # new Plot 1
     #M.plot_pixel_histograms() # new
     M.get_lunus_repl()
     M.get_image_res_data()
-    M.modify_shoeboxes() # new
-    M.view["sim_mock"] = M.simulation_mockup(M.view["exp_data"]) # new
+    M.modify_shoeboxes(verbose=False) # new
+    M.view["sim_mock"] = M.simulation_mockup(M.view["exp_data"],plot=params.model.plot,
+                  legend="Baseline control: %d "%params.output.index) # new Plot 2
     # works without bugs up to here at least
     nanobragg_sim = M.ersatz_MCMC(params = params) # final Bragg simulation after MCMC run
     # writes pickle file; also hits internal error & double free-error for image 55
     return
-    M.view["bragg_plus_background"] = M.reusable_rmsd(proposal=nanobragg_sim, label="ersatz_mcmc")
+    M.view["bragg_plus_background"] = M.reusable_rmsd(proposal=nanobragg_sim, label="ersatz_mcmc",plot=params.model.plot,
+                  legend="Unnormalized simulation: %d "%params.output.index) # Plot 3
     M.view["renormalize_bragg_plus_background"] = M.reusable_rmsd(proposal=M.renormalize(
             proposal=nanobragg_sim,proposal_label="ersatz_mcmc",ref_label="spots_mockup"),
-            label="renormalize_mcmc",plot=params.model.plot,legend="MCMC stat result: ")
+            label="renormalize_mcmc",plot=params.model.plot,output_refl="%s_%05d."%("renormalize_mcmc", params.output.index),
+                  legend="Renormalized simulation: %d "%params.output.index)# Plot 4
     M.view["Z_plot"] = M.Z_statistics(experiment=M.view["sim_mock"],
                                            model=M.view["renormalize_bragg_plus_background"],
                                            plot=params.model.plot,
-                                           legend="MCMC stat result: ")
+                                           legend="MCMC stat result: %d "%params.output.index)
     M.write_hdf5(os.path.join(params.output.output_dir,basename+"hdf5"))
     M.resultant_mask_to_file(os.path.join(params.output.output_dir,basename+"mask"))
 

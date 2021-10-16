@@ -16,6 +16,9 @@ class case_chain_runner:
 
     self.model_plot_enable = params.plot
     if mask_array is not None:
+      print(params.output.index,"Incoming chain runner mask array of type\n", type(mask_array),
+            "with length",len(mask_array), "and values ranging from",
+            min(mask_array),"to", max(mask_array))
       assert type(mask_array) is flex.bool # type check intending to convert active-pixel-bools to whitelist-ints
       active_pixels = flex.int()
       for i, x in enumerate(mask_array):

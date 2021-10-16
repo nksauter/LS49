@@ -168,7 +168,7 @@ class basic_run_manager(mask_manager):
     stats = flex.mean_and_variance(all_Z_values)
     self.mnz = stats.mean()
     self.sgz = stats.unweighted_sample_standard_deviation()
-    print(legend+"proposal mean Z=%.2f, sigma Z=%.2f"%(self.mnz, self.sgz),"on %d shoeboxes"%(len(all_Z_values)))
+    print(legend+"proposal mean Z=%.2f, sigma Z=%.2f"%(self.mnz, self.sgz),"on %d shoeboxes"%(len(self.refl_table)))
     if plot:
       self.plot_Z()
     return Z_plot
@@ -320,7 +320,7 @@ class basic_run_manager(mask_manager):
       islow_limits = (max(0,bbox[2]-3), min(slow_size,bbox[3]+3))
       ifast_limits = (max(0,bbox[0]-3), min(fast_size,bbox[1]+3))
       if verbose:
-       # print out the res-data
+       # print out 1: the res-data
        for islow in range(islow_limits[0], islow_limits[1]):
         fast_count=0
         fast_sum=0
@@ -331,7 +331,7 @@ class basic_run_manager(mask_manager):
           fast_sum+=value
         print(" =%6.0f"%(fast_sum/fast_count))
        print()
-       # print out the trusted mask
+       # print out 2: the trusted mask
        flag=True
        for islow in range(islow_limits[0], islow_limits[1]):
         fast_count=0
@@ -339,12 +339,12 @@ class basic_run_manager(mask_manager):
         for ifast in range(ifast_limits[0], ifast_limits[1]):
           value = float(int(self.resultant[ipanel][islow*slow_size + ifast]))
           if value==False:flag=False
-          print("%6.0f"%value, end="")
+          print(("%6.0f"%value) if value==True else "     F", end="")
           fast_count+=1
           fast_sum+=value
         print(" =%6.0f"%(fast_sum/fast_count))
        print()
-       # print out the lunus-repl shoebox
+       # print out 3: the lunus-repl shoebox
        for islow in range(islow_limits[0], islow_limits[1]):
         fast_count=0
         fast_sum=0
@@ -359,7 +359,7 @@ class basic_run_manager(mask_manager):
       from LS49.adse13_187.adse13_221.smooth_fit import replacement_pixels
       FIT=replacement_pixels(self.view["lunus_filtered_data"],
                              ipanel, islow_limits, ifast_limits, shoebox=S[sidx])
-      # print out the fit shoebox
+      # print out 4: the fit shoebox
       for islow in range(islow_limits[0], islow_limits[1]):
         fast_count=0
         fast_sum=0
@@ -372,7 +372,7 @@ class basic_run_manager(mask_manager):
         if verbose: print(" =%6.0f"%(fast_sum/fast_count))
       if verbose: print()
       if verbose:
-       # print out the data minus background-fit shoebox
+       # print out 5: the data minus background-fit shoebox
        for islow in range(islow_limits[0], islow_limits[1]):
         fast_count=0
         fast_sum=0
@@ -446,7 +446,7 @@ def run(params):
     M.modify_shoeboxes() # new
     M.view["sim_mock"] = M.simulation_mockup(M.view["exp_data"],plot=params.model.plot,
                   legend="Baseline control: %d "%params.output.index) # new Plot 2
-    nanobragg_sim = M.ersatz_MCMC(params.model) # initial Bragg simulation
+    nanobragg_sim = M.ersatz_MCMC(params) # initial Bragg simulation
     M.view["bragg_plus_background"] = M.reusable_rmsd(proposal=nanobragg_sim, label="ersatz_mcmc",plot=params.model.plot,
                   legend="Unnormalized simulation: %d "%params.output.index) # Plot 3
     M.view["renormalize_bragg_plus_background"] = M.reusable_rmsd(proposal=M.renormalize(
@@ -456,7 +456,8 @@ def run(params):
     return
     M.view["Z_plot"] = M.Z_statistics(experiment=M.view["sim_mock"],
                                            model=M.view["renormalize_bragg_plus_background"],
-                                   plot=False)
+                                          legend="Index %d "%(params.output.index),
+                                            plot=False)
     if params.output.enable:
       M.write_hdf5(os.path.join(params.output.output_dir,basename+"hdf5"))
     M.resultant_mask_to_file(os.path.join(params.output.output_dir,basename+"mask"))

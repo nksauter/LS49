@@ -15,11 +15,15 @@ class case_job_runner:
     shapetype = "gauss_argchk"
 
     if mask_array is not None:
+      print(params.output.index,"Incoming chain runner mask array of type\n", type(mask_array),
+            "with length",len(mask_array), "and values ranging from",
+            min(mask_array),"to", max(mask_array))
       assert type(mask_array) is flex.bool # type check intending to convert active-pixel-bools to whitelist-ints
       active_pixels = flex.int()
       for i, x in enumerate(mask_array):
         if x: active_pixels.append(i)
       mask_array = active_pixels
+      # no modification for job_runner, not needed to reassign mask_array for a disjoint set
 
     detector = expt.detector
     flat = True  # enforce that the camera has 0 thickness
@@ -59,8 +63,8 @@ class case_job_runner:
       assert self.gpu_channels_singleton.get_nchannels() == 1
 
       # Variable parameters
-      mosaic_spread = params.mosaic_spread.value
-      Ncells_abc = params.Nabc.value
+      mosaic_spread = params.model.mosaic_spread.value
+      Ncells_abc = params.model.Nabc.value
 
       JF16M_numpy_array, TIME_BG, TIME_BRAGG, _ = multipanel_sim(
         CRYSTAL=alt_crystal, DETECTOR=detector, BEAM=beam,
