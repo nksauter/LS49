@@ -292,6 +292,18 @@ class basic_run_manager(mask_manager):
 
     return mockup_simulation
 
+  def repurpose_stats(self,output_refl=None):
+    """Function is cobbled together.  Take rmsd from refl file recently written
+       to filesystem.  Take per-shoebox sigmaZ recently calculated.  Write out
+       a new refl file with both.
+    """
+    oldrefl = flex.reflection_table.from_file(output_refl+"refl")
+    if getattr(self, "proposal_shoebox_sigma_Z", None) is not None:
+      assert len(oldrefl) == len(self.proposal_shoebox_sigma_Z)
+      sigma_z = self.proposal_shoebox_sigma_Z
+      oldrefl["sigma_z"] = sigma_z
+      oldrefl.as_file(output_refl+"refl")
+
   def renormalize(self,proposal,proposal_label,ref_label):
     """Takes one proposal and returns a new one, with each spot adjusted by a
     separate scale factor that represents the ratio of experiment::proposal
@@ -451,12 +463,14 @@ def run(params):
                   legend="Unnormalized simulation: %d "%params.output.index) # Plot 3
     M.view["renormalize_bragg_plus_background"] = M.reusable_rmsd(proposal=M.renormalize(
             proposal=nanobragg_sim,proposal_label="ersatz_mcmc",ref_label="spots_mockup"),
-            label="renormalize_mcmc",plot=params.model.plot,output_refl="%s_%05d."%("renormalize_mcmc", params.output.index),
+            label="renormalize_mcmc",plot=params.model.plot,
+            output_refl="%s_%05d."%("renormalize_mcmc", params.output.index),
                   legend="Renormalized simulation: %d "%params.output.index)# Plot 4
     M.view["Z_plot"] = M.Z_statistics(experiment=M.view["sim_mock"],
                                            model=M.view["renormalize_bragg_plus_background"],
                                           legend="Index %d "%(params.output.index),
                                             plot=False)
+    M.repurpose_stats(output_refl="%s_%05d."%("renormalize_mcmc", params.output.index))
     if params.output.enable:
       M.write_hdf5(os.path.join(params.output.output_dir,basename+"hdf5"))
     M.resultant_mask_to_file(os.path.join(params.output.output_dir,basename+"mask"))
