@@ -138,10 +138,11 @@ modeim_kernel_width=15
         beam_dict.pop("spectrum_weights")
       except Exception: pass
       import numpy as np
+      comp = dict(compression='lzf' )
       with utils.H5AttributeGeomWriter(filenm,
                                 image_shape=img_sh, num_images=num_output_images,
                                 detector=det_dict, beam=beam_dict, dtype=np.float32,
-                                detector_and_beam_are_dicts=True) as writer:
+                                detector_and_beam_are_dicts=True, compression_args=comp) as writer:
         for key in self.view:
           if self.view[key] is not None:
             writer.add_image(self.view[key])
