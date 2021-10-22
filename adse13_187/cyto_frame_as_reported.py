@@ -95,6 +95,17 @@ def run_single_job(test_without_mpi=True):
   #os.system("nvidia-smi")
   # client process (requests all the work)
   print("parcels", parcels)
+
+  # with this change, I would hope you no longer need to edit out the MAIN_LOGGER lines
+  import logging
+  dblogger = logging.getLogger("diffBragg.main")
+  handler = logging.StreamHandler()
+  dblogger.setLevel(logging.DEBUG)
+  handler.setLevel(logging.DEBUG)
+  # to write less output, increase the logging level, these are just pointers to numbers,
+  # logging.INFO will write less output, logging.CRITICAL will mostly silience diffBragg
+  dblogger.addHandler(handler) # In the hopper_utils library, logging will use this stream
+
   while len(parcels) > 0:
       idx = parcels[0]
       parcels.remove(idx)
@@ -151,7 +162,7 @@ def run_batch_job(test_without_mpi=False):
     # ON LOGGING,
     # with this change, I would hope you no longer need to edit out the MAIN_LOGGER lines
     import logging
-    dblogger = logging.getLogger("main")
+    dblogger = logging.getLogger("diffBragg.main")
     # we can change 'main' to e.g. 'diffBragg.main', but I would
     # need to edit hopper_utils.py to reflect that, just a one-line fix
     handler = logging.StreamHandler(stream=sys.stdout)
