@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 from time import time
 import os, traceback
+import numpy as np
 start_elapse = time()
 
 """Modified version of the cyto_sim.py script with the following added features:
@@ -42,6 +43,15 @@ def thin_ds1(idx, frame_params):
       exp=os.path.join(BERNINA, "split_cs", "split_%04d.expt"%idx),
       ref = os.path.join(BERNINA, "split2b" , "split_%04d.refl"%idx),
       params=params, return_modeler=True)
+
+      "This subsection writes out the diffBragg-calculated model image"
+      from simtbx.command_line.hopper import save_to_pandas
+      stage1_df = save_to_pandas(x, data_modeler.SIM, os.path.join(BERNINA, "split_cs", "split_%04d.expt"%idx),
+              params,data_modeler.E, 0, os.path.join(BERNINA, "split2b" , "split_%04d.refl"%idx), None)
+      stage1_df.to_pickle("stage1_df_%04d.pickle"%idx)
+      np.save("modeler_%04d"%idx, data_modeler)
+      hopper_utils.write_SIM_logs(data_modeler.SIM, log="state_fname_%04d.txt"%idx, lam="spectra_fname_%04d.txt"%idx)
+
       (scale, rotX, rotY, rotZ, Na, Nb, Nc,
        diff_gam_a, diff_gam_b, diff_gam_c, diff_sig_a, diff_sig_b, diff_sig_c,
        a,b,c,al,be,ga, detz) = hopper_utils.get_param_from_x(x,data_modeler.SIM)
