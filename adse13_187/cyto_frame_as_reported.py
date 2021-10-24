@@ -34,23 +34,34 @@ def thin_ds1(idx, frame_params):
     from LS49.adse13_187.report_versions import ds1_params_v4 as ds1_params
     user_phil = parse(ds1_params)
     working_phil = phil_scope_db.fetch(sources=[user_phil])
-    params = working_phil.extract()
+    diffbragg_params = working_phil.extract()
     from simtbx.diffBragg import hopper_utils
     BERNINA = os.environ.get("BERNINA")
+    anaparams = mcmc_runner_parse_input()
+    if frame_params.use_diffuse_models:
+      diffbragg_params.use_diffuse_models = True
+      diffbragg_params.method = "Nelder-Mead"
+      diffbragg_params.init.diffuse_sigma = 1,1,1
+      diffbragg_params.init.diffuse_gamma = 100,100,100
+      diffbragg_params.betas.G = 1000.
+      diffbragg_params.fix.diffuse_gamma = False
+      diffbragg_params.fix.diffuse_sigma = False
 
     try:
       exp, ref, data_modeler, x = hopper_utils.refine(
       exp=os.path.join(BERNINA, "split_cs", "split_%04d.expt"%idx),
       ref = os.path.join(BERNINA, "split2b" , "split_%04d.refl"%idx),
-      params=params, return_modeler=True)
+      params=diffbragg_params, return_modeler=True)
 
       "This subsection writes out the diffBragg-calculated model image"
+      """
       from simtbx.command_line.hopper import save_to_pandas
       stage1_df = save_to_pandas(x, data_modeler.SIM, os.path.join(BERNINA, "split_cs", "split_%04d.expt"%idx),
-              params,data_modeler.E, 0, os.path.join(BERNINA, "split2b" , "split_%04d.refl"%idx), None)
+              diffbragg_params,data_modeler.E, 0, os.path.join(BERNINA, "split2b" , "split_%04d.refl"%idx), None)
       stage1_df.to_pickle("stage1_df_%04d.pickle"%idx)
       np.save("modeler_%04d"%idx, data_modeler)
       hopper_utils.write_SIM_logs(data_modeler.SIM, log="state_fname_%04d.txt"%idx, lam="spectra_fname_%04d.txt"%idx)
+      """
 
       (scale, rotX, rotY, rotZ, Na, Nb, Nc,
        diff_gam_a, diff_gam_b, diff_gam_c, diff_sig_a, diff_sig_b, diff_sig_c,
@@ -62,7 +73,6 @@ def thin_ds1(idx, frame_params):
       print("DS1 parameters index %d Na Nb Nc %.3f %.3f %.3f"%(idx,Na,Nb,Nc))
 
       from LS49.adse13_187.adse13_221.basic_runner import run as basic_run
-      anaparams = mcmc_runner_parse_input()
       anaparams.trusted_mask=os.path.join(BERNINA, "trusted_Py3.mask")
       anaparams.cryst="ds1_%04d.expt"%idx
       anaparams.expt = os.path.join(BERNINA, "split_cs", "split_%04d.expt"%idx)
@@ -84,7 +94,10 @@ def thin_ds1(idx, frame_params):
       print(anaparams.expt)
       print(anaparams.refl)
       print(anaparams.model.cell.covariance)
-      basic_run(anaparams)
+      if frame_params.use_diffuse_models:
+        basic_run(anaparams,use_diffuse=(diff_gam_a, diff_gam_b, diff_gam_c, diff_sig_a, diff_sig_b, diff_sig_c))
+      else:
+        basic_run(anaparams)
 
     except Exception as e:
       print("CATCH EXCEPTION",e)

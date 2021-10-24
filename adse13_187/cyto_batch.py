@@ -76,6 +76,9 @@ def parse_input():
     mask_file = ""
       .type = path
       .help = for the exascale api only, specifying this path chooses the debranched-maskall kernel
+    use_diffuse_models = False
+      .type = bool
+      .help = add diffuse halo term from Wall eqn 9
   """
   phil_scope = parse(master_phil)
   # The script usage
@@ -100,6 +103,7 @@ def multipanel_sim(
   background_total_flux=None, background_sample_thick_mm=None,
   density_gcm3=1, molecular_weight=18,
   cuda=False, oversample=0, Ncells_abc=(50, 50, 50),
+  use_diffuse=False,
   mos_dom=1, mos_spread=0, mosaic_method="double_uniform",
   mos_aniso=None, beamsize_mm=0.001,
   crystal_size_mm=0.01,
@@ -155,6 +159,7 @@ def multipanel_sim(
     S.include_noise = False
     S.Umats_method = dict(double_random=0, double_uniform=5)[mosaic_method]
 
+    print ("DIFFUSE IS",use_diffuse)
     if mosaicity_random_seeds is not None:
       S.mosaic_seeds = mosaicity_random_seeds
 
@@ -169,6 +174,8 @@ def multipanel_sim(
 
     from simtbx.gpu import exascale_api
     gpu_simulation = exascale_api(nanoBragg = SIM)
+    if use_diffuse:
+      gpu_simulation.use_diffuse(flex.double(use_diffuse))
     gpu_simulation.allocate_cuda() # presumably done once for each image
 
     from simtbx.gpu import gpu_detector as gpud

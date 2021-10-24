@@ -73,9 +73,7 @@ import os
 ds1_params_v4="""
 ucell_edge_perc=15
 ucell_ang_abs=1
-method="Nelder-Mead"
-#method="L-BFGS-B"
-use_diffuse_models=True
+method="L-BFGS-B"
 #nelder_mead_maxfev=None
 #nelder_mead_fatol=1000
 #niter=20
@@ -105,9 +103,7 @@ simulator {
 init {
   Nabc = 50.000000 50.000000 37.500000
   G = 10.000000
-  diffuse_sigma = 1 1 1
   #diffuse_sigma = 0.583037 0.458631 0.704636
-  diffuse_gamma = 100 100 100
   #diffuse_gamma = 238.873078 168.346065 73.587935
 }
 mins {
@@ -129,7 +125,7 @@ betas {
   ucell = 0.001 0.001
   RotXYZ = 1e-05
   Nabc = 50.000000 50.000000 50.000000
-  G = 1000.000000
+  G = 10.000000
 }
 centers {
   ucell = 78.61 265.12
@@ -137,8 +133,6 @@ centers {
   G = 10.000000
 }
 fix.detz_shift=True
-fix.diffuse_gamma=False
-fix.diffuse_sigma=False
 outdir="."
 """%(os.environ)
 

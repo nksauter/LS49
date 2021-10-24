@@ -187,7 +187,7 @@ class basic_run_manager(mask_manager):
       plt.legend(loc='upper right')
       plt.show()
 
-  def ersatz_MCMC(self, variable_params):
+  def ersatz_MCMC(self, variable_params, use_diffuse):
     from LS49.adse13_187.adse13_221.case_run import case_job_runner
     class ersatz(MCMC_manager, case_job_runner): pass
     self.MCMC = ersatz()
@@ -201,6 +201,7 @@ class basic_run_manager(mask_manager):
 
     modality = "job"
     return self.MCMC.job_runner(expt=self.expt, alt_expt=self.dials_model, params=variable_params,
+      use_diffuse = use_diffuse,
       mask_array = self.monolithic_mask_whole_detector_as_1D_bool
       ) # returns simulated image as numpy array
 
@@ -445,7 +446,7 @@ Results can be viewed with dials.image_viewer <token>_%%%.hdf5 mask=<token>_%%%.
   params, options = parser.parse_args(show_diff_phil=True,quick_parse=True)
   return params,options
 
-def run(params):
+def run(params,use_diffuse=False):
     basename = "%s_%05d."%(params.output.label, params.output.index)
     M = basic_run_manager.from_files(params.trusted_mask, params.refl, params.expt)
     M.get_trusted_and_refl_mask()
@@ -458,7 +459,7 @@ def run(params):
     M.modify_shoeboxes() # new
     M.view["sim_mock"] = M.simulation_mockup(M.view["exp_data"],plot=params.model.plot,
                   legend="Baseline control: %d "%params.output.index) # new Plot 2
-    nanobragg_sim = M.ersatz_MCMC(params) # initial Bragg simulation
+    nanobragg_sim = M.ersatz_MCMC(params,use_diffuse=use_diffuse) # initial Bragg simulation
     M.view["bragg_plus_background"] = M.reusable_rmsd(proposal=nanobragg_sim, label="ersatz_mcmc",plot=params.model.plot,
                   legend="Unnormalized simulation: %d "%params.output.index) # Plot 3
     M.view["renormalize_bragg_plus_background"] = M.reusable_rmsd(proposal=M.renormalize(

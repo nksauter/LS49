@@ -4,7 +4,7 @@ from time import time
 from scitbx.array_family import flex
 
 class case_job_runner:
-  def job_runner(self,expt,alt_expt,params,mask_array=None,i_exp=0,spectra={},mos_aniso=None):
+  def job_runner(self,expt,alt_expt,params,use_diffuse=None,mask_array=None,i_exp=0,spectra={},mos_aniso=None):
 
     # Fixed hyperparameters
     mosaic_spread_samples = 250
@@ -72,6 +72,7 @@ class case_job_runner:
         energies=energies, fluxes=weights,
         cuda=True,
         oversample=oversample, Ncells_abc=Ncells_abc,
+        use_diffuse=use_diffuse,
         mos_dom=mosaic_spread_samples, mos_spread=mosaic_spread,
         mos_aniso = mos_aniso,
         beamsize_mm=beamsize_mm,
