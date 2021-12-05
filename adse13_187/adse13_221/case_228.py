@@ -82,7 +82,7 @@ class case_228:
         #F_P1 = F2 # this one way absolutely wrong! way too many predictions, beyond the strong spots
         F_P1 = F1
         for x in range(1):  # in this scenario, amplitudes are independent of lambda
-          self.gpu_channels_singleton.structure_factors_to_GPU_direct_cuda(
+          self.gpu_channels_singleton.structure_factors_to_GPU_direct(
           x, F_P1.indices(), F_P1.data())
       assert self.gpu_channels_singleton.get_nchannels() == 1
 
