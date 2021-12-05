@@ -223,7 +223,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,para
     gpu_simulation.allocate_cuda()
 
     gpu_detector = gpud(deviceId=SIM.device_Id, nanoBragg=SIM)
-    gpu_detector.each_image_allocate_cuda()
+    gpu_detector.each_image_allocate()
 
     # loop over energies
     for x in range(len(flux)):
@@ -236,7 +236,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,para
       gpu_simulation.add_energy_channel_from_gpu_amplitudes_cuda(
         x, gpu_channels_singleton, gpu_detector)
       del P
-    gpu_detector.scale_in_place_cuda(crystal.domains_per_crystal) # apply scale directly on GPU
+    gpu_detector.scale_in_place(crystal.domains_per_crystal) # apply scale directly on GPU
     SIM.wavelength_A = wavelength_A # return to canonical energy for subsequent background
 
     if add_background_algorithm == "cuda":
@@ -256,8 +256,8 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,para
       gpu_simulation.add_background_cuda(gpu_detector)
 
     # deallocate GPU arrays
-    gpu_detector.write_raw_pixels_cuda(SIM)  # updates SIM.raw_pixels from GPU
-    gpu_detector.each_image_free_cuda()
+    gpu_detector.write_raw_pixels(SIM)  # updates SIM.raw_pixels from GPU
+    gpu_detector.each_image_free()
     SIM.Amatrix_RUB = Amatrix_rot # return to canonical orientation
     del QQ
 
