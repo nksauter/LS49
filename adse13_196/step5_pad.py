@@ -252,7 +252,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,para
         print("datetime for channels singleton rank %d"%(rank),time.time())
 
     # allocate GPU arrays
-    SIM.allocate_cuda()
+    SIM.allocate()
 
     # loop over energies
     for x in range(len(flux)):
@@ -263,12 +263,12 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,para
       SIM.wavelength_A = wavlen[x]
       SIM.flux = flux[x]
       if cache_fhkl_on_gpu: # new interface, use singleton to store all-image energy channels
-        SIM.add_energy_channel_from_gpu_amplitudes_cuda(x,gpu_channels_singleton)
+        SIM.add_energy_channel_from_gpu_amplitudes(x,gpu_channels_singleton)
       else: # old interface, host-to-device each energy channel, each image
         SIM.Fhkl = sfall_channels[x]
         SIM.add_energy_channel_cuda()
       del P
-    SIM.scale_in_place_cuda(crystal.domains_per_crystal) # apply scale directly on GPU
+    SIM.scale_in_place(crystal.domains_per_crystal) # apply scale directly on GPU
     SIM.wavelength_A = wavelength_A # return to canonical energy for subsequent background
 
     if add_background_algorithm == "cuda":
@@ -280,16 +280,16 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,para
       SIM.flux=1e12
       SIM.beamsize_mm=0.003 # square (not user specified)
       SIM.exposure_s=1.0 # multiplies flux x exposure
-      SIM.add_background_cuda()
+      SIM.add_background()
       SIM.Fbg_vs_stol = air_bg
       SIM.amorphous_sample_thick_mm = 10 # between beamstop and collimator
       SIM.amorphous_density_gcm3 = 1.2e-3
       SIM.amorphous_sample_molecular_weight_Da = 28 # nitrogen = N2
-      SIM.add_background_cuda()
+      SIM.add_background()
 
     # deallocate GPU arrays
-    SIM.get_raw_pixels_cuda()  # updates SIM.raw_pixels from GPU
-    SIM.deallocate_cuda()
+    SIM.get_raw_pixels()  # updates SIM.raw_pixels from GPU
+    SIM.deallocate()
     SIM.Amatrix_RUB = Amatrix_rot # return to canonical orientation
     del QQ
   else:
