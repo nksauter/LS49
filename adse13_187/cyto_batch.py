@@ -169,7 +169,7 @@ def multipanel_sim(
 
     from simtbx.gpu import exascale_api
     gpu_simulation = exascale_api(nanoBragg = SIM)
-    gpu_simulation.allocate_cuda() # presumably done once for each image
+    gpu_simulation.allocate() # presumably done once for each image
 
     from simtbx.gpu import gpu_detector as gpud
     gpu_detector = gpud(deviceId=SIM.device_Id, detector=DETECTOR,
@@ -180,17 +180,17 @@ def multipanel_sim(
     x = 0 # only one energy channel
     if mask_file is "": # all-pixel kernel
       P = Profiler("%40s"%"from gpu amplitudes cuda")
-      gpu_simulation.add_energy_channel_from_gpu_amplitudes_cuda(
+      gpu_simulation.add_energy_channel_from_gpu_amplitudes(
       x, Famp, gpu_detector)
     elif type(mask_file) is flex.bool: # 1D bool array, flattened from ipanel, islow, ifast
       P = Profiler("%40s"%"from gpu amplitudes cuda with bool mask")
-      gpu_simulation.add_energy_channel_mask_allpanel_cuda(
+      gpu_simulation.add_energy_channel_mask_allpanel(
         channel_number = x, gpu_amplitudes = Famp, gpu_detector = gpu_detector,
         pixel_active_mask_bools = mask_file )
     elif type(mask_file) is flex.int:
       # precalculated active_pixel_list
       P = Profiler("%40s"%"from gpu amplitudes cuda w/int whitelist")
-      gpu_simulation.add_energy_channel_mask_allpanel_cuda(
+      gpu_simulation.add_energy_channel_mask_allpanel(
         channel_number = x, gpu_amplitudes = Famp, gpu_detector = gpu_detector,
         pixel_active_list_ints = mask_file )
     else:
@@ -198,7 +198,7 @@ def multipanel_sim(
       from LS49.adse13_187.adse13_221.mask_utils import mask_from_file
       boolean_mask = mask_from_file(mask_file)
       P = Profiler("%40s"%"from gpu amplitudes cuda with file mask")
-      gpu_simulation.add_energy_channel_mask_allpanel_cuda(
+      gpu_simulation.add_energy_channel_mask_allpanel(
       x, Famp, gpu_detector, boolean_mask )
     TIME_BRAGG = time()-P.start_el
 
@@ -219,7 +219,7 @@ def multipanel_sim(
       SIM.amorphous_sample_thick_mm = background_sample_thick_mm
       SIM.amorphous_density_gcm3 = density_gcm3
       SIM.amorphous_molecular_weight_Da = molecular_weight
-      gpu_simulation.add_background_cuda(gpu_detector)
+      gpu_simulation.add_background(gpu_detector)
       TIME_BG = time()-t_bkgrd_start
     else: TIME_BG=0.
 

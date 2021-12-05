@@ -220,7 +220,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,para
         print("datetime for channels singleton rank %d"%(rank),time.time())
 
     gpu_simulation = exascale_api(nanoBragg = SIM)
-    gpu_simulation.allocate_cuda()
+    gpu_simulation.allocate()
 
     gpu_detector = gpud(deviceId=SIM.device_Id, nanoBragg=SIM)
     gpu_detector.each_image_allocate()
@@ -233,7 +233,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,para
       # from channel_pixels function
       SIM.wavelength_A = wavlen[x]
       SIM.flux = flux[x]
-      gpu_simulation.add_energy_channel_from_gpu_amplitudes_cuda(
+      gpu_simulation.add_energy_channel_from_gpu_amplitudes(
         x, gpu_channels_singleton, gpu_detector)
       del P
     gpu_detector.scale_in_place(crystal.domains_per_crystal) # apply scale directly on GPU
@@ -248,12 +248,12 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,para
       SIM.flux=1e12
       SIM.beamsize_mm=0.003 # square (not user specified)
       SIM.exposure_s=1.0 # multiplies flux x exposure
-      gpu_simulation.add_background_cuda(gpu_detector)
+      gpu_simulation.add_background(gpu_detector)
       SIM.Fbg_vs_stol = air_bg
       SIM.amorphous_sample_thick_mm = 10 # between beamstop and collimator
       SIM.amorphous_density_gcm3 = 1.2e-3
       SIM.amorphous_sample_molecular_weight_Da = 28 # nitrogen = N2
-      gpu_simulation.add_background_cuda(gpu_detector)
+      gpu_simulation.add_background(gpu_detector)
 
     # deallocate GPU arrays
     gpu_detector.write_raw_pixels(SIM)  # updates SIM.raw_pixels from GPU
