@@ -245,7 +245,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,para
       if gpu_channels_singleton.get_nchannels() == 0: # if uninitialized
         P = Profiler("Initialize the channels singleton rank %d"%(rank))
         for x in range(len(flux)):
-          gpu_channels_singleton.structure_factors_to_GPU_direct_cuda(
+          gpu_channels_singleton.structure_factors_to_GPU_direct(
            x, sfall_channels[x].indices(), sfall_channels[x].data())
         del P
         import time

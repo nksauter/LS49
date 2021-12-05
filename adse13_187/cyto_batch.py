@@ -317,7 +317,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
       if Famp_is_uninitialized:
         F_P1 = Fmerge.expand_to_p1()
         for x in range(1):  # in this scenario, amplitudes are independent of lambda
-          gpu_channels_singleton.structure_factors_to_GPU_direct_cuda(
+          gpu_channels_singleton.structure_factors_to_GPU_direct(
           x, F_P1.indices(), F_P1.data())
       assert gpu_channels_singleton.get_nchannels() == 1
 

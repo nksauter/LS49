@@ -60,7 +60,7 @@ def create_gpu_channels(cpu_channels,utilize):
     P = Profiler("Initialize the channels singleton rank %d, device %d"%(rank,this_device))
     for x in range(len(cpu_channels)):
       print("starting with ",x)
-      gpu_channels_singleton.structure_factors_to_GPU_direct_cuda(
+      gpu_channels_singleton.structure_factors_to_GPU_direct(
           x, cpu_channels[x].indices(), cpu_channels[x].data())
       print("Finished sending to gpu %d channels"%gpu_channels_singleton.get_nchannels())
     del P
@@ -80,7 +80,7 @@ def create_gpu_channels_one_rank(cpu_channels,utilize):
     P = Profiler("Initialize the channels singleton rank None, device %d"%(this_device))
     for x in range(len(cpu_channels)):
       print("starting with ",x)
-      gpu_channels_singleton.structure_factors_to_GPU_direct_cuda(
+      gpu_channels_singleton.structure_factors_to_GPU_direct(
           x, cpu_channels[x].indices(), cpu_channels[x].data())
       print("Finished sending to gpu %d channels"%gpu_channels_singleton.get_nchannels())
     del P
