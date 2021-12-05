@@ -174,7 +174,7 @@ def multipanel_sim(
     from simtbx.gpu import gpu_detector as gpud
     gpu_detector = gpud(deviceId=SIM.device_Id, detector=DETECTOR,
                         beam=BEAM)
-    gpu_detector.each_image_allocate_cuda()
+    gpu_detector.each_image_allocate()
 
     # revisit the allocate cuda for overlap with detector, sync up please
     x = 0 # only one energy channel
@@ -203,7 +203,7 @@ def multipanel_sim(
     TIME_BRAGG = time()-P.start_el
 
     per_image_scale_factor = 1.
-    gpu_detector.scale_in_place_cuda(per_image_scale_factor) # apply scale directly on GPU
+    gpu_detector.scale_in_place(per_image_scale_factor) # apply scale directly on GPU
 
     if include_background:
       t_bkgrd_start = time()
@@ -225,13 +225,18 @@ def multipanel_sim(
 
     if skip_numpy:
       P = Profiler("%40s"%"get short whitelist values")
-      whitelist_only = gpu_detector.get_whitelist_raw_pixels_cuda(relevant_whitelist_order)
+      whitelist_only = gpu_detector.get_whitelist_raw_pixels(relevant_whitelist_order)
+      # whitelist_only, flex_double pixel values
+      # relevant_whitelist_order, flex.size_t detector addresses
+      assert len(whitelist_only) == len(relevant_whitelist_order) # guard against shoebox overlap bug
+      # when shoeboxes overlap, the overlapped pixels should be simulated once for each parent shoebox
+
       P = Profiler("%40s"%"each image free cuda")
-      gpu_detector.each_image_free_cuda()
+      gpu_detector.each_image_free()
       return whitelist_only, TIME_BG, TIME_BRAGG, S.exascale_mos_blocks or None
 
-    packed_numpy = gpu_detector.get_raw_pixels_cuda()
-    gpu_detector.each_image_free_cuda()
+    packed_numpy = gpu_detector.get_raw_pixels()
+    gpu_detector.each_image_free()
     return packed_numpy.as_numpy_array(), TIME_BG, TIME_BRAGG, S.exascale_mos_blocks or None
 
 def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
