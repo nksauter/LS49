@@ -168,10 +168,12 @@ def run_step5_batch(test_without_mpi=False):
   print(rank, time(), "finished with the rank logger, now construct the GPU cache container")
 
   import random
-  from simtbx.gpu import gpu_energy_channels
+  from simtbx.gpu import gpu_instance, gpu_energy_channels
+  gpu_run = gpu_instance( deviceId = rank % int(os.environ.get("DEVICES_PER_NODE",1)) )
+
   gpu_channels_singleton = gpu_energy_channels (
-    deviceId = rank % int(os.environ.get("DEVICES_PER_NODE",1)))
-    # singleton will instantiate, regardless of cuda, device count, or exascale API
+    deviceId = gpu_run.get_deviceID())
+    # singleton will instantiate, regardless of gpu, device count, or exascale API
 
   comm.barrier()
   while len(parcels)>0:
