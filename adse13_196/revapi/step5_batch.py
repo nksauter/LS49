@@ -198,6 +198,8 @@ def run_step5_batch(test_without_mpi=False):
     parcels.remove(idx)
     print("idx------finis-------->",idx,"rank",rank,time(),"elapsed",time()-cache_time)
   comm.barrier()
+  del gpu_channels_singleton
+  # avoid Kokkos allocation "device_Fhkl" being deallocated after Kokkos::finalize was called
   print("Overall rank",rank,"at",datetime.datetime.now(),"seconds elapsed after srun startup %.3f"%(time()-start_elapse))
   print("Overall rank",rank,"at",datetime.datetime.now(),"seconds elapsed after Python imports %.3f"%(time()-start_comp))
   if rank_profile:
