@@ -20,6 +20,7 @@ step4_pad.big_data = ls49_big_data
 generate_spectra.big_data = ls49_big_data
 from LS49.sim.util_fmodel import gen_fmodel
 from LS49.adse13_196.revapi.step5_pad import data
+from simtbx import get_exascale
 # %%%%%%
 
 # Develop procedure for MPI control
@@ -38,6 +39,11 @@ def parse_input():
         .type = path
         .help = Use "/mnt/bb/${USER}" for Summit NVME burst buffer
     }
+    context = kokkos_gpu kokkos_cpu *cuda
+      .type = choice
+      .help = backend for parallel execution
+      .help = Note, for now the assumption that default==cuda is baked in to the tests
+      .help = specifically tst_step5_batch_single_process_GPU.py
   """
   phil_scope = parse(master_phil)
   # The script usage
@@ -168,7 +174,9 @@ def run_step5_batch(test_without_mpi=False):
   print(rank, time(), "finished with the rank logger, now construct the GPU cache container")
 
   import random
-  from simtbx.gpu import gpu_instance, gpu_energy_channels
+  gpu_instance = get_exascale("gpu_instance", params.context)
+  gpu_energy_channels = get_exascale("gpu_energy_channels", params.context)
+
   gpu_run = gpu_instance( deviceId = rank % int(os.environ.get("DEVICES_PER_NODE",1)) )
 
   gpu_channels_singleton = gpu_energy_channels (
