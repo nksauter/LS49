@@ -10,7 +10,7 @@ import math
 import scitbx
 import os
 from libtbx.development.timers import Profiler
-from simtbx.gpu import exascale_api, gpu_detector as gpud
+from simtbx import get_exascale
 from dxtbx.model.detector import DetectorFactory
 
 big_data = "." # directory location for reference files
@@ -218,6 +218,9 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,para
         del P
         import time
         print("datetime for channels singleton rank %d"%(rank),time.time())
+
+    exascale_api = get_exascale("exascale_api", params.context)
+    gpud = get_exascale("gpu_detector", params.context)
 
     gpu_simulation = exascale_api(nanoBragg = SIM)
     gpu_simulation.allocate()
