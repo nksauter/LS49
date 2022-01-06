@@ -115,14 +115,14 @@ class channel_pixels:
 
   from libtbx.development.timers import Profiler
   P = Profiler("nanoBragg")
-  if add_spots_algorithm is "NKS":
+  if add_spots_algorithm=="NKS":
     print ("USING NKS")
     from boost_adaptbx.boost.python import streambuf # will deposit printout into dummy StringIO as side effect
     SIM.add_nanoBragg_spots_nks(streambuf(StringIO()))
-  elif add_spots_algorithm is "JH":
+  elif add_spots_algorithm=="JH":
     print ("USING JH")
     SIM.add_nanoBragg_spots()
-  elif add_spots_algorithm is "cuda":
+  elif add_spots_algorithm=="cuda":
     print ("USING cuda")
     SIM.add_nanoBragg_spots_cuda()
   else: raise Exception("unknown spots algorithm")
