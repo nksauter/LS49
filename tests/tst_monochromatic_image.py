@@ -15,7 +15,7 @@ def run_monochromatic():
   tst_all(quick=True)
 
 # temporarily increasing tolerances. Reset to delta=50, count=10
-def compare_two_images(reference, test, tolerance_delta=2540, tolerance_count=3984027, verbose_pixels=False, verbose=True):
+def compare_two_images(reference, test, tolerance_delta=2540, tolerance_count=3985000, verbose_pixels=False, verbose=True):
   print ("Comparing",reference,test)
   try:
     from dxtbx.format.Registry import Registry
