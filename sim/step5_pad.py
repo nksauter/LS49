@@ -118,12 +118,12 @@ def channel_pixels(wavelength_A,flux,N,UMAT_nm,Amatrix_rot,fmodel_generator,loca
 
   from libtbx.development.timers import Profiler
   P = Profiler("nanoBragg C++ rank %d"%(rank))
-  if add_spots_algorithm is "NKS":
+  if add_spots_algorithm=="NKS":
     from boost_adaptbx.boost.python import streambuf # will deposit printout into dummy StringIO as side effect
     SIM.add_nanoBragg_spots_nks(streambuf(StringIO()))
-  elif add_spots_algorithm is "JH":
+  elif add_spots_algorithm=="JH":
     SIM.add_nanoBragg_spots()
-  elif add_spots_algorithm is "cuda":
+  elif add_spots_algorithm=="cuda":
     SIM.add_nanoBragg_spots_cuda()
   else: raise Exception("unknown spots algorithm")
   del P
