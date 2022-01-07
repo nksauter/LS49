@@ -14,8 +14,7 @@ def run_monochromatic():
   from LS49.sim.step5_pad import tst_all
   tst_all(quick=True)
 
-# temporarily increasing tolerances. Reset to delta=50, count=10
-def compare_two_images(reference, test, tolerance_delta=2540, tolerance_count=3984027, verbose_pixels=False, verbose=True):
+def compare_two_images(reference, test, tolerance_delta=50, tolerance_count=10, verbose_pixels=False, verbose=True):
   print ("Comparing",reference,test)
   try:
     from dxtbx.format.Registry import Registry
@@ -68,7 +67,7 @@ def compare_two_images(reference, test, tolerance_delta=2540, tolerance_count=39
 
   # first filter, do not allow any |delta| greater than tolerance_delta
   N_large_deltas = (abs_diff_data > tolerance_delta).count(True)
-  assert N_large_deltas == 0, "%d pixels have |delta| larger than cutoff %d with max %d"%(N_large_deltas,tolerance_delta, max(abs_diff_data))
+  assert N_large_deltas == 0, "%d pixels have |delta| larger than cutoff %d"%(N_large_deltas,tolerance_delta)
 
   # next filter, allow a maximum |delta| of tolerance_delta for no more than tolerance_count pixels
   nonzero_deltas = (abs_diff_data > 0)
@@ -77,8 +76,7 @@ def compare_two_images(reference, test, tolerance_delta=2540, tolerance_count=39
     print("%d pixels have |delta| up to %d"%(N_non_zero_deltas,tolerance_delta))
   assert N_non_zero_deltas <= tolerance_count, "%d pixels have |delta| up to %d"%(N_non_zero_deltas,tolerance_delta)
 
-# temporarily increasing tol. reset to 1E-7
-def compare_two_raw_images(reference, test, tol=0.003): # TODO: run more tests to decide on the default tolerance
+def compare_two_raw_images(reference, test, tol=1.E-7): # TODO: run more tests to decide on the default tolerance
   from six.moves import cPickle as pickle
   from scitbx.array_family import flex
   with open(reference,'rb') as F:
@@ -100,7 +98,7 @@ def compare_two_raw_images(reference, test, tol=0.003): # TODO: run more tests t
     diff_max = flex.max(diff_array)
     print("Differences: range (%.2E to %.2E); mean %.2E; std %.2E"%(diff_min, diff_max, diff_mean, diff_std))
     # assert acceptable differences
-    assert abs(diff_mean) < tol, "The raw image is different from the reference with abs(diff_mean) %f > tol %f." % (diff_mean, tol)
+    assert abs(diff_mean) < tol, "The raw image is different from the reference."
 
 if __name__=="__main__":
   run_monochromatic()
