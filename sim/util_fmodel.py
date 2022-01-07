@@ -109,6 +109,14 @@ class gen_fmodel(object):
     params2.fmodel.k_sol = 0.35
     params2.fmodel.b_sol = 46.
     params2.structure_factors_accuracy.algorithm = algorithm
+
+    # vvv These params restore the "legacy" solvent mask generation before
+    # vvv cctbx commit 2243cc9a
+    params2.mask.Fmask_res_high = 0
+    params2.mask.grid_step_factor = 4
+    params2.mask.solvent_radius = 1.11
+    # ^^^
+
     self.params2 = params2
     self.xray_structure = xray_structure
   def make_P1_primitive(self):
