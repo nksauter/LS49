@@ -1,7 +1,7 @@
 Planning for the March 2022 LY99 SPREAD data collection
 
 Begining Dec. 18, 2021, perform a new simulation with the Rayonix form factor
-
+```
         -N  -n  N_SIM wall weather
 907749-- 1  4   320    276s  3.44s  new detector dimensions, new atten(small diffs), no noise or PSF
 907902-- 1  4   320    170s  2.11s  new detector dimensions, atten=F, noise=F, PSF=F, CUDA
@@ -44,4 +44,4 @@ run 929158, 2.5-2.9 angstrom
 run 929171, 2.1-2.5 angstrom
 
 will need N=4 nodes for this problem size.  test on 1/10 data with 1 node
- 
+```
