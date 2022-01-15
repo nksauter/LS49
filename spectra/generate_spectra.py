@@ -17,8 +17,8 @@ class linear_fit:
   def __init__(self,data):
     self.x = data["expidx"] # the expected index over the 1D spectral distribution (low pass filtered)
     self.y = data["energy"] # the ebeam energy
-    print(len(self.x))
-    print(len(self.y))
+    #print(len(self.x))
+    #print(len(self.y))
     # y = Ap, where A = [[x 1]] and p = [[m], [c]]
     A = np.vstack([self.x, np.ones(len(self.x))]).T
 # workaround allows use of non-thread-safe numpy lstsq, even if openMP is enabled elsewhere in the Python program
@@ -231,8 +231,8 @@ class spectrum_simulation: # slim-down class to return only one spectrum per ins
     ysum = self.bk_subtracted_sum
 
     expected_energy = self.LF.m * self.R["expidx"][image] + self.LF.c + offset
-    print(image,"ebeam = %7.2f eV"%(expected_energy),"%5.1f%% of average pulse intensity"%(100.*
-        self.bk_subtracted_sum/self.average_integrated))
+    #print(image,"ebeam = %7.2f eV"%(expected_energy),"%5.1f%% of average pulse intensity"%(100.*
+    #    self.bk_subtracted_sum/self.average_integrated))
 
     channel_flux = flex.double(100) # 100 energy channels altogether
     channel_mean_eV = flex.double(range(100)) + energy - 49.5
@@ -248,11 +248,9 @@ class spectrum_simulation: # slim-down class to return only one spectrum per ins
   def get_average_expected_energy(self):
     idx = np.array(self.LF.x)
     fitted_energy = self.LF.m * idx + self.LF.c
-    #return np.mean(fitted_energy)
     from scitbx.array_family import flex
     idx_c = flex.double(self.LF.x)
     fitted_energy_c = float(self.LF.m) * idx_c + float(self.LF.c)
-    print ("numpy",np.mean(fitted_energy), "flex",flex.mean(fitted_energy_c))
     return flex.mean(fitted_energy_c)
 
 if __name__=="__main__":
