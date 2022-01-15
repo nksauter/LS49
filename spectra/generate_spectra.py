@@ -178,6 +178,72 @@ class spectra_simulation:
           channel_flux[channel] += self.R['spectra'][image][idx] * total_flux / self.average_integrated
     yield channel_wavelength,channel_flux,eV_to_angstrom / expected_energy
 
+  def get_average_expected_energy(self):
+    idx = np.array(self.LF.x)
+    fitted_energy = self.LF.m * idx + self.LF.c
+    #return np.mean(fitted_energy)
+    from scitbx.array_family import flex
+    idx_c = flex.double(self.LF.x)
+    fitted_energy_c = float(self.LF.m) * idx_c + float(self.LF.c)
+    print ("numpy",np.mean(fitted_energy), "flex",flex.mean(fitted_energy_c))
+    return flex.mean(fitted_energy_c)
+
+class spectrum_simulation: # slim-down class to return only one spectrum per instance
+  def __init__(self, common_data = get_results()):
+    self.R = common_data # pass in get_results() please
+
+  def select(self, image):
+    self.LF = linear_fit(self.R)
+    # get some information to help normalize things
+    self.max_of_max = 5709559.5
+    self.bk_subtracted_sum = np.sum(self.R['spectra'][image])
+    self.average_integrated = 349782880.0
+    self.NS = len(self.R["spectra"][0]) # number of points in each spectrum
+    self.N = len(self.R["spectra"]) # number of events overall
+
+  def plot_recast_image(self,image, energy):
+    import matplotlib.pyplot as plt
+    ylim = [-.05*self.max_of_max, 1.05*self.max_of_max]
+    spectrum_fitted_energy = self.LF.m * np.array(range(self.NS)) + self.LF.c
+    offset = energy - self.get_average_expected_energy()
+    offset_energy = spectrum_fitted_energy + offset
+
+    expected_energy = self.LF.m * self.R["expidx"][image] + self.LF.c + offset
+    print(image,"ebeam = %7.2f eV"%(expected_energy),"%5.1f%% of average pulse intensity"%(100.*
+        self.bk_subtracted_sum/self.average_integrated))
+    if True:
+        plt.plot(offset_energy,self.R['spectra'][image],"b-")
+        plt.xlabel('Energy (eV)')
+        expected, = plt.plot([expected_energy,expected_energy],
+                 [0.80*self.max_of_max, 0.90*self.max_of_max],"r-")
+        plt.legend([expected],["opal"])
+    plt.ylim(ylim)
+    plt.title('Simulated spectrum, %.1f eV center (event %d)'%(energy,image))
+    plt.show()
+
+  def generate_recast_renormalized_image(self, image, energy, total_flux):
+    spectrum_fitted_energy = self.LF.m * np.array(range(self.NS)) + self.LF.c
+    offset = energy - self.get_average_expected_energy()
+    offset_energy = spectrum_fitted_energy + offset
+
+    from scitbx.array_family import flex
+    y = flex.double(list(self.R['spectra'][image]))
+    ysum = self.bk_subtracted_sum
+
+    expected_energy = self.LF.m * self.R["expidx"][image] + self.LF.c + offset
+    print(image,"ebeam = %7.2f eV"%(expected_energy),"%5.1f%% of average pulse intensity"%(100.*
+        self.bk_subtracted_sum/self.average_integrated))
+
+    channel_flux = flex.double(100) # 100 energy channels altogether
+    channel_mean_eV = flex.double(range(100)) + energy - 49.5
+    eV_to_angstrom = 12398.425
+    channel_wavelength = eV_to_angstrom / channel_mean_eV
+    for idx in range(len(offset_energy)):
+        i_energy = offset_energy[idx]
+        channel = int(i_energy - (energy-50))
+        if 0 <= channel < 100:
+          channel_flux[channel] += self.R['spectra'][image][idx] * total_flux / self.average_integrated
+    yield channel_wavelength,channel_flux,eV_to_angstrom / expected_energy
 
   def get_average_expected_energy(self):
     idx = np.array(self.LF.x)
