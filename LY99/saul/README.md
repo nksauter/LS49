@@ -44,4 +44,5 @@ run 929158, 2.5-2.9 angstrom
 run 929171, 2.1-2.5 angstrom
 
 will need N=4 nodes for this problem size.  test on 1/10 data with 1 node
+1161807: requesting diffBragg stage 1 eta_abc refinement leads to segmentation fault
 ```
