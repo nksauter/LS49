@@ -21,6 +21,13 @@ class mask_manager:
                                               check_format=True)
     return cls(mask,refl_table,expts[0])
 
+  @classmethod
+  def from_mask_file_expt_refl(cls, trusted_mask_file, expt, refl):
+    with open(trusted_mask_file,"rb") as M:
+      mask = pickle.load(M)
+    refl_table = refl
+    return cls(mask,refl_table,expt)
+
   def get_trusted_and_refl_mask(self):
     mask = self.trusted_mask
     Z = self.refl_table
