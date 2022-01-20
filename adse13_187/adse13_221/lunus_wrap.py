@@ -166,6 +166,11 @@ def generate_phil_scope():
     trusted_mask = ""
       .type = path
       .help = False values indicate bad pixels in the pickled flex.bool 3D grid
+    shoebox_border = 0
+      .type = int
+      .help = general treatment of shoeboxes.  Original program used 3 pixel border around strong spot shoeboxes
+      .help = SPREAD simulation, 0 pixel border to use integration shoeboxes
+      .help = for Rayonix PSF, again use border > 0 to account for large spot sizes
     refl = ""
       .type = path
       .help = The strong spot refl file (group A) to define the regions of interest
