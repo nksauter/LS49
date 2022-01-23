@@ -17,6 +17,7 @@ import libtbx.load_env # possibly implicit
 from omptbx import omp_get_num_procs
 from xfel.merging.application.utils.memory_usage import get_memory_usage
 import os,sys
+from simtbx import get_exascale
 
 from simtbx.nanoBragg.tst_gauss_argchk import water
 # water is a flex.vec2_double, with structure factor background vs. sin-theta over lambda
@@ -76,6 +77,9 @@ def parse_input():
     mask_file = ""
       .type = path
       .help = for the exascale api only, specifying this path chooses the debranched-maskall kernel
+    context = kokkos_gpu kokkos_cpu *cuda
+      .type = choice
+      .help = backend for parallel execution
   """
   phil_scope = parse(master_phil)
   # The script usage
@@ -107,7 +111,8 @@ def multipanel_sim(
   spot_scale_override=None, show_params=False, time_panels=False,
   add_water = False, add_air=False, water_path_mm=0.005, air_path_mm=0,
   adc_offset=0, readout_noise=3, psf_fwhm=0, gain=1, mosaicity_random_seeds=None,
-  include_background=True, mask_file="",skip_numpy=False,relevant_whitelist_order=None):
+  include_background=True, mask_file="",skip_numpy=False,relevant_whitelist_order=None,
+  context="cuda"):
 
   from simtbx.nanoBragg.nanoBragg_beam import NBbeam
   from simtbx.nanoBragg.nanoBragg_crystal import NBcrystal
@@ -167,37 +172,36 @@ def multipanel_sim(
       SIM.spot_scale = spot_scale_override
     assert Famp.get_nchannels() == 1 # non-anomalous scenario
 
-    from simtbx.gpu import exascale_api
-    gpu_simulation = exascale_api(nanoBragg = SIM)
+    gpu_simulation = get_exascale("exascale_api",context)(nanoBragg = SIM)
     gpu_simulation.allocate() # presumably done once for each image
-
-    from simtbx.gpu import gpu_detector as gpud
-    gpu_detector = gpud(deviceId=SIM.device_Id, detector=DETECTOR,
+    gpu_detector = get_exascale("gpu_detector",context)(deviceId=SIM.device_Id, detector=DETECTOR,
                         beam=BEAM)
     gpu_detector.each_image_allocate()
 
     # revisit the allocate cuda for overlap with detector, sync up please
     x = 0 # only one energy channel
+    print(type(gpu_simulation), type(gpu_detector))  # debug line till kokkos is sorted
     if mask_file is "": # all-pixel kernel
-      P = Profiler("%40s"%"from gpu amplitudes cuda")
+      P = Profiler("%40s"%"select energy_channel_from_gpu_amplitudes")
       gpu_simulation.add_energy_channel_from_gpu_amplitudes(
       x, Famp, gpu_detector)
     elif type(mask_file) is flex.bool: # 1D bool array, flattened from ipanel, islow, ifast
-      P = Profiler("%40s"%"from gpu amplitudes cuda with bool mask")
+      P = Profiler("%40s"%"select energy_channel_mask_allpanel with mask_bools")
       gpu_simulation.add_energy_channel_mask_allpanel(
         channel_number = x, gpu_amplitudes = Famp, gpu_detector = gpu_detector,
         pixel_active_mask_bools = mask_file )
     elif type(mask_file) is flex.int:
       # precalculated active_pixel_list
-      P = Profiler("%40s"%"from gpu amplitudes cuda w/int whitelist")
+      P = Profiler("%40s"%"select energy_channel_mask_allpanel with int_whitelist")
       gpu_simulation.add_energy_channel_mask_allpanel(
         channel_number = x, gpu_amplitudes = Famp, gpu_detector = gpu_detector,
         pixel_active_list_ints = mask_file )
     else:
+      print("mask from file")
       assert type(mask_file) is str
       from LS49.adse13_187.adse13_221.mask_utils import mask_from_file
       boolean_mask = mask_from_file(mask_file)
-      P = Profiler("%40s"%"from gpu amplitudes cuda with file mask")
+      P = Profiler("%40s"%"select energy_channel_mask_allpanel with file_mask")
       gpu_simulation.add_energy_channel_mask_allpanel(
       x, Famp, gpu_detector, boolean_mask )
     TIME_BRAGG = time()-P.start_el
@@ -335,7 +339,7 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
         time_panels=time_panels, verbose=verbose,
         spot_scale_override=spot_scale,
         include_background=include_background,
-        mask_file=params.mask_file)
+        mask_file=params.mask_file,context=params.context)
       TIME_EXA = time()-BEG
       print ("Exascale time",TIME_EXA)
       if params.write_experimental_data:
@@ -511,15 +515,17 @@ def run_batch_job(test_without_mpi=False):
 
   print(rank, time(), "finished with the rank logger, now construct the GPU cache container")
 
-  try:
-    from simtbx.gpu import gpu_energy_channels
-    gpu_channels_singleton = gpu_energy_channels (
-      deviceId = rank % params.devices_per_node )
+  if 1:#try: squash the try...except until kokkos usage is sorted out
+    gpu_instance_type = get_exascale("gpu_instance", params.context)
+    gpu_instance = gpu_instance_type(deviceId = rank % params.devices_per_node)
+    gpu_channels_type = get_exascale("gpu_energy_channels",params.context)
+    gpu_channels_singleton = gpu_channels_type ( deviceId = gpu_instance.get_deviceID())
       # singleton will instantiate, regardless of cuda, device count, or exascale API
-  except ImportError:
+  if 0:#except ImportError: squash the try...except until kokkos usage is sorted out
     gpu_channels_singleton = None
   comm.barrier()
   import random
+  print (type(gpu_instance),type(gpu_channels_singleton)) # debug line till kokkos is sorted
   while len(parcels)>0:
     idx = random.choice(parcels)
     cache_time = time()
@@ -540,6 +546,7 @@ def run_batch_job(test_without_mpi=False):
   if params.log.rank_profile:
     pr.disable()
     pr.dump_stats("cpu_%d.prof"%rank)
+  del gpu_channels_singleton # delete this now so Kokkos::finalize is the last thing called
 
 if __name__=="__main__":
   run_batch_job()

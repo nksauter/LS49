@@ -21,42 +21,84 @@ OpenMP_required = [
     "$D/tests/tst_polychromatic_image.py",  #OpenMP (required)
     ["$D/tests/tst_cpu_add_spots_double_precision.py","poly"],  #OpenMP (required)
   ]
-
+tst_list_parallel = []
 if libtbx.env.build_options.enable_openmp_if_possible:
-  tst_list_parallel = OpenMP_optional + OpenMP_required
+  tst_list_parallel = tst_list_parallel + OpenMP_optional + OpenMP_required
 else:
   tst_list = tst_list + OpenMP_optional
 
+prepend = []
 OPT = libtbx.env.build_options
-if OPT.enable_cuda:
-  tst_list_parallel = [
    # these three tests, break portability after realizing that the spectral dispersion curve
    # comes directly from the nexus master and the expt must be read with check_format=True
+if OPT.enable_cuda:  prepend.append(
    ["$D/adse13_187/cyto_batch.py", "N_total=1", "test_pixel_congruency=True",
     "mosaic_method=double_random",
     "mosaic_spread_samples=50", "write_output=False", "test_without_mpi=True",
-    "log.outdir=mp1",
+    "log.outdir=mp1c",
     "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
-   ],
+    "context=cuda"
+   ])
+if OPT.enable_kokkos:  prepend.append(
+   ["$D/adse13_187/cyto_batch.py", "N_total=1", "test_pixel_congruency=True",
+    "mosaic_method=double_random",
+    "mosaic_spread_samples=50", "write_output=False", "test_without_mpi=True",
+    "log.outdir=mp1k",
+    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+    "context=kokkos_gpu"
+   ])
+if OPT.enable_cuda:  prepend.append(
    ["$D/adse13_187/tst_multipanel_argchk.py", "N_total=1",
-    "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp2",
+    "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp2c",
     "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
-   ],
+    "context=cuda"
+   ])
+if OPT.enable_kokkos:  prepend.append(
+   ["$D/adse13_187/tst_multipanel_argchk.py", "N_total=1",
+    "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp2k",
+    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+    "context=kokkos_gpu"
+   ])
+if OPT.enable_cuda:  prepend.append(
    ["$D/adse13_187/tst_write_file_action.py", "N_total=1",
     "mosaic_method=double_random",
-    "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp3",
+    "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp3c",
     "write_output=False",
     "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
-   ],
-   # this single test is developmental only, not portable, only checks run-without-crash, not results
+    "context=cuda"
+   ])
+if OPT.enable_kokkos:  prepend.append(
+   ["$D/adse13_187/tst_write_file_action.py", "N_total=1",
+    "mosaic_method=double_random",
+    "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp3k",
+    "write_output=False",
+    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+    "context=kokkos_gpu"
+   ])
+# this test pair is developmental only, not portable, only checks run-without-crash, not results:
+if OPT.enable_cuda:  prepend.append(
    ["$D/adse13_187/tst_write_file_action.py", "N_total=1", "write_output=True", "write_experimental_data=True",
-    "mosaic_spread_samples=62", "test_without_mpi=True", "log.outdir=mp4",
+    "mosaic_spread_samples=62", "test_without_mpi=True", "log.outdir=mp4c",
     "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
     "mask_file=/global/cfs/cdirs/m3562/nks/adse13_187/13_221/event_648.mask",
-   ],
+    "context=cuda"
+   ])
+if OPT.enable_kokkos:  prepend.append(
+   ["$D/adse13_187/tst_write_file_action.py", "N_total=1", "write_output=True", "write_experimental_data=True",
+    "mosaic_spread_samples=62", "test_without_mpi=True", "log.outdir=mp4k",
+    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+    "mask_file=/global/cfs/cdirs/m3562/nks/adse13_187/13_221/event_648.mask",
+    "context=kokkos_gpu"
+   ])
+
+if OPT.enable_cuda:
+  prepend = prepend + [
    "$D/adse13_196/tst_gpu_channels.py",
    "$D/adse13_196/revapi/tst_step5_batch_single_process_GPU.py",
-  ] + tst_list_parallel + [
+  ]
+tst_list_parallel = prepend + tst_list_parallel
+if  OPT.enable_cuda:
+  tst_list_parallel = tst_list_parallel + [
   ["$D/tests/tst_cuda_add_spots.py","mono"],
   ["$D/tests/tst_cuda_add_spots.py","poly"],
   # Laue hasn't worked recently, return to the issue later ["$D/tests/tst_cuda_add_spots.py","laue"]

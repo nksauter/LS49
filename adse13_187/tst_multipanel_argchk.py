@@ -106,7 +106,7 @@ def tst_one_monkeypatch(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params)
         show_params=show_params,
         time_panels=time_panels, verbose=verbose,
         spot_scale_override=spot_scale,
-        include_background=include_background)
+        include_background=include_background,context=params.context)
       TIME_EXA = time()-BEG
       jf16m_numpy_array[shapetype]=JF16M_numpy_array
       from_gpu_amplitudes_cuda[shapetype]=TIME_BRAGG
