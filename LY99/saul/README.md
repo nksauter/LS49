@@ -1,8 +1,16 @@
 Planning for the March 2022 LY99 SPREAD data collection.  Develop an entirely new workflow for SPREAD analysis building on the Sauter 2020 and Mendez 2021 papers.  Perform the following steps:
 1. Simulate a 100,000-image dataset, on a Rayonix form factor, with and without a point spread function (PSF).  See [slurm script 918365](./918365.sh).  I will develop the scattering factor analysis first without the PSF, and later consider the PSF.  Also, in order for shot-to-shot spectra to be associated with these simulated images, a special dxtbx.format file [must be installed](../../format). 
 2. Indexing and integration with dials.stills_process, naive, with [script 922530](./922530.sh) and [phil file index_nks](./index_nks.phil).
-3. Due to a half-pixel mismatch between simulated diffraction and metadata, the Level-0 detector position must be refined.  Steps for this are a) dials.combine_experiments <1000 images only>, b) then dials.refine [refine_level0_mcd.phil](./refine_level0_mcd.phil) combined.*, c) inspection of the output to determine the refined beam position.
+3. Due to a half-pixel mismatch between simulated diffraction and metadata, the Level-0 detector position must be refined.  Steps for this are 
+  a) ```dials.combine_experiments ../922530/idx-LY99_MPIbatch_000*.img_refined.expt ../922530/idx-LY99_MPIbatch_000*.img_indexed.refl reference_from_experiment.detector=0``` to combine just 30000 images, 
+  b) then dials.refine [refine_level0_mcd.phil](./refine_level0_mcd.phil) combined.* output.experiments=refined_mcd.expt output.reflections=refined_mcd.refl
+  c) comparison of the input and output with dials.show to determine the refined beam position.
 4. Indexing and integration with dials.stills_process, using the updated detector position, with [script 927185](./927185.sh) and [index_refi.phil](./index_refi.phil).
+5. Unit cell analysis using a covariance model.  Output all unit cells (tdata file) with [script 928005](./928005.sh) and [test_merge.phil](.test_merge.phil).  Then run the covariance analysis with ```uc_metrics.dbscan file_name=928005/ly99sim_30000.tdata space_group=C12/m1 feature_vector=a,b,c eps=0.20 write_covariance=928005.tt metric=L2norm show_plot=True```, ultimately writing the covariance file covariance_ly99sim_30000.pickle.
+6. A conventional merging run with Friedel mates separate, with [script 928123](./928123.sh) and [test_params03.phil](./test_params03.phil). 
+7. A straight run with the [annulus worker](./929171.sh) to determine the integration shoeboxes and number of pixels available for SPREAD. 
+8. An attempt (failed) to refine 10 images with diffBragg stage 1 (as a call to hopper_utils.refine).  In the worker spread_roi.py, comment in the call to ds1.  Then use [this input script, roi_mini.sh](./roi_mini.sh).  Two complaints are a) segfault when refinement of mosaic rotation is commented in, b) divergence from unit cell starting model.  Advise studying the [diffBragg API FAQ](https://github.com/cctbx/cctbx_project/tree/master/simtbx/diffBragg#apifaq) in detail. 
+9. An attempt (in progress) to perform the same refinement with the exascale_api.  In the worker spread_roi.py, comment in the call to exa1.  Then use [this input script, exa_mini.sh](./exa_mini.sh).
 
 Begining Dec. 18, 2021, perform a new simulation with the Rayonix form factor
 ```
