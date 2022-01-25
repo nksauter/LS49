@@ -1,4 +1,6 @@
-Planning for the March 2022 LY99 SPREAD data collection
+Planning for the March 2022 LY99 SPREAD data collection.  Develop an entirely new workflow for SPREAD analysis building on the Sauter 2020 and Mendez 2021 papers.  Perform the following steps:
+1. Simulate a 100,000-image dataset, on a Rayonix form factor, with and without a point spread function.  See [slurm script 918365](./918365.sh).  Note:  I will develop the scattering factor analysis first without the PSF, and later consider the PSF.   
+2. Indexing and integration with dials.stills_process, naive, with [script 922530](./922530.sh).
 
 Begining Dec. 18, 2021, perform a new simulation with the Rayonix form factor
 ```
