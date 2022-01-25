@@ -1,6 +1,8 @@
 Planning for the March 2022 LY99 SPREAD data collection.  Develop an entirely new workflow for SPREAD analysis building on the Sauter 2020 and Mendez 2021 papers.  Perform the following steps:
-1. Simulate a 100,000-image dataset, on a Rayonix form factor, with and without a point spread function.  See [slurm script 918365](./918365.sh).  Note:  I will develop the scattering factor analysis first without the PSF, and later consider the PSF.   
+1. Simulate a 100,000-image dataset, on a Rayonix form factor, with and without a point spread function (PSF).  See [slurm script 918365](./918365.sh).  I will develop the scattering factor analysis first without the PSF, and later consider the PSF.  Also, in order for shot-to-shot spectra to be associated with these simulated images, a special dxtbx.format file [must be installed](../../format). 
 2. Indexing and integration with dials.stills_process, naive, with [script 922530](./922530.sh) and [phil file index_nks](./index_nks.phil).
+3. Due to a half-pixel mismatch between simulated diffraction and metadata, the Level-0 detector position must be refined.  Steps for this are a) dials.combine_experiments <1000 images only>, b) then dials.refine [refine_level0_mcd.phil](./refine_level0_mcd.phil) combined.*, c) inspection of the output to determine the refined beam position.
+4. Indexing and integration with dials.stills_process, using the updated detector position, with [script 927185](./927185.sh) and [index_refi.phil](./index_refi.phil).
 
 Begining Dec. 18, 2021, perform a new simulation with the Rayonix form factor
 ```
