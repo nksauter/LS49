@@ -181,7 +181,7 @@ def multipanel_sim(
     # revisit the allocate cuda for overlap with detector, sync up please
     x = 0 # only one energy channel
     print(type(gpu_simulation), type(gpu_detector))  # debug line till kokkos is sorted
-    if mask_file is "": # all-pixel kernel
+    if mask_file == "": # all-pixel kernel
       P = Profiler("%40s"%"select energy_channel_from_gpu_amplitudes")
       gpu_simulation.add_energy_channel_from_gpu_amplitudes(
       x, Famp, gpu_detector)
