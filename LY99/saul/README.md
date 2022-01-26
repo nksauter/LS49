@@ -6,11 +6,11 @@ Planning for the March 2022 LY99 SPREAD data collection.  Develop an entirely ne
   b) then dials.refine [refine_level0_mcd.phil](./refine_level0_mcd.phil) combined.* output.experiments=refined_mcd.expt output.reflections=refined_mcd.refl
   c) comparison of the input and output with dials.show to determine the refined beam position.
 4. Indexing and integration with dials.stills_process, using the updated detector position, with [index2_927185.sh](./index2_927185.sh) and [index2.phil](./index2.phil).
-5. Unit cell analysis using a covariance model.  Output all unit cells (tdata file) with [script 928005](./928005.sh) and [test_merge.phil](.test_merge.phil).  Then run the covariance analysis with ```uc_metrics.dbscan file_name=928005/ly99sim_30000.tdata space_group=C12/m1 feature_vector=a,b,c eps=0.20 write_covariance=928005.tt metric=L2norm show_plot=True```, ultimately writing the covariance file covariance_ly99sim_30000.pickle.
-6. A conventional merging run with Friedel mates separate, with [script 928123](./928123.sh) and [test_params03.phil](./test_params03.phil). 
-7. A straight run with the [annulus worker](./929171.sh) to determine the integration shoeboxes and number of pixels available for SPREAD. 
-8. An attempt (failed) to refine 10 images with diffBragg stage 1 (as a call to hopper_utils.refine).  In the worker spread_roi.py, comment in the call to ds1.  Then use [this input script, roi_mini.sh](./roi_mini.sh).  Two complaints are a) segfault when refinement of mosaic rotation is commented in, b) divergence from unit cell starting model.  Advise studying the [diffBragg API FAQ](https://github.com/cctbx/cctbx_project/tree/master/simtbx/diffBragg#apifaq) in detail. 
-9. An attempt (in progress) to perform the same refinement with the exascale_api.  In the worker spread_roi.py, comment in the call to exa1.  Then use [this input script, exa_mini.sh](./exa_mini.sh).
+5. Unit cell analysis using a covariance model.  Output all unit cells (tdata file) with [tdata_928007.sh](./tdata_928007.sh).  Then run the covariance analysis with ```uc_metrics.dbscan file_name=928005/ly99sim_30000.tdata space_group=C12/m1 feature_vector=a,b,c eps=0.20 write_covariance=928005.tt metric=L2norm show_plot=True```, ultimately writing the covariance file covariance_ly99sim_30000.pickle.
+6. A conventional merging run with Friedel mates separate, with [merge_928123.sh](./merge_928123.sh). 
+7. A straight run with the [annulus worker](./annulus_929171.sh) to determine the integration shoeboxes and number of pixels available for SPREAD. 
+8. An attempt (failed) to refine 10 images with diffBragg stage 1 (as a call to hopper_utils.refine).  In the worker spread_roi.py, comment in the call to ds1.  Then use this input script: [roi_mini.sh](./roi_mini.sh).  Two complaints are a) segfault when refinement of mosaic rotation is commented in, b) divergence from unit cell starting model.  Advise studying the [diffBragg API FAQ](https://github.com/cctbx/cctbx_project/tree/master/simtbx/diffBragg#apifaq) in detail. 
+9. An attempt (in progress) to perform the same refinement with the exascale_api.  In the worker spread_roi.py, comment in the call to exa1.  Then use this input script: [exa_mini.sh](./exa_mini.sh).
 
 Begining Dec. 18, 2021, perform a new simulation with the Rayonix form factor
 ```
