@@ -1,0 +1,60 @@
+output {
+  composite_output = False
+}
+dispatch {
+  index=True
+  refine=True
+  integrate=True
+}
+mp {
+  method = mpi
+}
+geometry {
+  detector {
+    panel {
+      origin = -169.048 169.049 -141.7
+    }
+  }
+}
+spotfinder {
+  lookup {
+    #mask = "/global/cfs/cdirs/m3562/dwpaley/masks/4more.mask"
+  }
+  filter {
+    min_spot_size = 3
+  }
+  threshold {
+    dispersion {
+      gain = 1.0 # for nanoBragg sim
+      sigma_background=2
+      sigma_strong=2
+      global_threshold=10
+      kernel_size=6 6
+    }
+  }
+  filter.d_min=1.9 # gives 10085=60 spots
+}
+indexing {
+  stills.refine_candidates_with_known_symmetry=True
+  known_symmetry {
+    space_group = "C2"
+    unit_cell = 67.2 59.8 47.2 90 110.2 90
+  }
+}
+integration {
+  background.simple.outlier.plane.n_sigma=10
+  debug.output=True
+  debug.separate_files=False
+  lookup {
+    #mask = "/global/cfs/cdirs/m3562/dwpaley/masks/4more.mask"
+  }
+  summation {
+    detector_gain = 1.0 # for nanoBragg sim
+  }
+}
+profile.gaussian_rs.centroid_definition=com
+#dispatch.pre_import=True # would otherwise import every nanoBragg image in every rank
+#output.composite_output=True
+output.logging_dir=. # demangle by rank
+
+

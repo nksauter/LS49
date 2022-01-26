@@ -1,0 +1,25 @@
+refinement {
+  parameterisation {
+    auto_reduction {
+      min_nref_per_parameter = 3
+      action = fail fix *remove
+    }
+    beam {
+      fix = *all in_spindle_plane out_spindle_plane wavelength
+    }
+    detector {
+      fix_list = Tau
+    }
+  }
+  refinery {
+    engine = *SparseLevMar
+  }
+  reflections {
+    outlier {
+      algorithm = mcd
+      separate_experiments = False
+      separate_panels = False
+    }
+  }
+}
+
