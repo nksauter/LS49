@@ -2,7 +2,6 @@ from __future__ import division
 import os, copy
 from dials.array_family import flex
 from dxtbx.model.experiment_list import ExperimentListFactory
-from matplotlib import pyplot as plt
 import math
 from scipy import constants
 ENERGY_CONV = 1e10*constants.c*constants.h / constants.electron_volt
