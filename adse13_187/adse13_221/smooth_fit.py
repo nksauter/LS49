@@ -118,6 +118,8 @@ class fit_background_one_spot:
     vector_T = flex.double(len(self.SP),self.x[0]) + self.SP*self.x[1] + self.FP*self.x[2] + 0.5*(
            self.SS*self.x[3] + self.SF*self.x[4] + self.FF*self.x[5])
     vector_lambda = vector_T/self.gain
+    if (vector_lambda <= 0).count(True)>0:
+      raise RuntimeError("raising exception to avoid log(value<=0)")
     f = flex.sum(vector_lambda - (self.KI * flex.log(vector_lambda)))
     inner_paren = flex.double(len(self.SP),1.) - (self.KI/vector_lambda)
     g_list = [flex.sum( deriv * inner_paren ) for deriv in
