@@ -1,6 +1,5 @@
 from __future__ import division
 from dxtbx.model.experiment_list import ExperimentListFactory
-import matplotlib.pyplot as plt
 import time
 import numpy as np
 
@@ -34,6 +33,7 @@ def method3(energies_raw, weights_raw):
     baseline = (np.array(range(len(weights_raw)))/len(weights_raw))*(upper-lower)+lower
     real = np.array(list(weights_raw-baseline))
     #from IPython import embed; embed()
+    #import matplotlib.pyplot as plt
     #plt.plot(xrange(len(real)), real, 'r-')
     #plt.show()
     fr = np.fft.rfft(real)
@@ -49,6 +49,7 @@ def method3(energies_raw, weights_raw):
     return fit_x, fit_y, filtered_real
 
 if __name__=="__main__":
+  import matplotlib.pyplot as plt
   exptfile = "/global/cscratch1/sd/nksauter/adse13_187/bernina/split_c/split_%04d.expt"
   init=True
   for idx in range(600,700):
