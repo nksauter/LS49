@@ -188,8 +188,14 @@ class spectra_simulation:
     print ("numpy",np.mean(fitted_energy), "flex",flex.mean(fitted_energy_c))
     return flex.mean(fitted_energy_c)
 
+global_results = None
 class spectrum_simulation: # slim-down class to return only one spectrum per instance
-  def __init__(self, common_data = get_results()):
+  def __init__(self, common_data = None):
+    global global_results
+    if common_data is None:
+      if global_results is None:
+        global_results = get_results() # only read the spectrum pickle once per MPI rank
+      common_data = global_results
     self.R = common_data # pass in get_results() please
 
   def select(self, image):
