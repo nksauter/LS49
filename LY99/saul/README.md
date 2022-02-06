@@ -16,8 +16,11 @@ Planning for the March 2022 LY99 SPREAD data collection.  Develop an entirely ne
     Requires monkeypatches to the platform site-package.
    - [test_product_00](./test_product_00_1385292.sh): The input worker is asked to keep_imagesets but not read_image_headers.  Then test the ability of a downstream worker
     to read spectra and raw data arrays from a newly constructed imageset. The total count
-    reported in the main log should agree with the number of lattices passing the unit cell filter.  Currently FAILS on 100 nodes, 100K images, 3200 ranks, in 3 minutes.
+    reported in the main log should agree with the number of lattices passing the unit cell filter.  Currently FAILS on 100 nodes, 100K images, 3200 ranks, in 3 minutes; and also on 10 nodes, 10K images, 320 ranks.
     Requires monkeypatches to the platform site-package.
+   - [test_product_1](./test_product_1_1385608): The worker defines the set of shoeboxes for subsequent spread analysis, and creates a new bool array
+    in the reflections table to flag these shoeboxes.  RMSD statistics are reported, both for the spread shoeboxes and for the whole set of reflections.
+    This test succeeds on 100 nodes and 100K images.
 9. An attempt (failed) to refine 10 images with diffBragg stage 1 (as a call to hopper_utils.refine).  In the worker spread_roi.py, comment in the call to ds1.  Then use this input script: [roi_mini.sh](./roi_mini.sh).  Two complaints are a) segfault when refinement of mosaic rotation is commented in, b) divergence from unit cell starting model.  Advise studying the [diffBragg API FAQ](https://github.com/cctbx/cctbx_project/tree/master/simtbx/diffBragg#apifaq) in detail. 
 10. An attempt (in progress) to perform the same refinement with the exascale_api.  In the worker spread_roi.py, comment in the call to exa1.  Then use this input script: [exa_mini.sh](./exa_mini.sh).
 
