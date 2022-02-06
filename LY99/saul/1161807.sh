@@ -21,6 +21,8 @@ export DIALS_OUTPUT=${WORK}/927185
 # WITH PSF:
 #export DIALS_OUTPUT=${WORK}/927187
 
+export DIFFBRAGG_USE_BRAGG=1
+
 echo "dispatch.step_list = input balance filter statistics_unitcell model_statistics annulus
 input.path=${DIALS_OUTPUT}
 input.experiments_suffix=.img_integrated.expt
