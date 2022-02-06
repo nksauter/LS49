@@ -1,0 +1,27 @@
+CUDA:
+jobid    nodes    gpus/node    ranks  events  wall  weather  Hz
+822880     1         4           4     32     11.4s   1.37s  2.81
+822895     1         4           4     320    109.0s  1.35s  2.94
+822961     1         4           4     320    108.0s  1.34s  2.96 slurm script in Felix format
+822952     1         4           8     320    94.7s   2.29s  3.38 slurm script in Felix format
+822964     1         4          12     320    79.0s   2.97s  4.05 slurm script in Felix format
+822981     1         4          16     320    77.9s   3.88s  4.11 slurm script in Felix format
+822992    10         4         160    3200    78.3s   3.90s  40.8 slurm script in Felix format
+823036    10         4         160    6400    152.4s  3.77s  42.0 slurm script in Felix format
+823062    10         4         160   12800    300.6s  3.71s  42.6 slurm script in Felix format
+823064    20         4         320   25600    300.9s  3.71s  85.1 slurm script in Felix format
+823070    40         4         640   51200    300.9s  3.71s  170.2 slurm script in Felix format
+823072    80         4        1280  100000    297.0   3.72s  336.7 slurm script in Felix format
+
+KOKKOS:
+827348     1         4           4     32     9.2s    1.13s  3.48
+827350     1         4           4     320    89.1s   1.10s  3.60
+827351     1         4           8     320    55.6s   1.25s  5.76 rate increases toward end
+827353     1         4          12     320    59.3s   2.18s  5.40
+827354     1         4          16     320    59.4s   2.96s  5.39
+827492    10         4          80    3200    58.7s   1.25s  54.5 trailing time ragged / server?
+827497    10         4          80    6400    115.3s  1.25s  55.5 significant raggedness
+827772    10         4          80   12800    207.3s  1.25s  61.7 packed
+827774    20         4         160   25600    208.7s  1.25s  122.7
+827775    40         4         320   51200    250.5s  1.25s  170.2 very bad trailing ragged
+827781    80         4         640  100000    251.3s  1.25s  397.9
