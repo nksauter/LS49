@@ -24,8 +24,8 @@ export CCTBX_NO_UUID=1
 
 echo "dispatch.step_list = input balance filter statistics_unitcell model_statistics annulus
 input.path=${DIALS_OUTPUT}
-input.experiments_suffix=0.img_integrated.expt
-input.reflections_suffix=0.img_integrated.refl
+input.experiments_suffix=.img_integrated.expt
+input.reflections_suffix=.img_integrated.refl
 input.keep_imagesets=True
 input.read_image_headers=True
 input.persistent_refl_cols=shoebox

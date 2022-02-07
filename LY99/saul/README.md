@@ -12,8 +12,8 @@ Planning for the March 2022 LY99 SPREAD data collection.  Develop an entirely ne
 8. A series of regression tests for basic capabilities leading to global parameter refinement.
    - [test_product_0](./test_product_0_1285245.sh): The input worker is asked to keep_imagesets and read_image_headers.  Then simply test the ability of a downstream worker
     to read spectra and raw data arrays from the imageset data. The total count
-    reported in the main log should agree with the number of lattices passing the unit cell filter.  Currently FAILS on 100 nodes, 100K images, 3200 ranks, in 3 minutes.
-    Requires monkeypatches to the platform site-package.
+    reported in the main log should agree with the number of lattices passing the unit cell filter.
+    Currently FAILS on 100 nodes.  Logs only capture 90014 of 97878 images, 1659 of 3200 ranks, in < 3 minutes. No traceback.
    - [test_product_00](./test_product_00_1385292.sh): The input worker is asked to keep_imagesets but not read_image_headers.  Then test the ability of a downstream worker
     to read spectra and raw data arrays from a newly constructed imageset. The total count
     reported in the main log should agree with the number of lattices passing the unit cell filter.  Currently FAILS on 100 nodes, 100K images, 3200 ranks, in 3 minutes; and also on 10 nodes, 10K images, 320 ranks.
