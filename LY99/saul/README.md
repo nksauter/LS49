@@ -16,8 +16,8 @@ Planning for the March 2022 LY99 SPREAD data collection.  Develop an entirely ne
     Currently FAILS on 100 nodes.  Logs only capture 90014 of 97878 images, 1659 of 3200 ranks, in < 3 minutes. No traceback.
    - [test_product_00](./test_product_00_1385292.sh): The input worker is asked to keep_imagesets but not read_image_headers.  Then test the ability of a downstream worker
     to read spectra and raw data arrays from a newly constructed imageset. The total count
-    reported in the main log should agree with the number of lattices passing the unit cell filter.  Currently FAILS on 100 nodes, 100K images, 3200 ranks, in 3 minutes; and also on 10 nodes, 10K images, 320 ranks.
-    Requires monkeypatches to the platform site-package.
+    reported in the main log should agree with the number of lattices passing the unit cell filter.
+    Currently FAILS on 100 nodes.  Logs only capture 90065 of 97878 images, 1674 of 3200 ranks, in < 3 minutes. No traceback.
    - [test_product_1](./test_product_1_1385692): The worker defines the set of shoeboxes for subsequent spread analysis, and creates a new bool array
     in the reflections table to flag these shoeboxes.  RMSD statistics are reported, both for the spread shoeboxes and for the whole set of reflections.
     This test succeeds on 10 nodes, 10K images, but FAILS on 100 nodes and 100K images.
