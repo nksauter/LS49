@@ -5,7 +5,7 @@
 #SBATCH -A m3890_g          # allocation
 #SBATCH -C gpu
 #SBATCH -q early_science    # regular queue
-#SBATCH -t 00:05:00         # wall clock time limit
+#SBATCH -t 00:10:00         # wall clock time limit
 #SBATCH --gpus-per-node 4
 #SBATCH -o job%j.out
 #SBATCH -e job%j.err
@@ -14,6 +14,7 @@ export WORK=$SCRATCH/adse13_249/LY99
 cd $WORK
 
 mkdir -p $SLURM_JOB_ID; cd $SLURM_JOB_ID
+
 export TRIAL=ly99sim
 export OUT_DIR=${PWD}
 # NO PSF:
@@ -50,9 +51,17 @@ merging.d_min=2.1
 statistics.annulus.d_max=2.5
 statistics.annulus.d_min=2.1
 spread_roi.enable=True
+spread_roi.strong=2.0
 output.output_dir=${OUT_DIR}/${TRIAL}
 output.log_level=0 # stdout stderr
-exafel.scenario=00
+exafel.trusted_mask=${WORK}/pixels.mask
+exafel.scenario=2
+exafel.shoebox_border=0
+exafel.context=kokkos_gpu
+exafel.model.plot=False
+exafel.model.Nabc.value=50,50,50
+exafel.debug.lastfiles=False
+exafel.debug.verbose=False
 " > annulus.phil
 
 echo "jobstart $(date)";pwd

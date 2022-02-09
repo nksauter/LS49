@@ -13,14 +13,22 @@ Planning for the March 2022 LY99 SPREAD data collection.  Develop an entirely ne
    - [test_product_0](./test_product_0_1285245.sh): The input worker is asked to keep_imagesets and read_image_headers.  Then simply test the ability of a downstream worker
     to read spectra and raw data arrays from the imageset data. The total count
     reported in the main log should agree with the number of lattices passing the unit cell filter.
-    Currently FAILS on 100 nodes.  Logs only capture 90014 of 97878 images, 1659 of 3200 ranks, in < 3 minutes. No traceback.
+    Currently FAILS on 100 nodes, presumably exceeding the on-node memory.  Logs only capture 90014 of 97878 images, 1659 of 3200 ranks.  No traceback.  We do not have to make this test work, see test 00.
    - [test_product_00](./test_product_00_1385292.sh): The input worker is asked to keep_imagesets but not read_image_headers.  Then test the ability of a downstream worker
     to read spectra and raw data arrays from a newly constructed imageset. The total count
     reported in the main log should agree with the number of lattices passing the unit cell filter.
-    Currently FAILS on 100 nodes.  Logs only capture 90065 of 97878 images, 1674 of 3200 ranks, in < 3 minutes. No traceback.
+    Currently SUCCEEDS on 100 nodes, 100K images, in under 3 minutes.
    - [test_product_1](./test_product_1_1385692.sh): The worker defines the set of shoeboxes for subsequent spread analysis, and creates a new bool array
     in the reflections table to flag these shoeboxes.  RMSD statistics are reported, both for the spread shoeboxes and for the whole set of reflections.
-    This test succeeds with 10 nodes/10K images, and 100 nodes/100K images.
+    This test succeeds in 2m:42s with 100 nodes/100K images.
+   - [test_product_2](./test_product_2_1404150.sh): This worker demonstrates per-spot parameter refinement.
+    It reads the spectrum and pixel data in the downstream worker (with per-image destruction).  It defines
+    the set of shoeboxes for subsequent spread analysis.  It creates a model consisting of the DIALS
+    shoebox plane fit (Rossmann) plus the whitelist monochromatic Bragg simulated in the Kokkos_gpu execution
+    space.  Then it executes a per-spot planar fit to the rectangular shoebox border.  RMSD and Z-score are
+    evaluated before and after.
+    This test succeeds with 10 nodes/10K images (5 min.), and 100 nodes/100K images(7.5 min).
+
 9. An attempt (failed) to refine 10 images with diffBragg stage 1 (as a call to hopper_utils.refine).  In the worker spread_roi.py, comment in the call to ds1.  Then use this input script: [roi_mini.sh](./roi_mini.sh).  Two complaints are a) segfault when refinement of mosaic rotation is commented in, b) divergence from unit cell starting model.  Advise studying the [diffBragg API FAQ](https://github.com/cctbx/cctbx_project/tree/master/simtbx/diffBragg#apifaq) in detail. 
 10. An attempt (in progress) to perform the same refinement with the exascale_api.  In the worker spread_roi.py, comment in the call to exa1.  Then use this input script: [exa_mini.sh](./exa_mini.sh).
 
