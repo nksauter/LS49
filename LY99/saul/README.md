@@ -29,10 +29,10 @@ Planning for the March 2022 LY99 SPREAD data collection.  Develop an entirely ne
     evaluated before and after.
     This test succeeds, but load balancing is an issue:
 
-|    Workers dispatched             | 10 nodes/ 10 K images     | 100 nodes/ 100 K images  |
-|-----------------------------------|---------------------------|--------------------------|
-|using the merge.py balance worker  | 4m:50s, 17-49 images/rank | 7m:30s, 14-52 images/rank|
-|not using the balance worker       | 3m:40s, 28-32 images/rank | 5m:10s, 26-32 images/rank|
+|    Workers dispatched             | 1 node/ 1 K images    |10 nodes/ 10 K images     | 100 nodes/ 100 K images  |
+|-----------------------------------|-----------------------|--------------------------|--------------------------|
+|using the merge.py balance worker  | | 4m:50s, 17-49 images/rank | 7m:30s, 14-52 images/rank|
+|not using the balance worker       | 3m:10s, 30-32 images/rank | 3m:40s, 28-32 images/rank | 5m:10s, 26-32 images/rank|
 
 9. An attempt (failed) to refine 10 images with diffBragg stage 1 (as a call to hopper_utils.refine).  In the worker spread_roi.py, comment in the call to ds1.  Then use this input script: [roi_mini.sh](./roi_mini.sh).  Two complaints are a) segfault when refinement of mosaic rotation is commented in, b) divergence from unit cell starting model.  Advise studying the [diffBragg API FAQ](https://github.com/cctbx/cctbx_project/tree/master/simtbx/diffBragg#apifaq) in detail. 
 10. An attempt (in progress) to perform the same refinement with the exascale_api.  In the worker spread_roi.py, comment in the call to exa1.  Then use this input script: [exa_mini.sh](./exa_mini.sh).
