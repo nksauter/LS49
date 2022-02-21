@@ -38,6 +38,11 @@ Planning for the March 2022 LY99 SPREAD data collection.  Develop an entirely ne
     Shoebox plane fit is optimized, but here it is done as a single LBFGS minimization for the whole
     lattice.  A generic parameter optimizer is prototyped.
     The test succeeds with 10 nodes/10K images (5 min.).
+   - [test_product_3A](./test_product_3A.sh): First demonstration of a lattice-wide optimized
+    parameter, in this case the overall scale factor G. Also, this implements a polychromatic model 
+    instead of a monochromatic approximation, although we still use wavelength-independent structure factors.
+    There is a slight radial r.m.s.d. improvement, polychromatic (0.79 px) vs. DIALS (0.99px).
+    Due to perlmutter degradation, only tested with 1 node, 1K images (13 min).
 
 9. An attempt (failed) to refine 10 images with diffBragg stage 1 (as a call to hopper_utils.refine).  In the worker spread_roi.py, comment in the call to ds1.  Then use this input script: [roi_mini.sh](./roi_mini.sh).  Two complaints are a) segfault when refinement of mosaic rotation is commented in, b) divergence from unit cell starting model.  Advise studying the [diffBragg API FAQ](https://github.com/cctbx/cctbx_project/tree/master/simtbx/diffBragg#apifaq) in detail. 
 10. An attempt (in progress) to perform the same refinement with the exascale_api.  In the worker spread_roi.py, comment in the call to exa1.  Then use this input script: [exa_mini.sh](./exa_mini.sh).
