@@ -5,7 +5,7 @@
 #SBATCH -A m3890_g          # allocation
 #SBATCH -C gpu
 #SBATCH -q early_science    # regular queue
-#SBATCH -t 00:10:00         # wall clock time limit
+#SBATCH -t 00:35:00         # wall clock time limit
 #SBATCH -o job%j.out
 #SBATCH -e job%j.err
 
@@ -26,7 +26,7 @@ input.path=${DIALS_OUTPUT}
 input.experiments_suffix=0000.img_integrated.expt
 input.reflections_suffix=0000.img_integrated.refl
 input.keep_imagesets=True
-input.read_image_headers=True
+input.read_image_headers=False
 input.persistent_refl_cols=shoebox
 input.persistent_refl_cols=bbox
 input.persistent_refl_cols=xyzcal.px
@@ -50,12 +50,14 @@ statistics.annulus.d_max=2.5
 statistics.annulus.d_min=2.1
 spread_roi.enable=True
 spread_roi.strong=2.0
-output.output_dir=${OUT_DIR}/annulus
+output.output_dir=${OUT_DIR}/${TRIAL}
+exafel.scenario=ds1
 diffBragg.fix.detz_shift=True
 diffBragg.fix.eta_abc=False
 diffBragg.logging.other_ranks_level=high
 diffBragg.spectrum_from_imageset = True
 diffBragg.downsamp_spec.skip=True
+diffBragg.simulator.crystal.num_mosaicity_samples=20
 diffBragg.simulator.structure_factors.mtz_name=${WORK}/928123/out/ly99sim_all.mtz
 diffBragg.simulator.structure_factors.mtz_column=IMEAN,SIGIMEAN
 diffBragg.space_group=C2
@@ -65,8 +67,6 @@ diffBragg.refiner.adu_per_photon=1.0
 diffBragg.use_restraints=True
 " > annulus.phil
 # how can I log the minimizer step by step in real time?  It is a complete black box.
-mkdir -p ${OUT_DIR}/${TRIAL}/out
-mkdir -p ${OUT_DIR}/${TRIAL}/tmp
 
 export DIFFBRAGG_USE_CUDA=1
 
