@@ -5,7 +5,7 @@
 #SBATCH -A m3890_g          # allocation
 #SBATCH -C gpu
 #SBATCH -q early_science    # regular queue
-#SBATCH -t 00:20:00         # wall clock time limit
+#SBATCH -t 00:30:00         # wall clock time limit
 #SBATCH --gpus-per-node 4
 #SBATCH -o job%j.out
 #SBATCH -e job%j.err
@@ -22,6 +22,7 @@ export DIALS_OUTPUT=${WORK}/927185
 # WITH PSF:
 #export DIALS_OUTPUT=${WORK}/927187
 export CCTBX_NO_UUID=1
+export DIFFBRAGG_USE_CUDA=1
 
 echo "dispatch.step_list = input filter statistics_unitcell model_statistics annulus
 input.path=${DIALS_OUTPUT}
@@ -63,6 +64,7 @@ exafel.model.mosaic_spread.value=0.08
 exafel.model.Nabc.value=100,100,100
 exafel.debug.lastfiles=False
 exafel.debug.verbose=False
+exafel.skin=True # use diffBragg
 exafel{
   refpar{
     label = *background *G
