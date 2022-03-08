@@ -1,16 +1,16 @@
 export MODULES=$SCRATCH/dials/20220303/alcc-recipes/cctbx/modules
-export CCTBX_DEVICE_PER_NODE=1
+export CCTBX_DEVICE_PER_NODE=4
 source $MODULES/../activate.sh
 
 export LOG_BY_RANK=1 # Use Aaron's rank logger
 export RANK_PROFILE=0 # 0 or 1 Use cProfiler, default 1
-export N_SIM=3 # total number of images to simulate
+export N_SIM=100 # total number of images to simulate
 export ADD_BACKGROUND_ALGORITHM=cuda # always cuda for any GPU
-export DEVICES_PER_NODE=1
+export DEVICES_PER_NODE=4
 export MOS_DOM=1
 rm -r data; mkdir data; pushd data
 echo "jobstart $(date)";pwd
-srun -n 32 libtbx.python $MODULES/LS49/adse13_196/revapi/LY99_batch.py context=kokkos_gpu noise=True psf=False attenuation=True oversample=4
+srun -n 32 -G 4 libtbx.python $MODULES/LS49/adse13_196/revapi/LY99_batch.py context=kokkos_gpu noise=True psf=False attenuation=True oversample=4
 echo "jobend $(date)";pwd
 popd
 
@@ -80,7 +80,7 @@ PROCESSED_DIR=$PWD/dials_out
 export TRIAL=ly99sim
 export CCTBX_NO_UUID=1
 
-echo "dispatch.step_list = input balance filter statistics_unitcell model_statistics annulus
+echo "dispatch.step_list = input filter statistics_unitcell model_statistics annulus
 input.path=${PROCESSED_DIR}
 input.experiments_suffix=.img_integrated.expt
 input.reflections_suffix=.img_integrated.refl
@@ -94,13 +94,13 @@ input.persistent_refl_cols=delpsical.rad
 input.persistent_refl_cols=panel
 input.parallel_file_load.method=uniform
 output.output_dir=out
-scaling.model=/pscratch/sd/d/dwpaley/ly99/pdb/1m2a.pdb #FIXME
+scaling.model=/pscratch/sd/d/dwpaley/ly99/pdb/1m2a.pdb
 scaling.unit_cell=67.2 59.8 47.2 90 110.3 90
 scaling.space_group=C2
 scaling.resolution_scalar=0.993420862158964
 filter.algorithm=unit_cell
 filter.unit_cell.algorithm=cluster
-filter.unit_cell.cluster.covariance.file=/pscratch/sd/d/dwpaley/ly99/cov/covariance_1304534.cells.pickle #FIXME
+filter.unit_cell.cluster.covariance.file=/pscratch/sd/d/dwpaley/ly99/cov/covariance_1304534.cells.pickle
 filter.unit_cell.cluster.covariance.component=0
 filter.unit_cell.cluster.covariance.mahalanobis=4.0
 filter.outlier.min_corr=-1.0
@@ -111,7 +111,7 @@ statistics.annulus.d_min=2.1
 spread_roi.enable=True
 spread_roi.strong=2.0
 output.log_level=0 # stdout stderr
-exafel.trusted_mask=/pscratch/sd/d/dwpaley/ly99/mask/pixels.mask #FIXME
+exafel.trusted_mask=/pscratch/sd/d/dwpaley/ly99/mask/pixels.mask
 exafel.scenario=ds1
 exafel.shoebox_border=0
 exafel.context=kokkos_gpu
@@ -151,7 +151,7 @@ diffBragg {
   simulator {
     oversample=4
     crystal.has_isotropic_ncells = False
-    structure_factors.from_pdb.name=/pscratch/sd/d/dwpaley/ly99/pdb/1m2a.pdb #FIXME
+    structure_factors.from_pdb.name=/pscratch/sd/d/dwpaley/ly99/pdb/1m2a.pdb
     structure_factors.from_pdb.k_sol=0.435
     structure_factors.from_pdb.b_sol=46.0
     init_scale = 1
@@ -178,10 +178,11 @@ diffBragg {
     RotXYZ=[1e-3,1e-3,1e-3]
   }
   fix.detz_shift=True
+  refiner.num_devices=4
 }
 
 " > annulus.phil
 
 echo "jobstart $(date)";pwd
-DIFFBRAGG_USE_CUDA=1 srun -n 1 cctbx.xfel.merge annulus.phil
+DIFFBRAGG_USE_CUDA=1 srun -n 32 -G 4 cctbx.xfel.merge annulus.phil
 echo "jobend $(date)";pwd
