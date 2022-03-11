@@ -7,10 +7,10 @@ export RANK_PROFILE=0 # 0 or 1 Use cProfiler, default 1
 export N_SIM=100 # total number of images to simulate
 export ADD_BACKGROUND_ALGORITHM=cuda # always cuda for any GPU
 export DEVICES_PER_NODE=4
-export MOS_DOM=1
+export MOS_DOM=25
 rm -r data; mkdir data; pushd data
 echo "jobstart $(date)";pwd
-srun -n 32 -G 4 libtbx.python $MODULES/LS49/adse13_196/revapi/LY99_batch.py context=kokkos_gpu noise=True psf=False attenuation=True oversample=4
+srun -n 32 -G 4 libtbx.python $MODULES/LS49/adse13_196/revapi/LY99_batch.py context=kokkos_gpu noise=True psf=False attenuation=True oversample=1
 echo "jobend $(date)";pwd
 popd
 
@@ -179,6 +179,7 @@ diffBragg {
   }
   fix.detz_shift=True
   refiner.num_devices=4
+  logging.log_refined_params=True
 }
 
 " > annulus.phil
