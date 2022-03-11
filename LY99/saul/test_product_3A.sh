@@ -5,7 +5,7 @@
 #SBATCH -A m3890_g          # allocation
 #SBATCH -C gpu
 #SBATCH -q early_science    # regular queue
-#SBATCH -t 00:30:00         # wall clock time limit
+#SBATCH -t 00:05:00         # wall clock time limit
 #SBATCH --gpus-per-node 4
 #SBATCH -o job%j.out
 #SBATCH -e job%j.err
@@ -61,10 +61,12 @@ exafel.shoebox_border=0
 exafel.context=kokkos_gpu
 exafel.model.plot=False
 exafel.model.mosaic_spread.value=0.08
-exafel.model.Nabc.value=100,100,100
+exafel.model.Nabc.value=72,72,72
 exafel.debug.lastfiles=False
 exafel.debug.verbose=False
-exafel.skin=True # use diffBragg
+exafel.debug.finite_diff=-1
+exafel.debug.eps=1.e-8
+exafel.skin=False # whether to use diffBragg
 exafel{
   refpar{
     label = *background *G
@@ -82,5 +84,5 @@ exafel{
 " > annulus.phil
 
 echo "jobstart $(date)";pwd
-srun -n 32 -c 2 cctbx.xfel.merge annulus.phil
+CCTBX_GPUS_PER_NODE=4 srun -n 32 -c 2 cctbx.xfel.merge annulus.phil
 echo "jobend $(date)";pwd

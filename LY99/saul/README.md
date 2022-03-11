@@ -42,7 +42,7 @@ Planning for the March 2022 LY99 SPREAD data collection.  Develop an entirely ne
     parameter, in this case the overall scale factor G. Also, this implements a polychromatic model 
     instead of a monochromatic approximation, although we still use wavelength-independent structure factors.
     There is a slight radial r.m.s.d. improvement, polychromatic (0.79 px) vs. DIALS (0.99px).
-    Due to perlmutter degradation, only tested with 1 node, 1K images (13 min).
+    Due to perlmutter degradation, only tested with 1 node, 1K images (4 min).
 
 9. An attempt (failed) to refine 10 images with diffBragg stage 1 (as a call to hopper_utils.refine).  Use this input script: [roi_mini.sh](./roi_mini.sh).  Two complaints are a) commenting in mosaic rotation still does not seem to refine the mosaicity, b) rmsd in pixels worsens compared to the DIALS model.  Advise studying the [diffBragg API FAQ](https://github.com/cctbx/cctbx_project/tree/master/simtbx/diffBragg#apifaq) in detail.
 10. An attempt (in progress) to perform the same refinement with the exascale_api.  In the worker spread_roi.py, comment in the call to exa1.  Then use this input script: [exa_mini.sh](./exa_mini.sh).
