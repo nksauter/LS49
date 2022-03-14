@@ -1,4 +1,7 @@
 from __future__ import division
+
+import os
+
 from libtbx import test_utils
 import libtbx.load_env
 
@@ -31,65 +34,69 @@ prepend = []
 OPT = libtbx.env.build_options
    # these three tests, break portability after realizing that the spectral dispersion curve
    # comes directly from the nexus master and the expt must be read with check_format=True
-if OPT.enable_cuda:  prepend.append(
-   ["$D/adse13_187/cyto_batch.py", "N_total=1", "test_pixel_congruency=True",
-    "mosaic_method=double_random",
-    "mosaic_spread_samples=50", "write_output=False", "test_without_mpi=True",
-    "log.outdir=mp1c",
-    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
-    "context=cuda"
-   ])
-if OPT.enable_kokkos:  prepend.append(
-   ["$D/adse13_187/cyto_batch.py", "N_total=1", "test_pixel_congruency=True",
-    "mosaic_method=double_random",
-    "mosaic_spread_samples=50", "write_output=False", "test_without_mpi=True",
-    "log.outdir=mp1k",
-    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
-    "context=kokkos_gpu"
-   ])
-if OPT.enable_cuda:  prepend.append(
-   ["$D/adse13_187/tst_multipanel_argchk.py", "N_total=1",
-    "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp2c",
-    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
-    "context=cuda"
-   ])
-if OPT.enable_kokkos:  prepend.append(
-   ["$D/adse13_187/tst_multipanel_argchk.py", "N_total=1",
-    "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp2k",
-    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
-    "context=kokkos_gpu"
-   ])
-if OPT.enable_cuda:  prepend.append(
-   ["$D/adse13_187/tst_write_file_action.py", "N_total=1",
-    "mosaic_method=double_random",
-    "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp3c",
-    "write_output=False",
-    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
-    "context=cuda"
-   ])
-if OPT.enable_kokkos:  prepend.append(
-   ["$D/adse13_187/tst_write_file_action.py", "N_total=1",
-    "mosaic_method=double_random",
-    "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp3k",
-    "write_output=False",
-    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
-    "context=kokkos_gpu"
-   ])
-# this test pair is developmental only, not portable, only checks run-without-crash, not results:
-if OPT.enable_cuda:  prepend.append(
-   ["$D/adse13_187/tst_write_file_action.py", "N_total=1", "write_output=True", "write_experimental_data=True",
-    "mosaic_spread_samples=62", "test_without_mpi=True", "log.outdir=mp4c",
-    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
-    "mask_file=/global/cfs/cdirs/m3562/nks/adse13_187/13_221/event_648.mask",
-    "context=cuda"
-   ])
-if OPT.enable_kokkos:  prepend.append(
-   ["$D/adse13_187/tst_write_file_action.py", "N_total=1", "write_output=True", "write_experimental_data=True",
-    "mosaic_spread_samples=62", "test_without_mpi=True", "log.outdir=mp4k",
-    "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
-    "mask_file=/global/cfs/cdirs/m3562/nks/adse13_187/13_221/event_648.mask",
-    "context=kokkos_gpu"
-   ])
+
+# check if /global exists before adding tests that depend on files in /global
+if os.path.isdir('/global'):
+  if OPT.enable_cuda:  prepend.append(
+    ["$D/adse13_187/cyto_batch.py", "N_total=1", "test_pixel_congruency=True",
+      "mosaic_method=double_random",
+      "mosaic_spread_samples=50", "write_output=False", "test_without_mpi=True",
+      "log.outdir=mp1c",
+      "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+      "context=cuda"
+    ])
+  if OPT.enable_kokkos:  prepend.append(
+    ["$D/adse13_187/cyto_batch.py", "N_total=1", "test_pixel_congruency=True",
+      "mosaic_method=double_random",
+      "mosaic_spread_samples=50", "write_output=False", "test_without_mpi=True",
+      "log.outdir=mp1k",
+      "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+      "context=kokkos_gpu"
+    ])
+  if OPT.enable_cuda:  prepend.append(
+    ["$D/adse13_187/tst_multipanel_argchk.py", "N_total=1",
+      "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp2c",
+      "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+      "context=cuda"
+    ])
+  if OPT.enable_kokkos:  prepend.append(
+    ["$D/adse13_187/tst_multipanel_argchk.py", "N_total=1",
+      "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp2k",
+      "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+      "context=kokkos_gpu"
+    ])
+  if OPT.enable_cuda:  prepend.append(
+    ["$D/adse13_187/tst_write_file_action.py", "N_total=1",
+      "mosaic_method=double_random",
+      "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp3c",
+      "write_output=False",
+      "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+      "context=cuda"
+    ])
+  if OPT.enable_kokkos:  prepend.append(
+    ["$D/adse13_187/tst_write_file_action.py", "N_total=1",
+      "mosaic_method=double_random",
+      "mosaic_spread_samples=50", "test_without_mpi=True", "log.outdir=mp3k",
+      "write_output=False",
+      "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+      "context=kokkos_gpu"
+    ])
+  # this test pair is developmental only, not portable, only checks run-without-crash, not results:
+  if OPT.enable_cuda:  prepend.append(
+    ["$D/adse13_187/tst_write_file_action.py", "N_total=1", "write_output=True", "write_experimental_data=True",
+      "mosaic_spread_samples=62", "test_without_mpi=True", "log.outdir=mp4c",
+      "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+      "mask_file=/global/cfs/cdirs/m3562/nks/adse13_187/13_221/event_648.mask",
+      "context=cuda"
+    ])
+  if OPT.enable_kokkos:  prepend.append(
+    ["$D/adse13_187/tst_write_file_action.py", "N_total=1", "write_output=True", "write_experimental_data=True",
+      "mosaic_spread_samples=62", "test_without_mpi=True", "log.outdir=mp4k",
+      "nxmx_local_data=/global/cfs/cdirs/m3562/der/master_files/run_000795.JF07T32V01_master.h5",
+      "mask_file=/global/cfs/cdirs/m3562/nks/adse13_187/13_221/event_648.mask",
+      "context=kokkos_gpu"
+    ])
+# end tests that depend on files in /global
 
 if OPT.enable_cuda:
   prepend = prepend + [
