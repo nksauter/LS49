@@ -56,6 +56,8 @@ Planning for the March 2022 LY99 SPREAD data collection.  Develop an entirely ne
      As implemented, it refines the G-scale factor, orientation, unit cell, and Ncells_abc.  Mosaic spread eta is fixed at the
      ground truth value (if phil flag is set to refine eta, results diverge slightly). More information about diffBragg:
      [diffBragg API FAQ](https://github.com/cctbx/cctbx_project/tree/master/simtbx/diffBragg#apifaq).
+     Radial r.m.s.d. improvement here is polychromatic (0.79 px) vs. DIALS (0.99px).  Wall time for 8 nodes, 1K images is 16 min
+     with 64 ranks.
 
 10. An attempt (in progress) to perform the same refinement with the exascale_api.  In the worker spread_roi.py, comment in the call to exa1.  Then use this input script: [exa_mini.sh](./exa_mini.sh).
 
