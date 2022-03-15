@@ -1,11 +1,12 @@
 #!/bin/bash -l
-#SBATCH -N 1                # Number of nodes
+#SBATCH -N 8                # Number of nodes
 #SBATCH -J roi
 #SBATCH -L SCRATCH          # job requires SCRATCH files
 #SBATCH -A m3890_g          # allocation
 #SBATCH -C gpu
 #SBATCH -q early_science    # regular queue
-#SBATCH -t 00:35:00         # wall clock time limit
+#SBATCH -t 00:30:00         # wall clock time limit
+#SBATCH --gpus-per-node 4
 #SBATCH -o job%j.out
 #SBATCH -e job%j.err
 
@@ -20,11 +21,15 @@ export OUT_DIR=${PWD}
 export DIALS_OUTPUT=${WORK}/927185
 # WITH PSF:
 #export DIALS_OUTPUT=${WORK}/927187
+export CCTBX_NO_UUID=1
+export DIFFBRAGG_USE_CUDA=1
+export CCTBX_DEVICE_PER_NODE=4
+export CCTBX_GPUS_PER_NODE=4
 
 echo "dispatch.step_list = input balance filter statistics_unitcell model_statistics annulus
 input.path=${DIALS_OUTPUT}
-input.experiments_suffix=0000.img_integrated.expt
-input.reflections_suffix=0000.img_integrated.refl
+input.experiments_suffix=00.img_integrated.expt
+input.reflections_suffix=00.img_integrated.refl
 input.keep_imagesets=True
 input.read_image_headers=False
 input.persistent_refl_cols=shoebox
@@ -51,10 +56,14 @@ statistics.annulus.d_min=2.1
 spread_roi.enable=True
 spread_roi.strong=2.0
 output.output_dir=${OUT_DIR}/${TRIAL}
+output.log_level=0 # stdout stderr
+exafel.trusted_mask=${WORK}/pixels.mask
 exafel.scenario=ds1
 diffBragg.fix.detz_shift=True
-diffBragg.fix.eta_abc=False
+diffBragg.fix.eta_abc=True
+diffBragg.logging.rank0_level=high
 diffBragg.logging.other_ranks_level=high
+diffBragg.logging.log_refined_params=True
 diffBragg.spectrum_from_imageset = True
 diffBragg.downsamp_spec.skip=True
 diffBragg.simulator.crystal.num_mosaicity_samples=20
@@ -64,12 +73,53 @@ diffBragg.space_group=C2
 diffBragg.method=L-BFGS-B
 diffBragg.simulator.oversample=1
 diffBragg.refiner.adu_per_photon=1.0
-diffBragg.use_restraints=True
-" > annulus.phil
-# how can I log the minimizer step by step in real time?  It is a complete black box.
+diffBragg.use_restraints=False
 
-export DIFFBRAGG_USE_CUDA=1
+diffBragg {
+  no_Nabc_scale=False
+  roi {
+    shoebox_size=12
+    fit_tilt=True
+    fit_tilt_using_weights = False
+    hotpixel_mask = None
+    reject_edge_reflections = False
+    reject_roi_with_hotpix = False
+    pad_shoebox_for_background_estimation=10
+    mask_outside_trusted_range=True
+  }
+  refiner {
+    adu_per_photon = 1
+    sigma_r=3
+  }
+  simulator {
+    crystal.has_isotropic_ncells = False
+    init_scale = 1
+    beam.size_mm = 0.001
+    detector.force_zero_thickness = True
+  }
+  init {
+    Nabc=[72,72,72]
+    eta_abc=[0.08,0.08,0.08]
+    G=100
+  }
+  mins {
+    Nabc=[3,3,3]
+    detz_shift=-1.5
+    RotXYZ=[-15,-15,-15]
+    G=0
+  }
+  maxs {
+    RotXYZ=[15,15,15]
+    Nabc=[1600,1600,1600]
+    G=1e12
+    detz_shift=1.5
+  }
+  sigmas {
+    RotXYZ=[1e-3,1e-3,1e-3]
+  }
+}
+" > annulus.phil
 
 echo "jobstart $(date)";pwd
-srun -n 1 -c 2 cctbx.xfel.merge annulus.phil
+srun -n 64 cctbx.xfel.merge annulus.phil
 echo "jobend $(date)";pwd

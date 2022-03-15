@@ -52,8 +52,11 @@ Planning for the March 2022 LY99 SPREAD data collection.  Develop an entirely ne
    - [test_product_4](./test_product_4.sh): Refinement of G scale-factor and crystal rotation.
     Radial r.m.s.d. improvement is now polychromatic (0.72 px) vs. DIALS (0.99px).  Wall time for 4 nodes, 1K images is 100 min
     with 32 ranks.
+   - [DiffBragg stage 1, roi_mini.sh](./roi_mini.sh): Refine images with diffBragg stage 1 (as a call to hopper_utils.refine).
+     As implemented, it refines the G-scale factor, orientation, unit cell, and Ncells_abc.  Mosaic spread eta is fixed at the
+     ground truth value (if phil flag is set to refine eta, results diverge slightly). More information about diffBragg:
+     [diffBragg API FAQ](https://github.com/cctbx/cctbx_project/tree/master/simtbx/diffBragg#apifaq).
 
-9. An attempt (failed) to refine 10 images with diffBragg stage 1 (as a call to hopper_utils.refine).  Use this input script: [roi_mini.sh](./roi_mini.sh).  Two complaints are a) commenting in mosaic rotation still does not seem to refine the mosaicity, b) rmsd in pixels worsens compared to the DIALS model.  Advise studying the [diffBragg API FAQ](https://github.com/cctbx/cctbx_project/tree/master/simtbx/diffBragg#apifaq) in detail.
 10. An attempt (in progress) to perform the same refinement with the exascale_api.  In the worker spread_roi.py, comment in the call to exa1.  Then use this input script: [exa_mini.sh](./exa_mini.sh).
 
 Begining Dec. 18, 2021, perform a new simulation with the Rayonix form factor
