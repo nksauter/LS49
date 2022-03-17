@@ -26,7 +26,7 @@ export DIFFBRAGG_USE_CUDA=1
 export CCTBX_DEVICE_PER_NODE=4
 export CCTBX_GPUS_PER_NODE=4
 
-echo "dispatch.step_list = input balance filter statistics_unitcell model_statistics annulus
+echo "dispatch.step_list = input filter statistics_unitcell model_statistics annulus statistics_unitcell
 input.path=${DIALS_OUTPUT}
 input.experiments_suffix=00.img_integrated.expt
 input.reflections_suffix=00.img_integrated.refl
