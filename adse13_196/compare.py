@@ -34,9 +34,9 @@ def parse_input():
   help_message = '''ADSE13-196.'''
   usage = ""
   '''Initialize the script.'''
-  from dials.util.options import OptionParser
+  from dials.util.options import ArgumentParser
   # Create the parser
-  parser = OptionParser(
+  parser = ArgumentParser(
         usage=usage,
         phil=phil_scope,
         epilog=help_message)

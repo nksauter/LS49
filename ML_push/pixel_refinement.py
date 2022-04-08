@@ -213,9 +213,9 @@ class MPI_Run(object):
       self.parser = None
 
       '''Initialize the script.'''
-      from dials.util.options import OptionParser
+      from dials.util.options import ArgumentParser
       # Create the parser
-      self.parser = OptionParser(
+      self.parser = ArgumentParser(
         usage=self.usage,
         phil=phil_scope,
         epilog=help_message)
