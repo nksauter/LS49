@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import iotbx.phil
-from dials.util.options import OptionParser, flatten_datablocks
+from dials.util.options import ArgumentParser, flatten_datablocks
 from libtbx.utils import Sorry
 from scitbx.array_family import flex
 
@@ -147,7 +147,7 @@ def run(args):
   from libtbx.utils import Sorry
   usage = "%s [options] datablock.json" %libtbx.env.dispatcher_name
 
-  parser = OptionParser(
+  parser = ArgumentParser(
     usage=usage,
     phil=phil_scope,
     read_datablocks=True,

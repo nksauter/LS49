@@ -172,9 +172,9 @@ def parse_input():
 run where Stage 1 parameters are fit.
 """
   usage = ""
-  from dials.util.options import OptionParser
+  from dials.util.options import ArgumentParser
   # Create the parser
-  parser = OptionParser(usage=usage, phil=phil_scope, epilog=help_message)
+  parser = ArgumentParser(usage=usage, phil=phil_scope, epilog=help_message)
 
   # Parse the command line. quick_parse is required for MPI compatibility
   params, options = parser.parse_args(show_diff_phil=True,quick_parse=True)

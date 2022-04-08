@@ -409,9 +409,9 @@ the dials crystal model, and the reindexed & curated strong spots.
 Results can be viewed with dials.image_viewer <token>_%%%.hdf5 mask=<token>_%%%.mask
 """
   usage = ""
-  from dials.util.options import OptionParser
+  from dials.util.options import ArgumentParser
   # Create the parser
-  parser = OptionParser(usage=usage, phil=phil_scope, epilog=help_message)
+  parser = ArgumentParser(usage=usage, phil=phil_scope, epilog=help_message)
 
   # Parse the command line. quick_parse is required for MPI compatibility
   params, options = parser.parse_args(show_diff_phil=True,quick_parse=True)
