@@ -383,6 +383,10 @@ def tst_one(i_exp,spectra,Fmerge,gpu_channels_singleton,rank,params):
             for pid in pids_for_rank}
     TIME_BG2 = time()-TIME_BG2
 
+    if params.context != "cuda":
+      return # can't test the legacy cuda reference calculation arising from
+             # sim_data.py _add_nanoBragg_spots.  Future: if needed, can be
+             # coerced to use the SimData.using_omp flag.
     TIME_BRAGG2 = time()
     pid_and_pdata = utils.flexBeam_sim_colors(
       CRYSTAL=crystal, DETECTOR=detector, BEAM=beam,
