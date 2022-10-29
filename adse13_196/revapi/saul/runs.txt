@@ -25,3 +25,11 @@ KOKKOS:
 827774    20         4         160   25600    208.7s  1.25s  122.7
 827775    40         4         320   51200    250.5s  1.25s  170.2 very bad trailing ragged
 827781    80         4         640  100000    251.3s  1.25s  397.9
+
+10/28/22, Perlutter, kokkos, pscratch
+3515635    1         1           1     195    204.9s  1.05s  0.97  best performance
+3515637    1         4           8    1562    319.5s  1.20s  4.89  but large inactive periods at rank-random positions
+3516494    8         4          64   12500    262.1s  1.21s  47.7  mostly well packed weather plot
+3519724   80         4         640  100000    275.5s  1.21s  362.9  fragmented weather at aligned time points
+Repeat with no file writes:
+3519794   80         4         640  100000    385.8s  1.38s  less latency to hide, so median weather time is longer
