@@ -1,7 +1,7 @@
 from __future__ import division, print_function
 from scitbx.array_family import flex
-from six.moves import range
 from libtbx.math_utils import round2
+from scipy.interpolate import CubicSpline
 
 class csv:
   def __init__(self):
@@ -43,11 +43,18 @@ class george_sherrell:
         self.energy.append(tokens[0])
         self.fp.append(tokens[1])
         self.fdp.append(tokens[2])
+    self.fp_spline = CubicSpline(self.energy, self.fp)
+    self.fdp_spline = CubicSpline(self.energy, self.fdp)
   def fp_fdp_at_wavelength(self,angstroms):
     lookup_energy = round2(12398.425/angstroms,0)
-    lookup_idx = list(self.energy).index(lookup_energy)
-    return self.fp[lookup_idx], self.fdp[lookup_idx]
-  def plot_them(self,plt,f1,f2):
+    try:
+      lookup_idx = list(self.energy).index(lookup_energy)
+      return self.fp[lookup_idx], self.fdp[lookup_idx]
+    except ValueError as v:
+      #patch in a cubic spline in case the value isn't present explicitly
+      unrounded_energy = 12398.425/angstroms
+      return float(self.fp_spline(unrounded_energy)), float(self.fdp_spline(unrounded_energy))
+  def plot_them(self,plt,f1="b-",f2="r-"):
     plt.plot(self.energy, self.fp, f1)
     plt.plot(self.energy, self.fdp, f2)
 
