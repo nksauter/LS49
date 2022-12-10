@@ -1,4 +1,6 @@
 from __future__ import division, print_function
+from scipy import constants
+ENERGY_CONV = 1e10 * constants.c * constants.h / constants.electron_volt
 
 def hisym_fcalc_from_pdb(resolution,pdb_text,algorithm=None,wavelength=0.9):
   from iotbx import pdb
@@ -142,13 +144,13 @@ class gen_fmodel(object):
         newfp,newfdp = tables.fp_fdp_at_wavelength(angstroms=newvalue)
         if verbose:
           print("found",sc.element_symbol(),"label",sc.label, end=' ')
-          lookup_energy=12398.425/newvalue
+          lookup_energy=ENERGY_CONV/newvalue
           print(lookup_energy, end=' ')
           print("old",sc.fp,sc.fdp,"new",newfp,newfdp)
         sc.fp = newfp
         sc.fdp = newfdp
   def reset_specific_at_energy(self,label_has,tables,newvalue,verbose=False):
-    wavelength = 12398.425/newvalue
+    wavelength = ENERGY_CONV/newvalue
     self.reset_specific_at_wavelength(label_has,tables,wavelength,verbose)
   def get_fmodel(self):
     import mmtbx
