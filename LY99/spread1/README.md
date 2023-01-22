@@ -61,11 +61,25 @@ index 3404842c5b..54678d568e 100644
      # Do the work
  ```
 
-#### Known issues
+#### Known issues and bugs
  - An earlier execution of the same exact script finished in 40 minutes (on an earlier alcc-recipes build).
- 
-#### Scientific next steps
+ - The current macrocycle implementation in sw1.py duplicates code; macrocycles 1-3 are unrolled.  Presumably this could be
+a while loop.
+ - There is a matplotlib warning (about memory consumption) in out/rank_0.err.  Code should be redesigned and warning
+eliminated.
+ - There is a silent Kokkos error that kills the job (used to be verbose in a previous build).  Presumably in kokkos_finalize.
+Must be fixed eventually; error is encountered near the end, after results are output.
+
+#### Scientific next steps & controls
  - Add an additional 3000 lattices from shift 3.
+ - Refine the PDB model against the LY99 merged data (with PHENIX) so that the Fcalc's are exactly consistent with 
+the unit cell used for SPREAD.
+ - Said Phenix refinement should allow ADPs for all metals, and refine the Fe scattering factors.
+ - Positive control: Now that we have the entire workflow, run it on the simulated data to see if we can refine scattering
+factors.  Do this as a function of lattice count and energy granularity to see where the breaking point is.
+ - Negative control: Miller index permutation
+ - Negative control: Shuffle the energy channels
+ - Sensible spot recruitment is an important next step
 
 #### Implementation of new feature: Kramers-Kronig restraints
  - Summary: Provide a phil-based option to remove the Sauter (2020) restraints on 𝚫f′ and 𝚫f″, replacing them with 
@@ -78,4 +92,27 @@ index 3404842c5b..54678d568e 100644
  - Presumably a new function would be implemented to restrain 𝚫f′ and 𝚫f″ to each other.  The existing code serves as a working
  example explaining what the return values are (f = loss term; g1 = flex.double of the gradient of the loss term with respect
  to each scattering factor parameter), and how the return values are unpacked and fed into the minimizer.
+ - A great approach would be to work out a unit test first, then actually implement the code.
+   - The test would simulate f″ based on a very simple model of the K-edge.
+   - Then use the dispersion relations to calculate f′.
+   - Then sample both of these curves with Gaussian noise to simulate experimental measurement of the two curves.
+   - Then develop a restraint model, and optimize the parameters.  Presumably use automatic differentiation for first-derivatives.
+   - Compare the optimized model to the initial ground truth (and pass the test based on a tolerance). Show result in matplotlib.
  
+#### Generalization of the code for photosystem II
+ - As currently written the program will run out of memory due to the size of the structure factor table.  Total structure factor
+ count scales linearly with a) unit cell volume, b) volume of the reciprocal space annulus requested, and c) the number of energy 
+ channels analyzed for scattering factors. Also d) the number of metal classes analyzed (2 Fe for MMO, 4 Mn for PSII).
+   - Breaking examples could be worked out with LY99/MMO to help redesign the code.
+   - A leading candidate is to compute the wavelength-dependent 𝚫F directly in GPU memory (saving time) and possibly on the fly 
+ (condensing the memory usage).  But all the details still need to be worked out. 
+   - An initial PSII run might work if limited to low resolution (8Å) and very granular energy (8 eV).
+ - Somehow we need to create a framework for parsing the PDB that is aware of the metal sites.  
+   - For example, MMO Fe sites are 601 and 602.
+   - We could analyze the data using 601 and 602 as different classes, or both in the same class.
+   - For the four Mn atoms in PSII, we could treat the NCS monomers as being in the same class or a different class.
+   - What code should be provided to parse these cases, how should we switch options using phil, and what hooks should be provided
+ to the main code (which doesn't know the details of every structure)?  Presumably a Python class object whose data contains 
+ information about the metals, and which is specialized for every use case.
+   - The current code (labels=601, labels=602) needs to be generalized (labels=601,602).
+   - The class would have to set it own preset_starting_model.
