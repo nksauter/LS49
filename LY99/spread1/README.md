@@ -80,6 +80,8 @@ factors.  Do this as a function of lattice count and energy granularity to see w
  - Negative control: Miller index permutation
  - Negative control: Shuffle the energy channels
  - Sensible spot recruitment is an important next step
+ - Implement the "last files" *.h5 image output, to verify that the final Bragg spot model with scattering factors lines
+      up with experiment.
 
 #### Implementation of new feature: Kramers-Kronig restraints
  - Summary: Provide a phil-based option to remove the Sauter (2020) restraints on 𝚫f′ and 𝚫f″, replacing them with 
