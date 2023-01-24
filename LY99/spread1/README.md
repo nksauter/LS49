@@ -3,7 +3,13 @@
 Development of an entirely new workflow, building on the Sauter 2020 and Mendez 2021 papers. 
 <list of computational steps will be added here>
 
-### 1. Prepare model structure factors.
+### 1. Exa3A.  Run the exa3A script again with energy channel count narrowed from 2048 to 256.
+
+Using diffBragg first derivatives to refine crystal rotation; also refine background and G-scale.
+
+Run [slurm script, 3724210.sh](./3724210.sh). Resulting model (.expt) and data (.refl) are used for the next step.
+
+### 2. Prepare model structure factors.
 
 Cache the base structure factors to a pickle file to speed up the run time 
 of the S1 final step.  This [slurm script, 3762323.sh](./3762323.sh) will compute reference structure factors, write them to 
@@ -31,7 +37,7 @@ The following are calculated:
  A large file (e.g. 25 MB) with one item:
  A cctbx.miller_array with complex structure factors in P1 (Fmodel) calculated at the lowest energy channel.
 ```
-### 2. S1. Final step of scattering factor refinement.
+### 3. S1. Final step of scattering factor refinement.
 
 This [slurm script, 4709418.sh](./4709418.sh) will refine scattering factors for two
 independent Fe sites on a 4 eV grid spanning the K-edge. 
