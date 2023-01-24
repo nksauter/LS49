@@ -8,7 +8,7 @@ Development of an entirely new workflow, building on the Sauter 2020 and Mendez 
 Cache the base structure factors to a pickle file to speed up the run time 
 of the S1 final step.  This [slurm script, 3762323.sh](./3762323.sh) will compute reference structure factors, write them to 
 pickle, and then go ahead with the "S1" final step listed below.  The rationale is that the reference structure factors are
-very time intensive.  They can be computed once and re-used for repeat trials of S1.  The following phil parameters are
+somewhat time intensive.  They can be computed once and re-used for repeat trials of S1.  The following phil parameters are
 specific to an instance of writing structure factors:
 ```
 exafel.static_fcalcs.path=$WORK/reference/mmo_static_fcalcs.pickle
@@ -18,7 +18,19 @@ exafel.debug.format_offset=0
 exafel.debug.energy_offset_eV=0
 exafel.debug.energy_stride_eV=4.00 # new structure factors must be calculated if the stride changes
 ```
+The following are calculated:
+```
+...path = *_static_fcalcs.pickle: 
+ An extremely large file (e.g. 600 MB) with two items 
+ 1. A flex.miller_index array covering P1 in the chosen resolution range
+ 2. A flex.complex_double array of structure factors keyed to the Miller indices H.
+    The columns are F_H(energy, n_channels) for F(bulk) + F(non-metal atoms). Thus this is
+    the energy-dependent portion of the calculation not dependent on the metal model.
 
+...whole_path = *_miller_array.pickle:
+ A large file (e.g. 25 MB) with one item:
+ A cctbx.miller_array with complex structure factors in P1 (Fmodel) calculated at the lowest energy channel.
+```
 ### 2. S1. Final step of scattering factor refinement.
 
 This [slurm script, 4709418.sh](./4709418.sh) will refine scattering factors for two
