@@ -6,7 +6,18 @@ Development of an entirely new workflow, building on the Sauter 2020 and Mendez 
 ### 1. Prepare model structure factors.
 
 Cache the base structure factors to a pickle file to speed up the run time 
-of the S1 final step.  Script will be checked in soon.
+of the S1 final step.  This [slurm script, 3762323.sh](./3762323.sh) will compute reference structure factors, write them to 
+pickle, and then go ahead with the "S1" final step listed below.  The rationale is that the reference structure factors are
+very time intensive.  They can be computed once and re-used for repeat trials of S1.  The following phil parameters are
+specific to an instance of writing structure factors:
+```
+exafel.static_fcalcs.path=$WORK/reference/mmo_static_fcalcs.pickle
+exafel.static_fcalcs.whole_path=$WORK/reference/mmo_miller_array.pickle
+exafel.static_fcalcs.action=write
+exafel.debug.format_offset=0
+exafel.debug.energy_offset_eV=0
+exafel.debug.energy_stride_eV=4.00 # new structure factors must be calculated if the stride changes
+```
 
 ### 2. S1. Final step of scattering factor refinement.
 
