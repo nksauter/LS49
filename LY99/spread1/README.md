@@ -3,13 +3,45 @@
 Development of an entirely new workflow, building on the Sauter 2020 and Mendez 2021 papers. 
 <list of computational steps will be added here>
 
-### 1. Exa3A.  Run the exa3A script again with energy channel count narrowed from 2048 to 256.
+### 1. Grid search on mosaic parameters
+
+For each combination of Ncells and eta, refine the orientation with diffBragg and determine ΔR, Correlation(ΔR,ΔΨ), and <σZ>
+ on the specifc SPREAD annulus.  Pick the best global values for subsequent work, in this case Na=48, Nc=24, eta=0.0512 deg:
+```
+job      eta   Na  Nc   ΔR      CorrelΔR,ΔΨ  mean(σZ)
+2959146  .0384 24   8 0.64px   -23.9%        1.3310   12 min 4 nodes, 6-7 balance
+2959183  .0384 24  16 0.65px   -13.9%        1.2602   14 min 4 nodes, 6-7 balance
+2959184  .0384 24  24 0.67px   -14.1%        1.2507   15 min 4 nodes, 6-7 balance
+2959185  .0384 48   8 0.68px   -14.6%        1.3208   17 min 4 nodes, 6-7 balance
+2959199  .0384 48  16 0.71px     5.7%        1.2549   18 min 4 nodes, 6-7 balance
+2959200  .0384 48  24 0.79px    12.4%        1.3293   20 min 4 nodes, 6-7 balance
+2959201  .0384 96   8 0.84px    -8.1%        1.3377   20 min 4 nodes, 6-7 balance
+2959203  .0384 96  16 0.87px    21.3%        1.3833   20 min 4 nodes, 6-7 balance
+2959204  .0384 96  24 0.95px    25.8%        1.3389   21 min 4 nodes, 6-7 balance
+2959206  .0512 24   8 0.59px   -37.0%        1.3202   12 min 4 nodes, 6-7 balance
+2959207  .0512 24  16 0.63px   -19.1%        1.2701   14 min 4 nodes, 6-7 balance
+2959211  .0512 24  24 0.66px   -16.8%        1.2578   15 min 4 nodes, 6-7 balance
+2959212  .0512 48   8 0.61px   -24.9%        1.2848   16 min 4 nodes, 6-7 balance
+2959213  .0512 48  16 0.68px    -3.5%        1.2417   18 min 4 nodes, 6-7 balance
+2959215  .0512 48  24 0.67px    -0.4%        1.2351   18 min 4 nodes, 6-7 balance <-- pick this
+2959216  .0512 96   8 0.73px   -20.1%        1.3209   20 min 4 nodes, 6-7 balance
+2959218  .0512 96  16 0.74px     9.0%        1.2637   19 min 4 nodes, 6-7 balance
+2959219  .0512 96  24 0.81px    15.1%        1.2764   21 min 4 nodes, 6-7 balance
+```
+The SLURM file provided assumes that the input directory has the pair *000000.{expt,refl} containing approximately 50-100 experiments,
+thus a reasonable subsample.  Source the command line script trial8_2923740_array.sh to submit the large array of jobs.  
+Note that this script example assumes tetragonal or hexagonal, thus NcellsA = NcellsB.  It would have to be changed
+e.g., for orthorhombic (photosystem II).
+                                                                                      
+I have some concern over whether the code is correct, for I can no longer reproduce the small values of ΔR and mean(σZ).
+
+### 2. Exa3A.  Run the exa3A script again with energy channel count narrowed from 2048 to 256.
 
 Using diffBragg first derivatives to refine crystal rotation; also refine background and G-scale.
 
 Run [slurm script, 3724210.sh](./3724210.sh). Resulting model (.expt) and data (.refl) are used for the next step.
 
-### 2. Prepare model structure factors.
+### 3. Prepare model structure factors.
 
 Cache the base structure factors to a pickle file to speed up the run time 
 of the S1 final step.  This [slurm script, 3762323.sh](./3762323.sh) will compute reference structure factors, write them to 
@@ -37,7 +69,7 @@ The following are calculated:
  A large file (e.g. 25 MB) with one item:
  A cctbx.miller_array with complex structure factors in P1 (Fmodel) calculated at the lowest energy channel.
 ```
-### 3. S1. Final step of scattering factor refinement.
+### 4. S1. Final step of scattering factor refinement.
 
 This [slurm script, 4709418.sh](./4709418.sh) will refine scattering factors for two
 independent Fe sites on a 4 eV grid spanning the K-edge. 
