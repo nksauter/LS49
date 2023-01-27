@@ -18,11 +18,43 @@ should be refined.
 ### 5. Run the annulus worker
 Print out statistics on spotfinder spots (indexed.refl, refined.expt).
 Assess the useful resolution range for SPREAD.
-
-
+Remove lattices that do not meet the filter conditions, generating a new set of expt + refl.
+Run the [slurm script, annulus2.sh](./annulus2.sh). 
 
 ### 6. Run the trumpet plot
+Create the trumpet plot.  Optionally perform DIALS refinement prior to plotting the statistics.  Filter 
+ the outliers and remove them, thus generating a new set of expt + refl.  
+ 
+Caution: savepng=True is appropriate if a subset of data are processed; but output is too large if the 
+ entire data are used, so in that case set savepng=False.  PNG files can be converted to an animated
+ GIF if ImageMagick is present:
+```
+convert -delay 12 -loop 0 *.png shift2_annulus_hits.gif
+```
+Run the [slurm script, trial5_dials_refine.sh](./trial5_dials_refine.sh). 
+ 
+Warning: Check to make sure there is no matplotlib screen output if running in SLURM.
+ 
+Fatal: as of 1/27/2023 the script fails.  Working on it.
+
 ### 7. Convert to integrated shoeboxes
+Use the "specific" merge worker to replace the small shoeboxes of indexed strong spots,
+ with the corresponding large shoeboxes from integration refls.  This is easily done interactively:
+
+```
+salloc -A m3890 -C cpu -t 60 -N 1 --qos=interactive
+SIT_PSDM_DATA=/pscratch/sd/p/psdatmgr/data/pmscr srun -n 32 -c 4 cctbx.xfel.merge $MODULES/psii_spread/merging/application/specific/trial_switch.phil
+```
+The used phil file must be modified as follows:
+```
+# must reflect the filtered lattices from the previous step:
+input.path=/pscratch/sd/n/nksauter/LY99/trumpet_plot/trial5/out
+
+# must reflect the dials.stills_process output:
+specific.integration.refl=/pscratch/sd/n/nksauter/LY99/dwpaley/2531058/%d/idx-data_%05d_integrated.refl
+specific.integration.expt=/pscratch/sd/n/nksauter/LY99/dwpaley/2531058/%d/idx-data_%05d_integrated.expt
+```
+ 
 ### 8. Grid search on mosaic parameters
 
 For each combination of Ncells and eta, refine the orientation with diffBragg and determine ΔR, Correlation(ΔR,ΔΨ), and <σZ>
