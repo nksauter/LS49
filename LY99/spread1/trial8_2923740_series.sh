@@ -1,14 +1,14 @@
 #!/bin/bash -l
-#SBATCH -N 4               # Number of nodes
-#SBATCH -J trial8
+#SBATCH -N 32               # Number of nodes
+#SBATCH -J series_trial
 #SBATCH -L SCRATCH          # job requires SCRATCH files
-#SBATCH -A m3562_g          # allocation
+#SBATCH -A lcls_g           # allocation
 #SBATCH -C gpu
 #SBATCH -q regular          # regular queue
-#SBATCH -t 00:24:00         # wall clock time limit
+#SBATCH -t 00:36:00         # wall clock time limit
 #SBATCH --ntasks-per-gpu=1
-#SBATCH -o job%j.out
-#SBATCH -e job%j.err
+#SBATCH -o %j.out
+#SBATCH -e %j.err
 
 mkdir -p $SLURM_JOB_ID; cd $SLURM_JOB_ID
 
@@ -19,7 +19,7 @@ export NUMEXPR_MAX_THREADS=128
 export SLURM_CPU_BIND=cores # critical to force ranks onto different cores. verify with ps -o psr <pid>
 export OMP_PROC_BIND=spread
 export OMP_PLACES=threads
-export SIT_PSDM_DATA=/pscratch/sd/p/psdatmgr/data/pmscr
+export SIT_PSDM_DATA=/global/cfs/cdirs/lcls/psdm-sauter
 export CCTBX_GPUS_PER_NODE=1
 export XFEL_CUSTOM_WORKER_PATH=$MODULES/psii_spread/merging/application # User must export $MODULES path
 export WERK=/global/cfs/cdirs/lcls/sauter/LY99/
@@ -27,8 +27,8 @@ export WERK=/global/cfs/cdirs/lcls/sauter/LY99/
 echo "
 dispatch.step_list = input balance annulus
 input.path=$WERK/rescue_trumpet_plot/switch_integrated/out
-input.experiments_suffix=000000.expt  # switch back for production
-input.reflections_suffix=000000.refl  # switch back for production
+input.experiments_suffix=.expt  # switch back for production
+input.reflections_suffix=.refl  # switch back for production
 input.keep_imagesets=True
 input.read_image_headers=False
 input.persistent_refl_cols=shoebox
@@ -95,5 +95,5 @@ trumpet.plot_all.enable=True
 trumpet.plot_all.savepng=True
 " > trial8.phil
 echo "jobstart $(date)";pwd
-srun -n 16 -c 4 cctbx.xfel.merge trial8.phil
+srun -n 128 -c 4 cctbx.xfel.merge trial8.phil
 echo "jobend $(date)";pwd
