@@ -3,7 +3,27 @@
 Development of an entirely new workflow, building on the Sauter 2020 and Mendez 2021 papers. 
 <list of computational steps will be added here>
 
-### 1. Grid search on mosaic parameters
+### 1. Optimize the detector metrology
+### 2. Quality control on the unit cell
+Over all runs, the means should vary less than the standard deviation within one run.
+Prepare a single covariance model to be used throughout for unit cell acceptance/rejection.
+
+### 3. Conventional merging
+### 4. Refinement of the atomic model
+Using the conventionally merged data, re-optimize the best available PDB model against the present unit cell.
+Make sure to allow ADPs for the metal atoms, sulfur and higher (use PHENIX).  Also, since the SPREAD 
+data are collected across a K-edge, the scattering factors for that particular metal (for example, Fe) 
+should be refined.
+
+### 5. Run the annulus worker
+Print out statistics on spotfinder spots (indexed.refl, refined.expt).
+Assess the useful resolution range for SPREAD.
+
+
+
+### 6. Run the trumpet plot
+### 7. Convert to integrated shoeboxes
+### 8. Grid search on mosaic parameters
 
 For each combination of Ncells and eta, refine the orientation with diffBragg and determine ΔR, Correlation(ΔR,ΔΨ), and <σZ>
  on the specifc SPREAD annulus.  Pick the best global values for subsequent work, in this case Na=48, Nc=24, eta=0.0512 deg:
@@ -28,20 +48,20 @@ job      eta   Na  Nc   ΔR      CorrelΔR,ΔΨ  mean(σZ)
 2959218  .0512 96  16 0.74px     9.0%        1.2637   19 min 4 nodes, 6-7 balance
 2959219  .0512 96  24 0.81px    15.1%        1.2764   21 min 4 nodes, 6-7 balance
 ```
-The SLURM file provided assumes that the input directory has the pair *000000.{expt,refl} containing approximately 50-100 experiments,
-thus a reasonable subsample.  Source the command line script trial8_2923740_array.sh to submit the large array of jobs.  
+The SLURM file provided assumes that all experiments are taken as input, although a large subset could also suffice.
+Source the command line script trial8_2923740_array.sh to submit the large array of jobs.  
 Note that this script example assumes tetragonal or hexagonal, thus NcellsA = NcellsB.  It would have to be changed
-e.g., for orthorhombic (photosystem II).
+e.g., for orthorhombic (photosystem II).  Caution should be taken to not use too many node hours.
                                                                                       
 I have some concern over whether the code is correct, for I can no longer reproduce the small values of ΔR and mean(σZ).
 
-### 2. Exa3A.  Run the exa3A script again with energy channel count narrowed from 2048 to 256.
+### 9. Exa3A.  Run the exa3A script again with energy channel count narrowed from 2048 to 256.
 
 Using diffBragg first derivatives to refine crystal rotation; also refine background and G-scale.
 
 Run [slurm script, 3724210.sh](./3724210.sh). Resulting model (.expt) and data (.refl) are used for the next step.
 
-### 3. Prepare model structure factors.
+### 10. Prepare model structure factors.
 
 Cache the base structure factors to a pickle file to speed up the run time 
 of the S1 final step.  This [slurm script, 3762323.sh](./3762323.sh) will compute reference structure factors, write them to 
@@ -69,7 +89,7 @@ The following are calculated:
  A large file (e.g. 25 MB) with one item:
  A cctbx.miller_array with complex structure factors in P1 (Fmodel) calculated at the lowest energy channel.
 ```
-### 4. S1. Final step of scattering factor refinement.
+### 11. Final step (S1) of scattering factor refinement.
 
 This [slurm script, 4709418.sh](./4709418.sh) will refine scattering factors for two
 independent Fe sites on a 4 eV grid spanning the K-edge. 
