@@ -58,7 +58,7 @@ statistics.annulus.d_min=2.5
 spread_roi.enable=True
 spread_roi.strong=1.0
 
-output.log_level=0 # 0 = stdout stderr, 1 = terminal
+output.log_level=1 # 0 = stdout stderr, 1 = terminal
 output.output_dir=out
 output.prefix=trial5_production
 output.save_experiments_and_reflections=True
