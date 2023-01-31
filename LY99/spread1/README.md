@@ -25,17 +25,16 @@ Run the [slurm script, annulus2.sh](./annulus2.sh).
 Create the trumpet plot.  Optionally perform DIALS refinement prior to plotting the statistics.  Filter 
  the outliers and remove them, thus generating a new set of expt + refl.  
  
-Caution: savepng=True is appropriate if a subset of data are processed; but output is too large if the 
- entire data are used, so in that case set savepng=False.  PNG files can be converted to an animated
- GIF if ImageMagick is present:
+Caution: savepng=True is appropriate if a subset of data are processed; but output is quite large if the 
+ entire data are used, so in that case set savepng=False.  Sorry, ignore this advice (1/31/23) as there is 
+ no correct way to disable savepng.  As currently implemented, savepng=False writes the plot to the 
+ screen, which is counterproductive if executing within SLURM.
+ 
+PNG files can be converted to an animated GIF if ImageMagick is present:
 ```
 convert -delay 12 -loop 0 *.png shift2_annulus_hits.gif
 ```
 Run the [slurm script, trial5_dials_refine.sh](./trial5_dials_refine.sh). 
- 
-Warning: Check to make sure there is no matplotlib screen output if running in SLURM.
- 
-Fatal: as of 1/27/2023 the script fails.  Working on it.
 
 ### 7. Convert to integrated shoeboxes
 Use the "specific" merge worker to replace the small shoeboxes of indexed strong spots,
