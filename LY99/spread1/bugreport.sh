@@ -1,15 +1,4 @@
 #!/bin/bash -l
-#SBATCH -N 1              # Number of nodes on Perlmutter
-#SBATCH -J test_spread
-#SBATCH -L SCRATCH          # job requires SCRATCH files
-#SBATCH -A lcls             # allocation
-#SBATCH -C cpu
-#SBATCH -q regular          # regular queue
-#SBATCH -t 00:05:00         # wall clock time limit
-#SBATCH -o %j.out
-#SBATCH -e %j.err
-
-mkdir -p $SLURM_JOB_ID; cd $SLURM_JOB_ID
 
 export CCTBX_NO_UUID=1
 export DIFFBRAGG_USE_CUDA=1
@@ -24,10 +13,10 @@ export XFEL_CUSTOM_WORKER_PATH=$MODULES/psii_spread/merging/application # User m
 export WERK=/global/cfs/cdirs/lcls/sauter/LY99/
 
 echo "
-dispatch.step_list = input balance annulus trumpet
+dispatch.step_list = input annulus trumpet
 input.path=${WERK}/all_plots_bugreport/out
-input.experiments_suffix=00.expt
-input.reflections_suffix=00.refl
+input.experiments_suffix=13.expt
+input.reflections_suffix=13.refl
 input.keep_imagesets=True
 input.read_image_headers=False
 input.persistent_refl_cols=shoebox
@@ -59,7 +48,7 @@ spread_roi.enable=True
 spread_roi.strong=1.0
 
 output.log_level=1 # 0 = stdout stderr, 1 = terminal
-output.output_dir=out
+output.output_dir=.
 output.prefix=trial5_production
 output.save_experiments_and_reflections=True
 
