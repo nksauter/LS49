@@ -100,6 +100,7 @@ exafel{
     }
   }
 }
+exafel.metal=MMO2
 sauter20.LLG_evaluator.enable_plot=True
 sauter20.LLG_evaluator.title=tell
 sauter20.LLG_evaluator.restraints.fp.sigma=0.04

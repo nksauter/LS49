@@ -22,11 +22,10 @@ export SIT_PSDM_DATA=/global/cfs/cdirs/lcls/psdm-sauter
 export CCTBX_GPUS_PER_NODE=1
 export XFEL_CUSTOM_WORKER_PATH=$MODULES/psii_spread/merging/application # User must export $MODULES path
 export WERK=/global/cfs/cdirs/lcls/sauter/LY99/
-export WORK=/pscratch/sd/n/nksauter/LY99/trumpet_plot/all_plots/out
 
 echo "
 dispatch.step_list = input balance annulus trumpet
-input.path=${WORK}
+input.path=${WERK}/all_plots_bugreport/out
 input.experiments_suffix=.expt
 input.reflections_suffix=.refl
 input.keep_imagesets=True
