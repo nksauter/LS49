@@ -2,6 +2,50 @@
 
 Development of an entirely new workflow, building on the Sauter 2020 and Mendez 2021 papers. 
 <list of computational steps will be added here>
+#### Instructions for running the example on Perlmutter
+ - Assure the following environment is sourced:
+```
+    export CFSSRC=<path-to-alcc-recipes-software-install>
+    module purge
+    module load PrgEnv-gnu cpe-cuda cudatoolkit
+    module load evp-patch # known issue workaround
+    source $CFSSRC/alcc-recipes/cctbx/activate.sh
+    export MODULES=$CFSSRC/alcc-recipes/cctbx/modules
+    export BUILD=$CFSSRC/alcc-recipes/cctbx/build
+```
+ - The following code diffs are required:
+ ```
+ --- a/simtbx/diffBragg/src/diffBragg.cpp
++++ b/simtbx/diffBragg/src/diffBragg.cpp
+@@ -1815,6 +1815,7 @@ void diffBragg::add_diffBragg_spots(const af::shared<size_t>& panels_fasts_slows
+ 
+     Npix_to_model = panels_fasts_slows.size()/3;
+     SCITBX_ASSERT(Npix_to_model <= Npix_total);
++    raw_pixels_roi = af::flex_double(Npix_to_model); // NKS, only way to correctly size & zero array
+     double * floatimage_roi = raw_pixels_roi.begin();
+ 
+     diffBragg_rot_mats();
+diff --git a/xfel/merging/command_line/merge.py b/xfel/merging/command_line/merge.py
+index 3404842c5b..54678d568e 100644
+--- a/xfel/merging/command_line/merge.py
++++ b/xfel/merging/command_line/merge.py
+@@ -44,6 +44,7 @@ class Script(object):
+   def __init__(self):
+     self.mpi_helper = mpi_helper()
+     self.mpi_logger = mpi_logger()
++    self.common_store = dict(foo="hello") # always volatile, no serialization, no particular dict keys guaranteed
+ 
+   def __del__(self):
+     self.mpi_helper.finalize()
+@@ -163,6 +164,7 @@ class Script(object):
+     # Perform phil validation up front
+     for worker in workers:
+       worker.validate()
++      worker.__dict__["common_store"] = self.common_store
+     self.mpi_logger.log_step_time("CREATE_WORKERS", True)
+ 
+     # Do the work
+ ```
 
 ### 1. Optimize the detector metrology
 ### 2. Quality control on the unit cell
@@ -128,50 +172,6 @@ independent Fe sites on a 4 eV grid spanning the K-edge.
 This is a self-contained example.  Summary:  48 nodes, 192 ranks, 78 min. runtime.  <br>On 3044 lattices from shift 2, analyze
 66069 shoeboxes from 4.0-2.5Å, containing 23,121,402 pixels.
 
-#### Instructions for running the example on Perlmutter
- - Assure the following environment is sourced:
-```
-    export CFSSRC=<path-to-alcc-recipes-software-install>
-    module purge
-    module load PrgEnv-gnu cpe-cuda cudatoolkit
-    module load evp-patch # known issue workaround
-    source $CFSSRC/alcc-recipes/cctbx/activate.sh
-    export MODULES=$CFSSRC/alcc-recipes/cctbx/modules
-    export BUILD=$CFSSRC/alcc-recipes/cctbx/build
-```
- - The following code diffs are required:
- ```
- --- a/simtbx/diffBragg/src/diffBragg.cpp
-+++ b/simtbx/diffBragg/src/diffBragg.cpp
-@@ -1815,6 +1815,7 @@ void diffBragg::add_diffBragg_spots(const af::shared<size_t>& panels_fasts_slows
- 
-     Npix_to_model = panels_fasts_slows.size()/3;
-     SCITBX_ASSERT(Npix_to_model <= Npix_total);
-+    raw_pixels_roi = af::flex_double(Npix_to_model); // NKS, only way to correctly size & zero array
-     double * floatimage_roi = raw_pixels_roi.begin();
- 
-     diffBragg_rot_mats();
-diff --git a/xfel/merging/command_line/merge.py b/xfel/merging/command_line/merge.py
-index 3404842c5b..54678d568e 100644
---- a/xfel/merging/command_line/merge.py
-+++ b/xfel/merging/command_line/merge.py
-@@ -44,6 +44,7 @@ class Script(object):
-   def __init__(self):
-     self.mpi_helper = mpi_helper()
-     self.mpi_logger = mpi_logger()
-+    self.common_store = dict(foo="hello") # always volatile, no serialization, no particular dict keys guaranteed
- 
-   def __del__(self):
-     self.mpi_helper.finalize()
-@@ -163,6 +164,7 @@ class Script(object):
-     # Perform phil validation up front
-     for worker in workers:
-       worker.validate()
-+      worker.__dict__["common_store"] = self.common_store
-     self.mpi_logger.log_step_time("CREATE_WORKERS", True)
- 
-     # Do the work
- ```
 
 #### Known issues and bugs
  - An earlier execution of the same exact script finished in 40 minutes (on an earlier alcc-recipes build).
@@ -230,3 +230,5 @@ factors.  Do this as a function of lattice count and energy granularity to see w
  information about the metals, and which is specialized for every use case.
    - The current code (labels=601, labels=602) needs to be generalized (labels=601,602).
    - The class would have to set it own preset_starting_model.
+   - All this is now done. Specific behavior is localized in sw1.py, and cases are selected with phil parameter exafel.metal= choice.
+ - Currently the scattering factor refinement stops after 1 macrocycle.  Need to stabilize behavior and then extend to 3(?) macrocycles as in Sauter (2020) paper.
