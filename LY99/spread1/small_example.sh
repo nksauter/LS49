@@ -1,6 +1,6 @@
 cd /global/cfs/cdirs/lcls/sauter/LY99//ready2/3724210/out
 
-export OUTPUT_FOLDER=1
+export OUTPUT_FOLDER=small_example_out
 
 mkdir -p $OUTPUT_FOLDER; cd $OUTPUT_FOLDER
 
