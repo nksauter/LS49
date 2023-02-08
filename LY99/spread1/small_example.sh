@@ -20,7 +20,7 @@ echo "
 dispatch.step_list = input annulus
 input.path=$WERK/ready2/3724210/out
 input.experiments_suffix=trial8_scenario3A_000000.expt
-input.reflections_suffix=trial8_scenario3A_000000.expt
+input.reflections_suffix=trial8_scenario3A_000000.refl
 input.keep_imagesets=True
 input.read_image_headers=False
 input.persistent_refl_cols=shoebox
