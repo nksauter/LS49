@@ -1,5 +1,3 @@
-cd /global/cfs/cdirs/lcls/sauter/LY99//ready2/3724210/out
-
 export OUTPUT_FOLDER=small_example_out
 
 mkdir -p $OUTPUT_FOLDER; cd $OUTPUT_FOLDER
@@ -35,7 +33,7 @@ input.persistent_refl_cols=xyzobs.mm.variance
 input.persistent_refl_cols=delpsical.rad
 input.persistent_refl_cols=panel
 
-scaling.model=/global/cfs/cdirs/m3562/users/vidyagan/6ydi.pdb
+scaling.model=$WERK/reference/6ydi.pdb
 scaling.unit_cell=107.00  107.00  304.01  90.00  90.00  90.00
 scaling.space_group=P41212
 scaling.resolution_scalar=0.993420862158964
@@ -47,7 +45,7 @@ filter.unit_cell.cluster.covariance.component=0
 merging.d_max=None
 merging.d_min=2.5
 
-statistics.annulus.d_max=4.0
+statistics.annulus.d_max=3.0
 statistics.annulus.d_min=2.5
 
 spread_roi.enable=True
@@ -96,7 +94,7 @@ sauter20.LLG_evaluator.enable_plot=True
 sauter20.LLG_evaluator.title=tell
 sauter20.LLG_evaluator.restraints.fp.sigma=0.04
 sauter20.LLG_evaluator.restraints.fdp.sigma=0.08
-sauter20.LLG_evaluator.max_calls=30
+sauter20.LLG_evaluator.max_calls=2
 trumpet.plot_all.enable=False
 trumpet.plot_all.savepng=True
 " > trial8.phil
