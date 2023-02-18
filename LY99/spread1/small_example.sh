@@ -43,10 +43,10 @@ filter.unit_cell.cluster.covariance.file=$WERK/reference/covariance_run145_cells
 filter.unit_cell.cluster.covariance.component=0
 
 merging.d_max=None
-merging.d_min=2.5
+merging.d_min=2.75
 
 statistics.annulus.d_max=3.0
-statistics.annulus.d_min=2.5
+statistics.annulus.d_min=2.75
 
 spread_roi.enable=True
 # spread_roi.strong=1.0 # only use for initial annulus definition, not subsequent
