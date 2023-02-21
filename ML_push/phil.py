@@ -79,7 +79,7 @@ LLG_evaluator{
         .type = float
     }
     kramers_kronig{
-      use = False
+      use = True
         .type = bool
       pad = 10
         .type = int
