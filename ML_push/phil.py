@@ -78,6 +78,14 @@ LLG_evaluator{
       sigma = 0.2
         .type = float
     }
+    kramers_kronig{
+      use = False
+        .type = bool
+      pad = 10
+        .type = int
+      trim = 10
+        .type = int
+    }
   }
   restraints_II_enable = False
     .type = bool
