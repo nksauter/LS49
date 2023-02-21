@@ -20,10 +20,12 @@ export SLURM_CPU_BIND=cores # critical to force ranks onto different cores. veri
 export OMP_PROC_BIND=spread
 export OMP_PLACES=threads
 export SIT_PSDM_DATA=/global/cfs/cdirs/lcls/psdm-sauter
+export SIT_DATA=/global/common/software/lcls/psdm/data
+export SIT_ROOT=/reg/g/psdm
 export CCTBX_GPUS_PER_NODE=1
 export XFEL_CUSTOM_WORKER_PATH=$MODULES/psii_spread/merging/application # User must export $MODULES path
 export WERK=/global/cfs/cdirs/lcls/sauter/LY99/
-export WORK=/global/cfs/cdirs/lcls/sauter/scratch
+export WORK=/global/cfs/cdirs/lcls/vidyagan/scratch
 
 echo "
 dispatch.step_list = input balance annulus
