@@ -85,7 +85,7 @@ LLG_evaluator{
         .type = int
       trim = 10
         .type = int
-      weighting_factor = 0.1
+      weighting_factor = 1.0
         .type = float
     }
   }
