@@ -85,6 +85,8 @@ LLG_evaluator{
         .type = int
       trim = 10
         .type = int
+      weighting_factor = 0.1
+        .type = float
     }
   }
   restraints_II_enable = False
