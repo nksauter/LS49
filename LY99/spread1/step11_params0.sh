@@ -84,7 +84,7 @@ exafel.debug.finite_diff=-1
 exafel.debug.eps=1.e-8
 exafel.debug.format_offset=0
 exafel.debug.energy_offset_eV=0
-exafel.debug.energy_stride_eV=1.00
+exafel.debug.energy_stride_eV=4.00
 exafel.skin=False # whether to use diffBragg
 exafel{
   refpar{
