@@ -5,7 +5,7 @@
 #SBATCH -A lcls_g           # allocation
 #SBATCH -C gpu
 #SBATCH -q regular          # regular queue
-#SBATCH -t 01:20:00         # wall clock time limit
+#SBATCH -t 07:00:00         # wall clock time limit
 #SBATCH --ntasks-per-gpu=1
 #SBATCH -o %j.out
 #SBATCH -e %j.err
@@ -85,7 +85,7 @@ exafel.debug.finite_diff=-1
 exafel.debug.eps=1.e-8
 exafel.debug.format_offset=0
 exafel.debug.energy_offset_eV=0
-exafel.debug.energy_stride_eV=4.00
+exafel.debug.energy_stride_eV=1.00
 exafel.skin=False # whether to use diffBragg
 exafel{
   refpar{
