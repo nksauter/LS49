@@ -5,7 +5,7 @@
 #SBATCH -A lcls_g           # allocation
 #SBATCH -C gpu
 #SBATCH -q regular          # regular queue
-#SBATCH -t 01:20:00         # wall clock time limit
+#SBATCH -t 02:00:00         # wall clock time limit
 #SBATCH --ntasks-per-gpu=1
 #SBATCH -o %j.out
 #SBATCH -e %j.err
@@ -19,13 +19,12 @@ export NUMEXPR_MAX_THREADS=128
 export SLURM_CPU_BIND=cores # critical to force ranks onto different cores. verify with ps -o psr <pid>
 export OMP_PROC_BIND=spread
 export OMP_PLACES=threads
-export SIT_PSDM_DATA=/global/cfs/cdirs/lcls/psdm-sauter
 export SIT_DATA=/global/common/software/lcls/psdm/data
 export SIT_ROOT=/reg/g/psdm
+export SIT_PSDM_DATA=/global/cfs/cdirs/lcls/psdm-sauter
 export CCTBX_GPUS_PER_NODE=1
 export XFEL_CUSTOM_WORKER_PATH=$MODULES/psii_spread/merging/application # User must export $MODULES path
 export WERK=/global/cfs/cdirs/lcls/sauter/LY99/
-export WORK=/global/cfs/cdirs/lcls/sauter/scratch
 
 echo "
 dispatch.step_list = input balance annulus
@@ -70,9 +69,9 @@ output.prefix=trial8_scenario3A
 output.save_experiments_and_reflections=True
 
 exafel.scenario=S1
-exafel.static_fcalcs.path=$WORK/reference/mmo_static_fcalcs.pickle
-exafel.static_fcalcs.whole_path=$WORK/reference/mmo_miller_array.pickle
-exafel.static_fcalcs.action=write
+exafel.static_fcalcs.path=$WERK/reference/mmo_static_fcalcs.pickle
+exafel.static_fcalcs.whole_path=$WERK/reference/mmo_miller_array.pickle
+exafel.static_fcalcs.action=read
 exafel.trusted_mask=$WERK/reference/epix.mask
 exafel.shoebox_border=0
 exafel.context=kokkos_gpu
@@ -105,8 +104,14 @@ exafel{
 exafel.metal=MMO2
 sauter20.LLG_evaluator.enable_plot=True
 sauter20.LLG_evaluator.title=tell
+sauter20.LLG_evaluator.restraints.fp.mean=0.0
 sauter20.LLG_evaluator.restraints.fp.sigma=0.04
+sauter20.LLG_evaluator.restraints.fdp.mean=0.03
 sauter20.LLG_evaluator.restraints.fdp.sigma=0.08
+sauter20.LLG_evaluator.restraints.kramers_kronig.use=True
+sauter20.LLG_evaluator.restraints.kramers_kronig.pad=100
+sauter20.LLG_evaluator.restraints.kramers_kronig.trim=0
+sauter20.LLG_evaluator.restraints.kramers_kronig.weighting_factor=1000000.0
 sauter20.LLG_evaluator.max_calls=30
 trumpet.plot_all.enable=False
 trumpet.plot_all.savepng=True
