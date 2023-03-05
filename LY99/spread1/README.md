@@ -212,7 +212,7 @@ factors.  Do this as a function of lattice count and energy granularity to see w
    - Then sample both of these curves with Gaussian noise to simulate experimental measurement of the two curves.
    - Then develop a restraint model, and optimize the parameters.  Presumably use automatic differentiation for first-derivatives.
    - Compare the optimized model to the initial ground truth (and pass the test based on a tolerance). Show result in matplotlib.
- 
+ - This work is now complete.  Here is a working [Slurm script, 5928113.sh](./5928113.sh) to apply Kramers-Kronig to Step 11.
 #### Generalization of the code for photosystem II
  - As currently written the program will run out of memory due to the size of the structure factor table.  Total structure factor
  count scales linearly with a) unit cell volume, b) volume of the reciprocal space annulus requested, and c) the number of energy 
@@ -230,5 +230,8 @@ factors.  Do this as a function of lattice count and energy granularity to see w
  information about the metals, and which is specialized for every use case.
    - The current code (labels=601, labels=602) needs to be generalized (labels=601,602).
    - The class would have to set it own preset_starting_model.
-   - All this is now done. Specific behavior is localized in sw1.py, and cases are selected with phil parameter exafel.metal= choice.
+   - All this is now done. Specific behavior is localized in sw1.py, and cases are selected with phil parameter exafel.metal= choice. Here is a [Slurm script](./5928113.sh) showing the use of exafel.metal=MMO2.
+     - MMO2: methane monooxygenase, treating the two Fe sites as chemically distinct (realistic)
+     - MMO2: methane monooxygenase, treating the Fe sites as chemically identical (for debug)
+     - PSII: not implemented
  - Currently the scattering factor refinement stops after 1 macrocycle.  Need to stabilize behavior and then extend to 3(?) macrocycles as in Sauter (2020) paper.
