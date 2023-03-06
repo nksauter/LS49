@@ -212,6 +212,7 @@ factors.  Do this as a function of lattice count and energy granularity to see w
    - Then sample both of these curves with Gaussian noise to simulate experimental measurement of the two curves.
    - Then develop a restraint model, and optimize the parameters.  Presumably use automatic differentiation for first-derivatives.
    - Compare the optimized model to the initial ground truth (and pass the test based on a tolerance). Show result in matplotlib.
+ - It is now done: [slurm script 5928113.sh](./5928113.sh).
  
 #### Generalization of the code for photosystem II
  - As currently written the program will run out of memory due to the size of the structure factor table.  Total structure factor
@@ -231,4 +232,5 @@ factors.  Do this as a function of lattice count and energy granularity to see w
    - The current code (labels=601, labels=602) needs to be generalized (labels=601,602).
    - The class would have to set it own preset_starting_model.
    - All this is now done. Specific behavior is localized in sw1.py, and cases are selected with phil parameter exafel.metal= choice.
+   - See for example: [slurm script 5928113.sh](./5928113.sh).
  - Currently the scattering factor refinement stops after 1 macrocycle.  Need to stabilize behavior and then extend to 3(?) macrocycles as in Sauter (2020) paper.
