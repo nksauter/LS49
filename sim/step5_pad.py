@@ -22,7 +22,8 @@ def data():
     pdb_lines = open(full_path("1m2a.pdb"),"r").read(),
     Fe_oxidized_model = george_sherrell(full_path("data_sherrell/pf-rd-ox_fftkk.out")),
     Fe_reduced_model = george_sherrell(full_path("data_sherrell/pf-rd-red_fftkk.out")),
-    Fe_metallic_model = george_sherrell(full_path("data_sherrell/Fe_fake.dat"))
+    Fe_metallic_model = george_sherrell(full_path("data_sherrell/Fe_fake.dat")),
+    Mn_metallic_model = george_sherrell(full_path("data_sherrell/Mn.dat"))
   )
 
 def raw_to_pickle(raw_pixels, fileout):
