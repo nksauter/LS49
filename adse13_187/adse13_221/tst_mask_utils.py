@@ -283,7 +283,7 @@ modeim_kernel_width=15
           writer.add_image(self.sim_mock)
 
           #Output 6. Figure the Z-plot
-          #from xfel.util import jungfrau
+          #from serialtbx.detector import jungfrau
           #RMS = jungfrau.get_pedestalRMS_from_jungfrau(self.expt)
           # the shape of RMS is 256x254x254.
           Z_plot=self.Z_statistics(experiment=self.sim_mock,
