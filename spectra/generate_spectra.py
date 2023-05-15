@@ -178,6 +178,36 @@ class spectra_simulation:
           channel_flux[channel] += self.R['spectra'][image][idx] * total_flux / self.average_integrated
     yield channel_wavelength,channel_flux,eV_to_angstrom / expected_energy
 
+  def generate_recast_renormalized_image_parameterized(self, image, params):
+    requested_energy = params.beam.mean_energy
+    spectrum_fitted_energy = self.LF.m * np.array(range(self.NS)) + self.LF.c
+    offset = requested_energy - self.get_average_expected_energy()
+    offset_energy = spectrum_fitted_energy + offset
+
+    from scitbx.array_family import flex
+    y = flex.double(list(self.R['spectra'][image]))
+    ysum = self.bk_subtracted_sum[image]
+
+    expected_energy = self.LF.m * self.R["expidx"][image] + self.LF.c + offset
+    print(image,"ebeam = %7.2f eV"%(expected_energy),"%5.1f%% of average pulse intensity"%(100.*
+        self.bk_subtracted_sum[image]/self.average_integrated))
+
+    channel_flux = flex.double(params.spectrum.nchannels)
+    centerline = float(params.spectrum.nchannels-1)/2.0
+    channel_mean_eV = (flex.double(range(params.spectrum.nchannels)) - centerline
+                      ) * params.spectrum.channel_width + requested_energy
+    from scipy import constants
+    eV_to_angstrom = 1e10*constants.c*constants.h / constants.electron_volt
+    channel_wavelength = eV_to_angstrom / channel_mean_eV
+    for idx in range(len(offset_energy)):
+        i_energy = offset_energy[idx]
+        # invert the formula to solve for channel number
+        channel = int( (1./params.spectrum.channel_width)*(i_energy-requested_energy)+centerline+0.5 )
+        channel = int(i_energy - (requested_energy-50)) #NKS
+        if 0 <= channel < params.spectrum.nchannels:
+          channel_flux[channel] += self.R['spectra'][image][idx] * params.beam.total_flux / self.average_integrated
+    yield channel_wavelength,channel_flux,eV_to_angstrom / expected_energy
+
   def get_average_expected_energy(self):
     idx = np.array(self.LF.x)
     fitted_energy = self.LF.m * idx + self.LF.c
