@@ -25,10 +25,12 @@ OpenMP_required = [
     ["$D/tests/tst_cpu_add_spots_double_precision.py","poly"],  #OpenMP (required)
   ]
 tst_list_parallel = []
+tst_list_parallel_slow = []
 if libtbx.env.build_options.enable_openmp_if_possible:
-  tst_list_parallel = tst_list_parallel + OpenMP_optional + OpenMP_required
+  tst_list_parallel += OpenMP_optional
+  tst_list_parallel_slow += OpenMP_required
 else:
-  tst_list = tst_list + OpenMP_optional
+  tst_list += OpenMP_optional
 
 prepend = []
 OPT = libtbx.env.build_options
