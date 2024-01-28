@@ -62,8 +62,8 @@ def fmodel_from_pdb(resolution,pdb_text,algorithm=None,wavelength=0.9):
   P1_primitive_xray_structure = primitive_xray_structure.expand_to_p1()
   P1_primitive_xray_structure.show_summary(prefix="P1 structure ")
   # how do we do bulk solvent?
-  import mmtbx.command_line.fmodel
-  phil2 = mmtbx.command_line.fmodel.fmodel_from_xray_structure_master_params
+  import mmtbx.programs.fmodel
+  phil2 = mmtbx.programs.fmodel.master_phil
   params2 = phil2.extract()
     # adjust the cutoff of the generated intensities to assure that
     # statistics will be reported to the desired high-resolution limit
@@ -100,8 +100,8 @@ class gen_fmodel(object):
       sc.fp = expected_henke.fp()
       sc.fdp = expected_henke.fdp()
 
-    import mmtbx.command_line.fmodel
-    phil2 = mmtbx.command_line.fmodel.fmodel_from_xray_structure_master_params
+    import mmtbx.programs.fmodel
+    phil2 = mmtbx.programs.fmodel.master_phil
     params2 = phil2.extract()
     # adjust the cutoff of the generated intensities to assure that
     # statistics will be reported to the desired high-resolution limit
