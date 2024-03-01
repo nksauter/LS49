@@ -65,8 +65,7 @@ class gen_fmodel_with_complex(gen_fmodel):
   def from_parameters(self, resolution=1.7,
                             algorithm="fft",
                             k_sol=0.435 ):
-    import mmtbx.command_line.fmodel
-    phil2 = mmtbx.command_line.fmodel.fmodel_from_xray_structure_master_params
+    from mmtbx.programs.fmodel import master_phil as phil2
     params2 = phil2.extract()
     # adjust the cutoff of the generated intensities to assure that
     # statistics will be reported to the desired high-resolution limit

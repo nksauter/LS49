@@ -33,8 +33,7 @@ class gen_fmodel:
       sc.fdp = expected_henke.fdp()
 
     if self.method=="f_model":
-      import mmtbx.command_line.fmodel
-      phil2 = mmtbx.command_line.fmodel.fmodel_from_xray_structure_master_params
+      from mmtbx.programs.fmodel import master_phil as phil2
       #phil2.show()
       params2 = phil2.extract()
       # adjust the cutoff of the generated intensities to assure that
