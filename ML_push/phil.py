@@ -52,6 +52,12 @@ LLG_evaluator{
     .type = int
   enable_plot = False
     .type = bool
+  plot {
+    starting_model = False
+      .type = bool
+    reference = False
+      .type = bool
+  }
   plot_interpolation = True
     .type = bool
   plot_scope = *P1 P2
