@@ -59,8 +59,8 @@ print ("The rms difference is %10.5f%%"%(100.*math.sqrt(flex.mean(qty*qty))))
 from matplotlib import pyplot as plt
 
 fig, ax = plt.subplots()
-from matplotlib import cm , colors
-CC = cm.get_cmap("bwr")
+from matplotlib import colors
+CC = plt.get_cmap("bwr")
 norm = colors.Normalize(vmin=0, vmax=40)
 myCC = [CC(x) for x in range(40)]
 
