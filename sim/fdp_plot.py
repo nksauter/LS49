@@ -54,6 +54,13 @@ class george_sherrell:
       #patch in a cubic spline in case the value isn't present explicitly
       unrounded_energy = 12398.425/angstroms
       return float(self.fp_spline(unrounded_energy)), float(self.fdp_spline(unrounded_energy))
+  def fp_fdp_at_eV_energy(self,unrounded_energy):
+    try:
+      lookup_idx = list(self.energy).index(unrounded_energy)
+      return self.fp[lookup_idx], self.fdp[lookup_idx]
+    except ValueError as v:
+      #patch in a cubic spline in case the value isn't present explicitly
+      return float(self.fp_spline(unrounded_energy)), float(self.fdp_spline(unrounded_energy))
   def plot_them(self,plt,f1="b-",f2="r-"):
     plt.plot(self.energy, self.fp, f1)
     plt.plot(self.energy, self.fdp, f2)
