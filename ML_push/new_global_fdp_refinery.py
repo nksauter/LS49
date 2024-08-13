@@ -347,7 +347,7 @@ class rank_0_fit_all_f:
 
     if self.logical_rank == 0 or self.comm_size==1:
       from LS49.ML_push.pModel import compute_functional_and_gradients_fp
-      if self.params.LLG_evaluator.restraints.fp.mean is not None:
+      if self.params.LLG_evaluator.restraints.fp.sigma is not None:
         # add in restraints on the fp model
         ffp,g1fp,g2fp = compute_functional_and_gradients_fp(
           FE1_fp = a[0:100], FE2_fp = a[200:300],
@@ -356,7 +356,7 @@ class rank_0_fit_all_f:
         f += ffp
         for gidx in range(100):
           g[gidx] += g1fp[gidx]; g[200+gidx] += g2fp[gidx]
-      if self.params.LLG_evaluator.restraints.fdp.mean is not None:
+      if self.params.LLG_evaluator.restraints.fdp.sigma is not None:
         # add in restraints on the fdp model
         ffp,g1fp,g2fp = compute_functional_and_gradients_fp(
           FE1_fp = a[100:200], FE2_fp = a[300:400],

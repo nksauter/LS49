@@ -77,14 +77,19 @@ LLG_evaluator{
         .type = float
       sigma = 0.1
         .type = float
+        .help = setting the value to None removes this restraint
     }
     fdp{
       mean = 0.03
         .type = float
       sigma = 0.2
         .type = float
+        .help = setting the value to None removes this restraint
     }
     kramers_kronig{
+      algorithm = *original1 hotpatch2
+        .type = choice
+        .help = which algorithm to use for Kramers Kronig.
       use = True
         .type = bool
       pad = 10
