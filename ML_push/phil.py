@@ -98,6 +98,11 @@ LLG_evaluator{
         .type = int
       weighting_factor = 1.0
         .type = float
+      algorithm = original1
+        .type = str
+        .help = Kramers-Kronig algorithm for fp and fdp used in psii_spread
+        .help = Ultimately, this should be a choice-type between "original1" and "hotpatch2"
+        .help = For the time being, let this be a str-type to facilitate code development
     }
   }
   restraints_II_enable = False
