@@ -87,7 +87,7 @@ LLG_evaluator{
         .help = setting the value to None removes this restraint
     }
     kramers_kronig{
-      algorithm = *original1 hotpatch2
+      algorithm = *original1 hotpatch2 kramkron
         .type = choice
         .help = which algorithm to use for Kramers Kronig.
       use = True
