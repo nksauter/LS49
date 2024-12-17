@@ -90,6 +90,7 @@ LLG_evaluator{
       algorithm = *original1 hotpatch2 kramkron
         .type = choice
         .help = which algorithm to use for Kramers Kronig.
+      mask = True
       use = True
         .type = bool
       pad = 10
