@@ -10,7 +10,7 @@ class csv:
     self.red_fdp = flex.double()
     self.ox_fp = flex.double()
     self.ox_fdp = flex.double()
-    with open("data_sherrell/FP_FDP_data.csv","rU") as F:
+    with open("data_sherrell/FP_FDP_data.csv","r") as F:
       lines = F.readlines()
       for line in lines:
         tokens = [float(f) for f in line.strip().split(",")]
@@ -36,7 +36,7 @@ class george_sherrell:
     self.energy = flex.double()
     self.fp = flex.double()
     self.fdp = flex.double()
-    with open(file,"rU") as F:
+    with open(file,"r") as F:
       lines = F.readlines()
       for line in lines:
         tokens = [float(f) for f in line.strip().split()]
