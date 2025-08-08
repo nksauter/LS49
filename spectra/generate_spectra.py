@@ -151,7 +151,10 @@ class spectra_simulation:
         i_energy = offset_energy[idx]
         channel = int(i_energy - (energy-50))
         if 0 <= channel < 100:
-          channel_flux[channel] += self.R['spectra'][image][idx] * total_flux / self.average_integrated
+          # Work around a type conversion issue in numpy >=2.
+          # https://github.com/cctbx/cctbx_project/issues/1084
+          val = self.R['spectra'][image][idx] * total_flux / self.average_integrated
+          channel_flux[channel] += float(val)
       yield channel_wavelength,channel_flux,eV_to_angstrom / expected_energy
 
   def generate_recast_renormalized_image(self, image, energy, total_flux):
