@@ -13,8 +13,11 @@ Fe_oxidized_model = george_sherrell(os.path.join(ls49_big_data,"data_sherrell/pf
 Fe_reduced_model = george_sherrell(os.path.join(ls49_big_data,"data_sherrell/pf-rd-red_fftkk.out"))
 
 def fix_unpickled_attributes(crystal_lattice):
+  dict_ = crystal_lattice.__dict__
   for attr in ["_unit_cell", "_space_group_info", "_indices", "_data", "_sigmas"]:
-    crystal_lattice.__dict__[attr] = crystal_lattice.__dict__[attr.encode()]; del crystal_lattice.__dict__[attr.encode()]
+    if attr.encode() in dict_ and attr not in dict_:
+      crystal_lattice.__dict__[attr] = crystal_lattice.__dict__[attr.encode()]
+      del crystal_lattice.__dict__[attr.encode()]
 
 def channel_wavelength_fmodel(create):
   from LS49.spectra.generate_spectra import spectra_simulation
