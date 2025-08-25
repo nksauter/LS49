@@ -120,7 +120,7 @@ def run_sim2smv(prefix,crystal,spectra,rotation,rank,gpu_channels_singleton,para
 
   # get same noise each time this test is run
   SIM.seed = 1
-  SIM.oversample=1
+  SIM.oversample=params.oversample
   SIM.wavelength_A = wavelength_A
   SIM.polarization=1
   # this will become F000, marking the beam center
