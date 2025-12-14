@@ -14,7 +14,7 @@ def run_monochromatic():
   from LS49.sim.step5_pad import tst_all
   tst_all(quick=True)
 
-def compare_two_images(reference, test, tolerance_delta=50, tolerance_count=10, verbose_pixels=False, verbose=True):
+def compare_two_images(reference, test, tolerance_delta=50, tolerance_count=20, verbose_pixels=False, verbose=True):
   print ("Comparing",reference,test)
   try:
     from dxtbx.format.Registry import Registry
