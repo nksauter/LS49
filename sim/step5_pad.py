@@ -26,6 +26,7 @@ def data():
     Mn_oxidized_model = george_sherrell(full_path("data_sherrell/MnO2_spliced.dat")),
     Mn_reduced_model = george_sherrell(full_path("data_sherrell/Mn2O3_spliced.dat")),
     Mn_metallic_model = george_sherrell(full_path("data_sherrell/Mn.dat")),
+    Mn_dummy_model = george_sherrell(full_path("data_sherrell/Mn_dummy.dat")),
   )
 
 def raw_to_pickle(raw_pixels, fileout):
