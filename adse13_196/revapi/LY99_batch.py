@@ -50,6 +50,8 @@ def parse_input():
       .type = bool
     attenuation = True
       .type = bool
+    oversample = 1
+      .type = int
   """
   phil_scope = parse(master_phil)
   # The script usage

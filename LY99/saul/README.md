@@ -110,3 +110,27 @@ will need N=4 nodes for this problem size.  test on 1/10 data with 1 node
 work in progress on exascale API:
 exa_mini.sh
 ```
+
+Another experimental workflow:
+
+First modify `$MODULES/LS49/LY99/saul/sim_dials_ds1.sh` to correct the hardcoded paths labeled
+`FIXME`. Then start an interactive session:
+```
+$ salloc -N 1  -A m3890_g -t 60 -q interactive -C gpu -G 1
+```
+Then just source the script in an empty directory:
+```
+$ mkdir work
+$ cd work
+$ source $MODULES/LS49/LY99/saul/sim_dials_ds1.sh
+```
+Finally check the unit cells from DiffBragg stage 1 refinement:
+```
+$ grep ucell[012] out/rank_0.out
+ucell0: 67.199663
+ucell1: 59.799025
+ucell2: 47.199492
+ucell0: 67.199766
+ucell1: 59.798947
+ucell2: 47.199722
+```
