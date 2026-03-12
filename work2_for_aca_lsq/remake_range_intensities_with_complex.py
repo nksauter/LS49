@@ -64,7 +64,9 @@ class gen_fmodel_with_complex(gen_fmodel):
 
   def from_parameters(self, resolution=1.7,
                             algorithm="fft",
-                            k_sol=0.435 ):
+                            k_sol=0.435,
+                            b_sol=46.
+                            ):
     from mmtbx.programs.fmodel import master_phil as phil2
     params2 = phil2.extract()
     # adjust the cutoff of the generated intensities to assure that
@@ -74,7 +76,7 @@ class gen_fmodel_with_complex(gen_fmodel):
     params2.high_resolution = resolution
     params2.structure_factors_accuracy.algorithm = algorithm
     params2.fmodel.k_sol = k_sol
-    params2.fmodel.b_sol = 46.
+    params2.fmodel.b_sol = b_sol
     params2.structure_factors_accuracy.grid_resolution_factor = 1/5.
     params2.mask.grid_step_factor = 10.
     self.params2 = params2
